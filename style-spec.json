@@ -1,0 +1,735 @@
+{
+  "title": "《小さな旅 / This Way》及同批插畫的生成與美術規格",
+  "language": "zh-Hant-HK",
+  "how_to_use": "選一個交付物、一張主參考及最多兩張分工清楚的輔助參考。填寫 brief，再使用對應提示詞；場景、道具和角色按任務選取。",
+  "evidence": {
+    "attachment_count": 21,
+    "distinct_compositions_by_visual_review": 19,
+    "reference_numbering": "上載次序，從 1 起。",
+    "quantities": "色碼為目測近似。比例、技術參數及驗收門檻為製作建議，沒有量度原檔或驗證模型相似率。"
+  },
+  "invariants": [
+    "一幀只講清一個動作或一件物品的用途。以視線、承重點和輪廓空隙建立可讀性。",
+    "先構成大明暗，再鋪啞面色塊。只在必要轉折加局部深線、乾邊或受光邊。",
+    "遠景合併為疏落大形，故事平面分清人物與背景，近處用有方向的材質筆。",
+    "把顆粒留在適合材質和距離的區域，給眼、手和互動點安靜的底色。"
+  ],
+  "controlled_variations": [
+    "光色依地點和時段改變。可選高彩晚霞、低彩晴鎮、薄荷林光或局部夜火。",
+    "鏡頭可切換側視、背視、俯視、近景對話或物品平鋪。",
+    "狼、鳥、營火、瀑布和旅行裝備按需要選取。"
+  ],
+  "reference_index": [
+    {
+      "attachment_ids": [
+        1,
+        2
+      ],
+      "scene": "港口木棧道",
+      "visual_evidence": "近處木板橫切畫底，右邊攤檔幾乎頂出畫框。魚、橙和花集中右側。碼頭端的小鳥隔著一段空氣望向揹包旅人。旗繩斜切白雲，後方屋頂一層層抵達尖塔。",
+      "production_use": "畫遠城時讓灰紫屋頂和奶白屋身互相咬合，窗只留短點。近木用大面暖暗；最高彩度的天空可佔很大面積，細節密度仍由攤檔掌控。"
+    },
+    {
+      "attachment_ids": [
+        3
+      ],
+      "scene": "騎狼越花海",
+      "visual_evidence": "狼身及四肢拉成近水平長形，劍和耳尖打破水平。上方黃橙、中段藍紫與粉紅、下方青綠分層。近花有缺口、深色花心和長莖，遠花融成一道粉帶。",
+      "production_use": "做速度先拉長姿勢及留出前進空間。草線可以直立，與運動方向形成交叉；沒有必要把所有東西拖成動態模糊。"
+    },
+    {
+      "attachment_ids": [
+        4
+      ],
+      "scene": "燈籠食堂",
+      "visual_evidence": "高角度看見碗口、桌面和打開的餐牌。三盞燈籠懸在冷色巷口前。兩旁大客人被裁切，中央小孩雙手擱桌、低頭看餐牌，小鳥站在頁邊。",
+      "production_use": "擠迫空間靠遮擋和大小差。暖亮桌面為微小手勢提供乾淨底色；堆碗以重複弧線表深度，比逐碗上高光更接近參考。"
+    },
+    {
+      "attachment_ids": [
+        5
+      ],
+      "scene": "紅岩歇腳",
+      "visual_evidence": "上方岩拱圍出一塊藍天，透過洞口仍看見遠方台地。旅人、行囊、小鳥聚在岩腳陰影，右側露一個小頭骨。",
+      "production_use": "用「透得過去的洞」交代尺度。近岩面大而有折角，遠台地轉淡紫灰。人物旁的水平陰影比大面天空更適合安放休息動作。"
+    },
+    {
+      "attachment_ids": [
+        6
+      ],
+      "scene": "綠林石階",
+      "visual_evidence": "背向觀眾的旅人雙臂打開，站於石階上端；兩側深樹幹、中段翠綠山形、遠處薄荷白直立光帶逐層分開。大葉缺口呈寬齒，水花用同心弧。",
+      "production_use": "背面角色靠帽羽、頭形、腰帶交叉方向和手臂負形辨認。階梯由寬收窄，亮線斷續，越靠遠處越合併。"
+    },
+    {
+      "attachment_ids": [
+        7
+      ],
+      "scene": "旅行裝備平鋪",
+      "visual_evidence": "米色流蘇毯上，藍衣、短褲、襪和鞋順人體次序排開。袋子有側面深度，衣物以正面為主。小鳥越過毯邊停在袋頂，打破目錄般的整齊。",
+      "production_use": "最適合作道具形狀及局部色參照。保留包帶負形、衣襟交疊和鞋口。單件圖示獨立裁切時，拿走靠毯色才看得見的淺邊，補一小段本體暗面。"
+    },
+    {
+      "attachment_ids": [
+        8
+      ],
+      "scene": "瀑布木橋",
+      "visual_evidence": "近乎白色的遠崖和鳥形、中間明青瀑面、深藍崖壁及底部藍水池依次疊起。白色捲線繞過崖頂，細木橋斜跨畫面中央。",
+      "production_use": "同一種水有三種筆法。落水垂直拖長，撞石處畫弧和泡，池水橫鋪。讓橋及人物與水簾有明度差。"
+    },
+    {
+      "attachment_ids": [
+        9
+      ],
+      "scene": "店主展示短劍",
+      "visual_evidence": "冷藍貨架橫列道具，拱窗明亮。店主頭盔和雙手構成大面積白、綠；小劍橫放掌上，白十字與點光集中在商品。孩子由右下仰望。",
+      "production_use": "對話畫面有兩條視線。店主的手掌像小舞台，顧客的仰頭將視線送回商品。陳列品只需保留色列、間隔和少量不同輪廓。"
+    },
+    {
+      "attachment_ids": [
+        10
+      ],
+      "scene": "紫山前眺望",
+      "visual_evidence": "大半幅是低反差紫藍圓山、粉雲與天空，橙色平原上的路曲折入深。近處一紅一藍的層疊尖樹，孩子與狼在低位背向觀眾。",
+      "production_use": "在遠景容許相鄰大色面明度很接近，把剪影分離留給前景。狼四肢之間要見到後方橙地，縮圖才會讀成站立。"
+    },
+    {
+      "attachment_ids": [
+        11
+      ],
+      "scene": "俯視騎狼",
+      "visual_evidence": "狼頭朝畫底，脊背與尾巴沿畫幅長軸延伸；右邊一個放大的尖嘴投影，左邊是花葉圖案，旅人的圓眼和小鳥夾在兩隻狼耳之上。",
+      "production_use": "用俯視壓短腿、拉出鼻樑。投影本身亦是構圖大形，影嘴偏移到空地後仍要認得源自哪個形。"
+    },
+    {
+      "attachment_ids": [
+        12,
+        15
+      ],
+      "scene": "洞口營火",
+      "visual_evidence": "上半部冷藍覆頂、暗洞和層層岩口，火光把下方岩唇染黃橙。狼貼地橫臥，小孩伸手向火；最底紫水上有分段的橙色倒影。",
+      "production_use": "學局部光如何在「頂、臉、地、水」四個表面留下不同形狀。兩個附件用作同一構圖參考，不應在風格統計重複加權。"
+    },
+    {
+      "attachment_ids": [
+        13
+      ],
+      "scene": "林中依狼取暖",
+      "visual_evidence": "左右近樹像兩扇深藍簾，中央遠景亮青。狼身彎成開口環抱小孩與火，煙從火心往上走，使上下兩個亮區相連。",
+      "production_use": "與洞口圖共用冷暖分區，但此圖的庇護感來自狼身弧線。試作時先畫尾巴包圍的小空間，再放孩子與火。"
+    },
+    {
+      "attachment_ids": [
+        14
+      ],
+      "scene": "粉山行旅",
+      "visual_evidence": "橫幅下沿橙坡托起左下孩子和飛鳥。白雲帶在角色後留出明亮空隙；山腳有細小屋群，中景一棵較大的藍圓樹穩住右側。",
+      "production_use": "極小的屋群可校準巨大山峰。角色背後只留一條淺帶便足夠，不用替人物逐邊加亮。"
+    },
+    {
+      "attachment_ids": [
+        16
+      ],
+      "scene": "機械人樹下休息",
+      "visual_evidence": "粗枝從右上橫伸，崖下是大塊暗面；小孩垂釣、機械人與結他、白貓和幾隻棲鳥聚在枝下，遠城只剩亮窗。",
+      "production_use": "科技物件也可用同一語法。用黑面板和青色表情表示發光，用紅圍巾、靠樹的姿勢和旁邊的貓交代性情，金屬殼可保持啞面。"
+    },
+    {
+      "attachment_ids": [
+        17
+      ],
+      "scene": "小鎮單車",
+      "visual_evidence": "道路由畫底向市政廳及層疊台地抬升，前景停車牌與號誌分列兩端。近處紅帽、路中黃車都很細，卻各有乾淨路面承托。",
+      "production_use": "城市日景可用低彩度草綠、灰白、淡棕。標誌的可讀文字在此有敘事作用；要製作 UI 文字，可獨立排字以控制準確度。"
+    },
+    {
+      "attachment_ids": [
+        18
+      ],
+      "scene": "苔石巨人",
+      "visual_evidence": "巨人頭頂披苔，面部兩個暖淺眼形藏在綠塊中，身體下半部用土褐分段。頭頂的蛋、近水的釣線和小火，將其尺度與生活動作連起來。",
+      "production_use": "角色材質可以跨入環境材質。分清苔的圓垂輪廓、石的鈍切面，以及背後小孩與黑貓的剪影，才不會讀成一座草丘。"
+    },
+    {
+      "attachment_ids": [
+        19
+      ],
+      "scene": "騎貓過木橋",
+      "visual_evidence": "小孩與大灰貓在覆草樹幹上橫行。橋下明亮的直立樹幹仍可見，前景花、繩藤和兩側樹幹將視線圈在橋上。",
+      "production_use": "灰貓背線很長、腿短，眯眼只用小橫筆，頸上黃飾點出頭頸。可愛感也可以來自沉着姿勢，毋須所有動物都畫大圓眼。"
+    },
+    {
+      "attachment_ids": [
+        20
+      ],
+      "scene": "方幅林徑",
+      "visual_evidence": "旅人正面舉手，頭上小鳥、旁邊短劍都貼着較淺的綠地。左右深葉和彩花逼近畫框，林徑上有幾塊斜長日光，足下有短影。",
+      "production_use": "正面角色亦可有縱深。用地面光片和葉片重疊把觀者引向臉；勿把整條路均勻鋪滿相同密度的花。"
+    },
+    {
+      "attachment_ids": [
+        21
+      ],
+      "scene": "熱帶拱橋搬木",
+      "visual_evidence": "超寬橫幅中，拱橋橫跨兩岸，背木人與圓木組成橋頂的一個小剪影。兩端高棕櫚、遠方圓雲、前方白浪弧線分別穩住上、中、下。",
+      "production_use": "橫幅不宜靠裁剪直幅得到。把「移動」設成橫軸、把「重量」放到背後的圓木，以拱橋和浪線重複弧度。"
+    }
+  ],
+  "palettes": [
+    {
+      "scene": "晴港 01",
+      "roles": {
+        "environment": {
+          "name": "水天青",
+          "srgb_hex": "#46E1EC"
+        },
+        "secondary_environment": {
+          "name": "瓦灰紫",
+          "srgb_hex": "#937F96"
+        },
+        "dark_anchor": {
+          "name": "木暗棕",
+          "srgb_hex": "#492B31"
+        },
+        "lit_plane": {
+          "name": "帆布乳黃",
+          "srgb_hex": "#FFE1A1"
+        },
+        "story_accent": {
+          "name": "攤橙",
+          "srgb_hex": "#F58B37"
+        }
+      }
+    },
+    {
+      "scene": "花海黃昏 03",
+      "roles": {
+        "environment": {
+          "name": "天黃",
+          "srgb_hex": "#FFD852"
+        },
+        "secondary_environment": {
+          "name": "遠丘藍紫",
+          "srgb_hex": "#898CD0"
+        },
+        "dark_anchor": {
+          "name": "狼墨紫",
+          "srgb_hex": "#201B2C"
+        },
+        "lit_plane": {
+          "name": "草尖黃綠",
+          "srgb_hex": "#CCED76"
+        },
+        "story_accent": {
+          "name": "花粉",
+          "srgb_hex": "#F7529D"
+        }
+      }
+    },
+    {
+      "scene": "燈籠食堂 04",
+      "roles": {
+        "environment": {
+          "name": "陶土",
+          "srgb_hex": "#B86E49"
+        },
+        "secondary_environment": {
+          "name": "巷青",
+          "srgb_hex": "#207488"
+        },
+        "dark_anchor": {
+          "name": "棕紫",
+          "srgb_hex": "#422C3A"
+        },
+        "lit_plane": {
+          "name": "桌面蜜黃",
+          "srgb_hex": "#FFCB7E"
+        },
+        "story_accent": {
+          "name": "燈籠橙",
+          "srgb_hex": "#FB903E"
+        }
+      }
+    },
+    {
+      "scene": "乾旱紅谷 05",
+      "roles": {
+        "environment": {
+          "name": "沙杏",
+          "srgb_hex": "#F8B562"
+        },
+        "secondary_environment": {
+          "name": "天藍",
+          "srgb_hex": "#86CFE6"
+        },
+        "dark_anchor": {
+          "name": "岩酒棕",
+          "srgb_hex": "#582727"
+        },
+        "lit_plane": {
+          "name": "沙光",
+          "srgb_hex": "#FFD48A"
+        },
+        "story_accent": {
+          "name": "小鳥金",
+          "srgb_hex": "#FFC13D"
+        }
+      }
+    },
+    {
+      "scene": "濕林／石階 06、20",
+      "roles": {
+        "environment": {
+          "name": "苔綠",
+          "srgb_hex": "#42AF79"
+        },
+        "secondary_environment": {
+          "name": "青綠",
+          "srgb_hex": "#168C86"
+        },
+        "dark_anchor": {
+          "name": "樹深青",
+          "srgb_hex": "#103C46"
+        },
+        "lit_plane": {
+          "name": "薄荷光",
+          "srgb_hex": "#A3F5B8"
+        },
+        "story_accent": {
+          "name": "暖果紅",
+          "srgb_hex": "#F56A43"
+        }
+      }
+    },
+    {
+      "scene": "水瀑 08",
+      "roles": {
+        "environment": {
+          "name": "水淺青",
+          "srgb_hex": "#9CF6F6"
+        },
+        "secondary_environment": {
+          "name": "石湖藍",
+          "srgb_hex": "#227CA4"
+        },
+        "dark_anchor": {
+          "name": "石靛藍",
+          "srgb_hex": "#123E66"
+        },
+        "lit_plane": {
+          "name": "泡沫白",
+          "srgb_hex": "#F5FFFA"
+        },
+        "story_accent": {
+          "name": "鳥黃",
+          "srgb_hex": "#FFB937"
+        }
+      }
+    },
+    {
+      "scene": "晚霞群山 10、14",
+      "roles": {
+        "environment": {
+          "name": "霧粉",
+          "srgb_hex": "#F4B8D9"
+        },
+        "secondary_environment": {
+          "name": "山薰衣草",
+          "srgb_hex": "#AF9BDD"
+        },
+        "dark_anchor": {
+          "name": "近景墨紫",
+          "srgb_hex": "#312638"
+        },
+        "lit_plane": {
+          "name": "雲淡粉",
+          "srgb_hex": "#FFE2EA"
+        },
+        "story_accent": {
+          "name": "草地橘",
+          "srgb_hex": "#EF975B"
+        }
+      }
+    },
+    {
+      "scene": "洞火 12、15",
+      "roles": {
+        "environment": {
+          "name": "林夜藍",
+          "srgb_hex": "#193C79"
+        },
+        "secondary_environment": {
+          "name": "岩藍紫",
+          "srgb_hex": "#474164"
+        },
+        "dark_anchor": {
+          "name": "洞暗紫",
+          "srgb_hex": "#211D30"
+        },
+        "lit_plane": {
+          "name": "火心黃",
+          "srgb_hex": "#FFDD69"
+        },
+        "story_accent": {
+          "name": "反光橘",
+          "srgb_hex": "#FF813B"
+        }
+      }
+    },
+    {
+      "scene": "城鎮日光 17",
+      "roles": {
+        "environment": {
+          "name": "路灰米",
+          "srgb_hex": "#D4D1B7"
+        },
+        "secondary_environment": {
+          "name": "草鼠尾綠",
+          "srgb_hex": "#9ABD85"
+        },
+        "dark_anchor": {
+          "name": "樹深綠",
+          "srgb_hex": "#376B64"
+        },
+        "lit_plane": {
+          "name": "牆象牙",
+          "srgb_hex": "#F3EDDC"
+        },
+        "story_accent": {
+          "name": "交通黃",
+          "srgb_hex": "#E9AC36"
+        }
+      }
+    },
+    {
+      "scene": "裝備平鋪 07",
+      "roles": {
+        "environment": {
+          "name": "毯米白",
+          "srgb_hex": "#EDE8D0"
+        },
+        "secondary_environment": {
+          "name": "衣天藍",
+          "srgb_hex": "#67A9E0"
+        },
+        "dark_anchor": {
+          "name": "布靛紫",
+          "srgb_hex": "#393456"
+        },
+        "lit_plane": {
+          "name": "襪暖白",
+          "srgb_hex": "#F6F6EF"
+        },
+        "story_accent": {
+          "name": "零錢金",
+          "srgb_hex": "#E7A23F"
+        }
+      }
+    }
+  ],
+  "materials": [
+    {
+      "material": "大面鋪色",
+      "method": "用有實心中心的寬筆先閉合形狀，沿長軸拖一至兩次近色。讓一段邊斷出少量底色。",
+      "visible_result": "07 衣袖、05 岩面。輪廓清楚，內部有低對比顏料厚薄。"
+    },
+    {
+      "material": "岩石剖面",
+      "method": "用兩三塊不同明度的折面決定體積。轉角後改排線方向，線群之間留整塊靜面。",
+      "visible_result": "05 紅岩有斜線和少量礦點，08 藍崖長筆近乎垂直。"
+    },
+    {
+      "material": "木、皮、繩",
+      "method": "木線沿板長軸，偶爾一個節眼；皮用翻蓋弧、斷續縫線及一個暗側；繩用幾道橫繞短筆。",
+      "visible_result": "01 棧道與攤柱、07 背包。縮小後木縫與帶孔仍可見。"
+    },
+    {
+      "material": "苔、草、泥",
+      "method": "苔頂亮、邊緣鈍垂，草以三數筆成簇，間距與高度有長短；泥層可露水平帶。",
+      "visible_result": "06 梯邊、18 巨人、19 草橋。大量留白讓細草像稀疏生長。"
+    },
+    {
+      "material": "葉、花、藤",
+      "method": "大葉先造瓣或挖出缺口；以中脈帶少量側脈。小花以杯形、圓瓣或平碟加一個花心。藤以疏密不同的珠／葉轉彎。",
+      "visible_result": "03 前景花有大面和深芯，20 的葉脈可由中心放射。葉片間的負形也參與造型。"
+    },
+    {
+      "material": "水、泡、雲、煙",
+      "method": "水簾長直帶，水池橫短筆；泡用少量套弧或空心點。雲由重疊的圓肩或扁平長塊組成，煙用一條粗細變化的曲線。",
+      "visible_result": "08 瀑面與 12 倒影互相比對。13 的煙是引導視線的線，無須畫成寫實粒子。"
+    },
+    {
+      "material": "毛、羽、布",
+      "method": "毛色先合成大面，頸、尾端才露三角簇；羽以簡短斜紋，布以袖口、摺邊和交疊色面表示。",
+      "visible_result": "11 狼頭、07 帽羽及衣襟。毛筆方向順體積，絨毛不用覆蓋每一寸。"
+    },
+    {
+      "material": "金屬、玻璃、陶",
+      "method": "金屬用冷淺切面和短亮線；玻璃用帶色透明面、邊角反光；碗口畫淺橢圓和內圈，堆疊時共享外形。",
+      "visible_result": "09 短劍及玻璃櫃、04 疊碗。窄白線只在面轉向或故事焦點出現。"
+    },
+    {
+      "material": "遠山、遠城",
+      "method": "拉一條完整天際線，內部少量低對比幾何。窗縮成有疏密的豎點，遠鳥可只是一個折筆。",
+      "visible_result": "01 城鎮、10 紫山、17 遠郊；移走個別窗仍應感到那是一群房子。"
+    }
+  ],
+  "camera_anchors": [
+    {
+      "scene": "港口 01",
+      "anchors_top_left_normalized": "旅人身體中心 (0.61, 0.64)，鳥中心 (0.16, 0.61)，最高尖塔頂 (0.42, 0.18)",
+      "relationships": "鳥與人接近同一水平高度但不同距離；棧道的收窄方向把人送向市區。不要把兩者移到同一根欄杆上。"
+    },
+    {
+      "scene": "石階 06",
+      "anchors_top_left_normalized": "人物腳底 (0.46, 0.58)，林中亮口約 (0.52, 0.36)",
+      "relationships": "腳底與最上級台階接觸，黑髮上沿離開樹幹。近階幾乎佔滿底邊，遠處台階合成一條帶。"
+    },
+    {
+      "scene": "瀑橋 08",
+      "anchors_top_left_normalized": "頭中心 (0.49, 0.49)，橋中點 (0.50, 0.54)",
+      "relationships": "橋上留一條可看見水色的窄縫，步姿立即有離地感。左右崖頂高度有偏差，橋自然傾斜。"
+    },
+    {
+      "scene": "洞口 12",
+      "anchors_top_left_normalized": "火心 (0.54, 0.71)，人物面中心 (0.64, 0.64)",
+      "relationships": "狼頭在火左，背包在人物右。火與人偏開，煙和眼睛才可同時被看見。"
+    },
+    {
+      "scene": "林火 13",
+      "anchors_top_left_normalized": "火心 (0.49, 0.72)，人物面中心 (0.58, 0.58)",
+      "relationships": "狼尾包住人物右邊，左側狼嘴伸近火；煙的淺筆穿過深色狼身才顯形。"
+    }
+  ],
+  "character_shapes": [
+    {
+      "subject": "小旅人",
+      "silhouette": "大頭、短身、短靴，帽羽／背包／伸手之中選可見識別物",
+      "paint": "眉、臉頰、帶扣、衣襟、髮內幾筆",
+      "consistency": "眼線高度、帽羽根部、鞋底與腳掌對齊；衣物按所選參考版本固定"
+    },
+    {
+      "subject": "小鳥",
+      "silhouette": "一粒偏扁的暖圓形、一小截喙、短尾，有時只見兩條腳",
+      "paint": "一個眼白和瞳點、翅膀短彎、腹部小斑",
+      "consistency": "在港口是遠處視線對手，在食堂是頁邊陪伴，在頭頂是人物朝向的提示"
+    },
+    {
+      "subject": "狼",
+      "silhouette": "長楔嘴、尖耳、帶折角的頸毛、長背與尾；站姿腿間可見地面",
+      "paint": "內耳、窄眼、灰紫頰面、順長軸的短毛筆",
+      "consistency": "側面拉長，頂視留窄鼻樑，蜷臥讓尾巴與腹部之間保留安放人物的縫"
+    },
+    {
+      "subject": "巨貓",
+      "silhouette": "圓頭接長身、兩小耳、長背托住騎者，尾部與後腿錯開",
+      "paint": "細眼、鬚、項圈及黃飾",
+      "consistency": "小孩與貓比例，大貓四足需支撐重量。參照 19"
+    },
+    {
+      "subject": "大店主／食客",
+      "silhouette": "寬肩和大手像圓鈍石塊；角、耳或頭盔打破頭部輪廓",
+      "paint": "皮膚斑點、少數肌膚短線、袖口、面頰",
+      "consistency": "手掌與商品、嘴與食物的接觸點，決定這一刻的表演"
+    },
+    {
+      "subject": "機械人／苔巨人",
+      "silhouette": "一個靠方圓外殼分件，一個靠下垂苔冠包住厚臂",
+      "paint": "顯示屏表情、殼縫／石紋、苔上細草",
+      "consistency": "先分清臉和背景，再決定表面紋理。兩者共享可親的姿態，輪廓各自獨立"
+    }
+  ],
+  "prompt_templates": {
+    "A": {
+      "deliverable": "環境插畫，整段可直接使用",
+      "prompt": "繪製一幅直幅 5:7 的敘事插畫。雨後，一名小郵差從左岸踏過斜木板，望向右岸紅色郵箱。右腳踏實，左腳離板，雙腳之間露出淺青色水面；頭頂勿與岸線相切。人物在畫面中央略下，身高約畫高十分之一。短靴、鈍圓大頭、深色塊狀頭髮，側面只見一隻清楚的白眼，肩帶壓住方形皮郵袋，袋口露半封信。最遠以幾塊淺灰薄荷色樹冠融入天光，中景是完整的奶青水簾，近景用兩個不對稱的靛藍切面岩岸夾住木板。前景葉片大且有寬缺口；三五筆草為一組，路上留空。用啞面不透明水粉般的色塊，局部乾邊露底。木紋平行橋面，岩紋垂落，落水用長筆、池面用橫筆，只有碰石處出現白弧。讓郵箱與視線構成第二個焦點。畫面無標題、外框或署名。"
+    },
+    "B": {
+      "deliverable": "角色轉面，供連續圖或模型製作",
+      "prompt": "同一名原創郵差，正面、左側、背面、前四分之三，四個全身等高視圖，平行投影，同一地面基線，各視圖分隔。約兩個半頭高，帽頂微偏、右側一根短羽、深色整塊髮、圓眼配小暗瞳、短身短靴。腰右側棕郵袋，背帶由左肩到右腰，四視圖維持解剖方位一致。正面雙眼、純側面一個眼形、背面清楚顯示髮尾和背帶。手離開身體少許以看清輪廓。藍綠上衣、靛色短褲、米色鞋口，以大啞面色塊、袖口兩三筆斷線表現布料。淺暖灰背景、均勻柔光、無地景；保留完整帽羽和鞋底。各視圖分開核對比例後供建模使用。"
+    },
+    "C": {
+      "deliverable": "遊戲關卡背景，橫向移動",
+      "prompt": "16:9 側視可橫向延伸的林間渡口。玩家由左往右，主要行走面在畫面下三分之一。中間一段窄橋的兩端明確落在岸上。前景深青大葉只從角落入畫，角色通道保留連續而安靜的淺苔色。中景橋底用一個完整深藍拱洞，橋頂短草遇到承重邊便停。遠方山與圓頂屋壓成低反差灰綠層，光從左上方照亮草邊。以霧面大色塊、露底乾邊、沿材料方向的斷筆呈現。輸出純背景，不放玩家、HUD、字樣。橋與兩岸完整可見，左右延展處保持同一地面高度和光向。"
+    },
+    "D": {
+      "deliverable": "背包物品圖示",
+      "prompt": "一個方底圓翻蓋的舊郵袋，三分之四角度，可見正面、右側袋與提帶中間的空洞；外形飽滿微歪，底部承重略平。主面赤陶棕、側面深梅棕，翻蓋頂緣一小片暖赭；鈍黃扣釘是唯一高彩點。縫線只沿蓋角斷續轉彎，皮面留大塊安靜區域。置中、完整、四周留約一成空間，單物件，透明背景，沒有地面和投影。48 像素大小仍可辨認袋蓋、提帶和扣位，細縫線可隨縮小而消失。"
+    },
+    "E": {
+      "deliverable": "3D 模型／材質生成 brief（英文，方便跨工具使用）",
+      "prompt": "Create one game-ready stylized moss courier golem. A heavy earthen torso supports an overhanging rounded moss cap. Two pale oval eyes sit inside a quiet green face patch. A small satchel hangs from the left shoulder to the right hip. Use blunt cut planes for stone, a scalloped lip for moss, and an actual open loop for the bag handle. Keep the silhouette readable in front, side and three-quarter orthographic views. Hand-paint broad matte albedo blocks. Put short downward strokes below the moss lip and a few slanted hatches on individual stone faces. Keep a large quiet patch beside the eyes. Separate the moss cap, body and satchel into material regions. Deliver a neutral-light turnaround and a second in-scene view under cool forest light. Keep topology around shoulders and hips suitable for a short, weight-bearing walk cycle."
+    }
+  },
+  "completed_brief": {
+    "output": "直幅 5:7 單張雨後送信插畫",
+    "references": {
+      "8": "空間與水",
+      "7": "皮袋的剪影與材質",
+      "6": "濕林層次與光口"
+    },
+    "action": "郵差跨木板，右腳踩實，左腳離地，望向右岸郵箱。",
+    "camera": "側視環境遠景",
+    "subject_height_fraction_trial": 0.1,
+    "identity": "圓頭、短靴、左肩至右腰郵袋，袋中半封信。",
+    "foreground": "角落兩個深靛葉叢",
+    "action_plane": "中部斜木板和岸頂",
+    "midground": "淺青瀑面托住頭和腳",
+    "background": "淺灰綠樹冠、薄霧",
+    "light": "左上方散射光；帽頂、肩與岸頂較亮，鞋底及橋底成暗錨。",
+    "palette": "水瀑 08；郵箱用朱紅取代鳥黃作敘事點。",
+    "material_marks": "木順紋、崖垂筆、池水橫筆，人物眼周保持平靜。",
+    "deliverable_checks": [
+      "縮圖認得跨步與右岸目標。",
+      "頭部和後岸不相切。",
+      "原尺寸可讀到皮蓋與橋面兩種材料。"
+    ]
+  },
+  "game_assets": [
+    {
+      "asset": "玩家角色",
+      "construction": "固定頭高、裝備版本、鞋底基線和影子中心。側身行走時測最前腳、最後腳及雙腳重疊幀。拆件動畫在肩、髖預留遮蓋。",
+      "review": "同一角色置於晴地、樹蔭和夜火三張底圖，臉或朝向仍可讀。背帶不可因水平翻轉而跳肩。"
+    },
+    {
+      "asset": "路、橋、平台",
+      "construction": "承重面有一條可辨識的上邊，苔可略垂到側壁。直段、角、端頭、過渡各準備形狀變體。",
+      "review": "用角色實際高度走完整段，腳落在所見橋面。重複拼接數次，沒有規則間距的「花牆」。"
+    },
+    {
+      "asset": "植物、岩石組",
+      "construction": "製作少量有主方向的大剪影，搭配幾組草筆和花點，記錄可旋轉／可鏡像項。帶有主光的物件翻轉時要同步改光。",
+      "review": "多件連排，天際線有高低，最小草筆在縮放時不閃。"
+    },
+    {
+      "asset": "NPC、攤位及互動物",
+      "construction": "用手勢、提手、開口或明度差提示用途。發光或閃點集中於當前物件；每件都閃會消耗提示的辨識力。",
+      "review": "玩家接近前能辨認售貨、閱讀、休息等動作，互動提示不蓋臉。"
+    },
+    {
+      "asset": "圖示、物品欄",
+      "construction": "選定同一投影角度、留白、光向及基線。裝備交換用同一鏡頭輸出，圖示保留物件的功能性開口。",
+      "review": "48 px 看輪廓和用途，96 px 看蓋、扣、刀鞘或水壺提帶。分別放在亮與暗 UI 上。"
+    },
+    {
+      "asset": "火、水、風",
+      "construction": "火焰以外焰和淺色內芯兩塊形狀交替；水花用幾組套弧出入；風用少量連續曲線帶動局部草。",
+      "review": "暫停時像一幅完整插畫；播放時火芯、煙的起點、水勢方向連貫。"
+    }
+  ],
+  "model_assets": [
+    {
+      "asset": "旅人",
+      "geometry": "頭部偏寬，頰和下頜是一段連續鈍弧；鼻尖、耳、靴底、帽羽及包體影響剪影。髮束合成幾個外形。",
+      "paint": "眼、瞳、眉可用可替換面片或貼花。衣襟交疊及袖口用色面，短縫線用貼圖。",
+      "camera_review": "以正、側、背及四分之三近似正交鏡頭比對頭高。把側面遠眼遮在頭形內。"
+    },
+    {
+      "asset": "狼／大貓",
+      "geometry": "狼的長楔嘴、頸毛折角、背和尾進幾何；貓的圓頭、短鼻、粗背另作一型。預留坐騎背面的接觸區。",
+      "paint": "畫內耳、臉頰色塊、疏落順毛筆。眼睛留給表情控制。",
+      "camera_review": "檢驗側面四足間的洞、俯視嘴的長度、蜷臥時尾巴與小孩的空間。"
+    },
+    {
+      "asset": "郵袋、樹幹、崖壁",
+      "geometry": "提帶成真空洞；崖頂向側面折下去；大樹枝與樹幹的連接有厚度。小倒角只在輪廓轉折留亮面。",
+      "paint": "木紋、縫線和岩紋跟隨 UV 方向，避免跨轉角延續同一排線。",
+      "camera_review": "袋柄內部需見背景；最終畫面檢查岩紋不會因傾斜視角縮成摩爾紋。"
+    },
+    {
+      "asset": "草、葉、花",
+      "geometry": "影響剪影的主葉可用簡化曲面；遠處草花可用成簇卡片。葉的寬缺口要在最終鏡頭保住。",
+      "paint": "中脈、花心、草筆及泥層用色面，葉群根部可共用一塊深色。",
+      "camera_review": "避免所有卡片同角度受光或向鏡頭轉到突然相交。較遠 LOD 保留整叢的外形。"
+    }
+  ],
+  "shading_modes": {
+    "fixed_camera": "手繪底色加固定光面，移動物件獨立接觸影。",
+    "dynamic_camera": "低對比本色，柔邊兩至三段漫反射，依環境染暗面。底色用 sRGB，數據遮罩用非色彩模式。",
+    "render_review": [
+      "中立光下正、側、背、四分之三",
+      "實際遊戲鏡頭下晴地、樹蔭或火光",
+      "目標螢幕大小與動作關鍵幀"
+    ]
+  },
+  "review": [
+    {
+      "criterion": "敘事與視線",
+      "weight": 15,
+      "pass_condition": "一眼說得出誰做甚麼、望向何處，手或腳與物件接觸正確。"
+    },
+    {
+      "criterion": "構圖與尺度",
+      "weight": 20,
+      "pass_condition": "大形、主錨點、空隙和遠中近層成立；人物大小符合指定鏡頭。"
+    },
+    {
+      "criterion": "色彩與光區",
+      "weight": 20,
+      "pass_condition": "當幕的大面主色、深錨、受光區與小點色關係正確，夜火／日光各有明確來源。"
+    },
+    {
+      "criterion": "角色／物件識別",
+      "weight": 15,
+      "pass_condition": "縮小後仍認得輪廓、比例、朝向及指定裝備。"
+    },
+    {
+      "criterion": "邊緣、材質與筆觸",
+      "weight": 20,
+      "pass_condition": "啞面色塊清晰，近看可分木、石、草、水，遠看局部紋理能安靜合併。"
+    },
+    {
+      "criterion": "交付用途",
+      "weight": 10,
+      "pass_condition": "插畫在目標比例成立；遊戲在移動中可辨；模型在指定轉面及關卡光下仍一致。"
+    }
+  ],
+  "review_note": "分數為內部美術審閱，不代表統計相似率。單一物品的故事可讀性按用途與穿戴位置評估。",
+  "repair": [
+    {
+      "symptom": "像普通可愛奇幻海報",
+      "inspect": "角色太大，背景全為裝飾，缺少故事動詞",
+      "revision": "在草稿明確一個動作、一個目的物和兩者的距離，再決定人物大小。"
+    },
+    {
+      "symptom": "配色看似準確，人物仍消失",
+      "inspect": "髮外沿、眼或抬腳與後景同值／相切",
+      "revision": "移動背後一整塊水霧或陰影，讓接觸邊清楚。"
+    },
+    {
+      "symptom": "像平滑向量圖",
+      "inspect": "每段邊同樣銳利，形內沒有沿物件走的筆",
+      "revision": "保住主剪影，只在一段暗邊擦出紙齒，並補一組有方向的材料筆。"
+    },
+    {
+      "symptom": "像開了全屏噪點",
+      "inspect": "顆粒大小、密度在天空、皮膚、岩面完全一致",
+      "revision": "減掉天空和臉部噪點，靠岩壁切面和順紋筆恢復材料差別。"
+    },
+    {
+      "symptom": "像亮膠玩具",
+      "inspect": "每個圓面都有同一白光斑，暗面灰黑",
+      "revision": "刪除皮、布、苔上的圓白斑，重畫本色與一個染色暗面；亮切面只留在金屬等需要處。"
+    },
+    {
+      "symptom": "夜景糊成藍橙漸層",
+      "inspect": "火光沒有跟隨表面轉折",
+      "revision": "分別畫下頜、手掌、岩唇與斷開的水面反光，讓遠處暗面保持完整。"
+    },
+    {
+      "symptom": "圖示精細但小尺寸認不出",
+      "inspect": "大輪廓相似，扣、眼、縫線全部擠在中心",
+      "revision": "把功能性負形放大，例如提帶的洞、壺頸、鞋口；次要縫線先合併。"
+    },
+    {
+      "symptom": "3D 正面相似，一轉就失真",
+      "inspect": "用正面貼圖補了側面應有的幾何",
+      "revision": "在側視剪影重修鼻、下頜、包厚、尾巴轉折，再校正貼花及光線。"
+    },
+    {
+      "symptom": "連續場景像不同角色",
+      "inspect": "頭身比、帽羽方向、肩帶穿法跟着視角改變",
+      "revision": "取同一四視圖疊比頭高和穿戴點，場景變色只進入燈光與配色層。"
+    }
+  ]
+}

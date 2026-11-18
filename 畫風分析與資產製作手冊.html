@@ -1,0 +1,658 @@
+<!doctype html><html lang="zh-HK"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>畫風分析與資產製作手冊</title><style>
+:root{color-scheme:light;--ink:#223836;--teal:#19635a;--border:#ccd9d1;--pale:#edf3ee}
+*{box-sizing:border-box}body{margin:0;color:var(--ink);background:#fafaf5;font:17px/1.85 "Source Sans 3","Noto Sans CJK TC","PingFang TC","Microsoft JhengHei",sans-serif}main{max-width:1140px;margin:auto;padding:36px 48px 90px}h1,h2,h3{line-height:1.4;text-wrap:balance}h1{font-size:clamp(30px,4vw,48px);color:#173f39;margin:0 0 20px}h2{font-size:30px;color:#174b43;border-top:2px solid #589181;padding-top:26px;margin:54px 0 12px}h3{font-size:22px;margin:28px 0 8px}a{color:var(--teal);text-underline-offset:3px}nav{padding:18px 24px;background:var(--pale);columns:2;column-gap:32px}nav a{display:block;break-inside:avoid;font-size:15px;padding:3px 0}p{margin:12px 0}li{margin:8px 0}table{width:100%;border-collapse:collapse;font-size:15.5px;line-height:1.68}td,th{border-bottom:1px solid var(--border);text-align:left;vertical-align:top;padding:10px 12px}thead{background:var(--pale)}td:first-child{font-weight:650;min-width:7em}tr:nth-child(even){background:#f3f6f1}.table-scroll{overflow-x:auto}blockquote{background:#edf3ee;border-left:4px solid #4d8777;padding:10px 18px;margin:14px 0}pre{white-space:pre-wrap;padding:20px;background:var(--pale)}code{font-family:"IBM Plex Mono",monospace;font-size:.9em}.swatch{display:inline-block;width:1.15em;height:1.15em;border:1px solid #0002;border-radius:3px;vertical-align:-.21em;margin:0 .24em 0 .08em}details{margin:22px 0}summary{cursor:pointer;color:var(--teal);font-weight:bold}strong{color:#173c37}
+@media(max-width:700px){main{padding:22px 16px 60px}nav{columns:1}td,th{padding:8px}h2{font-size:24px}}
+@media print{main{max-width:none;padding:0}details{display:none}body{background:white;font-size:10pt}table{font-size:9pt}tr,blockquote{break-inside:avoid}h2,h3{break-after:avoid}.swatch{print-color-adjust:exact}.table-scroll{overflow:visible}}
+</style></head><body><main><h1 id="小さな旅--this-way及同批插畫的畫風分析與資產製作手冊">《小さな旅 / This Way》及同批插畫的畫風分析與資產製作手冊</h1><details open><summary>章節目錄</summary><nav><a href="#1-先看三個最值得保留的關係">1　先看三個最值得保留的關係</a><a href="#2-逐幅視讀與製作用途">2　逐幅視讀與製作用途</a><a href="#3-鏡頭明度與敘事怎樣一起運作">3　鏡頭、明度與敘事怎樣一起運作</a><a href="#4-色彩腳本與光線">4　色彩腳本與光線</a><a href="#5-角色動物與表情的造型文法">5　角色、動物與表情的造型文法</a><a href="#6-筆觸邊緣與材質字典">6　筆觸、邊緣與材質字典</a><a href="#7-把一幅畫拆成可重做的製作步驟">7　把一幅畫拆成可重做的製作步驟</a><a href="#8-可以直接交畀圖像模型的提示詞">8　可以直接交畀圖像模型的提示詞</a><a href="#9-遊戲資產美術規格">9　遊戲資產美術規格</a><a href="#10-3d-製作規格由插畫剪影變成可轉動模型">10　3D 製作規格：由插畫剪影變成可轉動模型</a><a href="#11-高相似度迭代和驗收">11　高相似度迭代和驗收</a><a href="#12-給-ai-或美術團隊的最小交接單">12　給 AI 或美術團隊的最小交接單</a></nav></details>
+<p>適用於單幅插畫、連續場景、遊戲角色與環境、道具圖示，以及手繪風 3D 模型。圖號跟隨本次上載次序。文中「見圖」指附件，「試作」指為製作而選的起點。色碼按畫面目測配搭，尺寸、鏡頭、材質及評分數字是試作規格。從成圖可辨認筆觸的外觀，但無法確定原作者使用的軟件、筆刷、圖層或混色模式。以高度視覺一致作目標，文字規格本身無法保證生成結果 100% 一致。</p>
+<h2 id="1-先看三個最值得保留的關係">1　先看三個最值得保留的關係</h2>
+<p><strong>第一，讓觀眾先看得出「誰在做甚麼」，然後才發現環境有幾大。</strong> 圖 08 的人細到幾乎只剩眼、頭髮和兩隻腳，但大瀑布偏偏在他背後留了一塊最乾淨的淺青。橋面只有一筆厚木，腳和木之間留有空隙，於是人是在「跨過去」。如果只還原熱帶植物和水粉顆粒，卻把人物貼在佈滿葉脈的石壁前，動作就消失了。</p>
+<p><strong>第二，輪廓先交代物件，表面才交代材料。</strong> 圖 07 的皮袋靠翻蓋、扣帶、側袋和提帶中的空洞成立。縫線只在蓋邊轉彎，皮面大部分安靜。圖 05 的岩石剛好相反，外沿由幾次硬折構成，排線停在相應的斜面。兩者用的都是短線，方向、落點和留白令它們分別讀成皮與石。這個區別比一張全畫面顆粒貼圖重要。</p>
+<p><strong>第三，同一物件在不同世界光色下會改變。</strong> 圖 03 花海上的狼接近黑剪影，圖 11 俯視的狼露出灰紫長嘴和窄眼，圖 13 火旁的狼下頜變成金橙。長嘴、尖耳、背部與尾巴的走向令牠在三幅圖中仍可辨認。製作系列時，鎖定這些關係，讓局部顏色隨每一幕的光改變。</p>
+<h2 id="2-逐幅視讀與製作用途">2　逐幅視讀與製作用途</h2>
+<p>21 個附件有 19 個目視可區分的構圖。01 和 02 是同一港口構圖，12 和 15 是同一洞口營火構圖。這是構圖去重，未核對檔案雜湊。下列名稱按畫面內容編寫，方便在製作 brief 中指圖。</p>
+<div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>附件</th>
+<th>畫面證據與觀看次序</th>
+<th>最值得借用的製作決定</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>01、02　港口木棧道</td>
+<td>近處木板橫切畫底，右邊攤檔幾乎頂出畫框。魚、橙和花集中右側。碼頭端的小鳥隔著一段空氣望向揹包旅人。旗繩斜切白雲，後方屋頂一層層抵達尖塔。</td>
+<td>畫遠城時讓灰紫屋頂和奶白屋身互相咬合，窗只留短點。近木用大面暖暗；最高彩度的天空可佔很大面積，細節密度仍由攤檔掌控。</td>
+</tr>
+<tr class="even">
+<td>03　騎狼越花海</td>
+<td>狼身及四肢拉成近水平長形，劍和耳尖打破水平。上方黃橙、中段藍紫與粉紅、下方青綠分層。近花有缺口、深色花心和長莖，遠花融成一道粉帶。</td>
+<td>做速度先拉長姿勢及留出前進空間。草線可以直立，與運動方向形成交叉；沒有必要把所有東西拖成動態模糊。</td>
+</tr>
+<tr class="odd">
+<td>04　燈籠食堂</td>
+<td>高角度看見碗口、桌面和打開的餐牌。三盞燈籠懸在冷色巷口前。兩旁大客人被裁切，中央小孩雙手擱桌、低頭看餐牌，小鳥站在頁邊。</td>
+<td>擠迫空間靠遮擋和大小差。暖亮桌面為微小手勢提供乾淨底色；堆碗以重複弧線表深度，比逐碗上高光更接近參考。</td>
+</tr>
+<tr class="even">
+<td>05　紅岩歇腳</td>
+<td>上方岩拱圍出一塊藍天，透過洞口仍看見遠方台地。旅人、行囊、小鳥聚在岩腳陰影，右側露一個小頭骨。</td>
+<td>用「透得過去的洞」交代尺度。近岩面大而有折角，遠台地轉淡紫灰。人物旁的水平陰影比大面天空更適合安放休息動作。</td>
+</tr>
+<tr class="odd">
+<td>06　綠林石階</td>
+<td>背向觀眾的旅人雙臂打開，站於石階上端；兩側深樹幹、中段翠綠山形、遠處薄荷白直立光帶逐層分開。大葉缺口呈寬齒，水花用同心弧。</td>
+<td>背面角色靠帽羽、頭形、腰帶交叉方向和手臂負形辨認。階梯由寬收窄，亮線斷續，越靠遠處越合併。</td>
+</tr>
+<tr class="even">
+<td>07　旅行裝備平鋪</td>
+<td>米色流蘇毯上，藍衣、短褲、襪和鞋順人體次序排開。袋子有側面深度，衣物以正面為主。小鳥越過毯邊停在袋頂，打破目錄般的整齊。</td>
+<td>最適合作道具形狀及局部色參照。保留包帶負形、衣襟交疊和鞋口。單件圖示獨立裁切時，拿走靠毯色才看得見的淺邊，補一小段本體暗面。</td>
+</tr>
+<tr class="odd">
+<td>08　瀑布木橋</td>
+<td>近乎白色的遠崖和鳥形、中間明青瀑面、深藍崖壁及底部藍水池依次疊起。白色捲線繞過崖頂，細木橋斜跨畫面中央。</td>
+<td>同一種水有三種筆法。落水垂直拖長，撞石處畫弧和泡，池水橫鋪。讓橋及人物與水簾有明度差。</td>
+</tr>
+<tr class="even">
+<td>09　店主展示短劍</td>
+<td>冷藍貨架橫列道具，拱窗明亮。店主頭盔和雙手構成大面積白、綠；小劍橫放掌上，白十字與點光集中在商品。孩子由右下仰望。</td>
+<td>對話畫面有兩條視線。店主的手掌像小舞台，顧客的仰頭將視線送回商品。陳列品只需保留色列、間隔和少量不同輪廓。</td>
+</tr>
+<tr class="odd">
+<td>10　紫山前眺望</td>
+<td>大半幅是低反差紫藍圓山、粉雲與天空，橙色平原上的路曲折入深。近處一紅一藍的層疊尖樹，孩子與狼在低位背向觀眾。</td>
+<td>在遠景容許相鄰大色面明度很接近，把剪影分離留給前景。狼四肢之間要見到後方橙地，縮圖才會讀成站立。</td>
+</tr>
+<tr class="even">
+<td>11　俯視騎狼</td>
+<td>狼頭朝畫底，脊背與尾巴沿畫幅長軸延伸；右邊一個放大的尖嘴投影，左邊是花葉圖案，旅人的圓眼和小鳥夾在兩隻狼耳之上。</td>
+<td>用俯視壓短腿、拉出鼻樑。投影本身亦是構圖大形，影嘴偏移到空地後仍要認得源自哪個形。</td>
+</tr>
+<tr class="odd">
+<td>12、15　洞口營火</td>
+<td>上半部冷藍覆頂、暗洞和層層岩口，火光把下方岩唇染黃橙。狼貼地橫臥，小孩伸手向火；最底紫水上有分段的橙色倒影。</td>
+<td>學局部光如何在「頂、臉、地、水」四個表面留下不同形狀。兩個附件用作同一構圖參考，不應在風格統計重複加權。</td>
+</tr>
+<tr class="even">
+<td>13　林中依狼取暖</td>
+<td>左右近樹像兩扇深藍簾，中央遠景亮青。狼身彎成開口環抱小孩與火，煙從火心往上走，使上下兩個亮區相連。</td>
+<td>與洞口圖共用冷暖分區，但此圖的庇護感來自狼身弧線。試作時先畫尾巴包圍的小空間，再放孩子與火。</td>
+</tr>
+<tr class="odd">
+<td>14　粉山行旅</td>
+<td>橫幅下沿橙坡托起左下孩子和飛鳥。白雲帶在角色後留出明亮空隙；山腳有細小屋群，中景一棵較大的藍圓樹穩住右側。</td>
+<td>極小的屋群可校準巨大山峰。角色背後只留一條淺帶便足夠，不用替人物逐邊加亮。</td>
+</tr>
+<tr class="even">
+<td>16　機械人樹下休息</td>
+<td>粗枝從右上橫伸，崖下是大塊暗面；小孩垂釣、機械人與結他、白貓和幾隻棲鳥聚在枝下，遠城只剩亮窗。</td>
+<td>科技物件也可用同一語法。用黑面板和青色表情表示發光，用紅圍巾、靠樹的姿勢和旁邊的貓交代性情，金屬殼可保持啞面。</td>
+</tr>
+<tr class="odd">
+<td>17　小鎮單車</td>
+<td>道路由畫底向市政廳及層疊台地抬升，前景停車牌與號誌分列兩端。近處紅帽、路中黃車都很細，卻各有乾淨路面承托。</td>
+<td>城市日景可用低彩度草綠、灰白、淡棕。標誌的可讀文字在此有敘事作用；要製作 UI 文字，可獨立排字以控制準確度。</td>
+</tr>
+<tr class="even">
+<td>18　苔石巨人</td>
+<td>巨人頭頂披苔，面部兩個暖淺眼形藏在綠塊中，身體下半部用土褐分段。頭頂的蛋、近水的釣線和小火，將其尺度與生活動作連起來。</td>
+<td>角色材質可以跨入環境材質。分清苔的圓垂輪廓、石的鈍切面，以及背後小孩與黑貓的剪影，才不會讀成一座草丘。</td>
+</tr>
+<tr class="odd">
+<td>19　騎貓過木橋</td>
+<td>小孩與大灰貓在覆草樹幹上橫行。橋下明亮的直立樹幹仍可見，前景花、繩藤和兩側樹幹將視線圈在橋上。</td>
+<td>灰貓背線很長、腿短，眯眼只用小橫筆，頸上黃飾點出頭頸。可愛感也可以來自沉着姿勢，毋須所有動物都畫大圓眼。</td>
+</tr>
+<tr class="even">
+<td>20　方幅林徑</td>
+<td>旅人正面舉手，頭上小鳥、旁邊短劍都貼着較淺的綠地。左右深葉和彩花逼近畫框，林徑上有幾塊斜長日光，足下有短影。</td>
+<td>正面角色亦可有縱深。用地面光片和葉片重疊把觀者引向臉；勿把整條路均勻鋪滿相同密度的花。</td>
+</tr>
+<tr class="odd">
+<td>21　熱帶拱橋搬木</td>
+<td>超寬橫幅中，拱橋橫跨兩岸，背木人與圓木組成橋頂的一個小剪影。兩端高棕櫚、遠方圓雲、前方白浪弧線分別穩住上、中、下。</td>
+<td>橫幅不宜靠裁剪直幅得到。把「移動」設成橫軸、把「重量」放到背後的圓木，以拱橋和浪線重複弧度。</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="3-鏡頭明度與敘事怎樣一起運作">3　鏡頭、明度與敘事怎樣一起運作</h2>
+<h3 id="31-用畫面座標還原構圖">3.1　用畫面座標還原構圖</h3>
+<p>以下是看圖估位，原點在左上，x 向右、y 向下，範圍 0–1。錨點的定義寫在物件前。用來畫草稿時，百分比比指定鏡頭焦距可靠。</p>
+<div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>場景</th>
+<th>參考錨點（約數）</th>
+<th>大形及輪廓要如何相遇</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>港口 01</td>
+<td>旅人身體中心 (0.61, 0.64)，鳥中心 (0.16, 0.61)，最高尖塔頂 (0.42, 0.18)</td>
+<td>鳥與人接近同一水平高度但不同距離；棧道的收窄方向把人送向市區。不要把兩者移到同一根欄杆上。</td>
+</tr>
+<tr class="even">
+<td>石階 06</td>
+<td>人物腳底 (0.46, 0.58)，林中亮口約 (0.52, 0.36)</td>
+<td>腳底與最上級台階接觸，黑髮上沿離開樹幹。近階幾乎佔滿底邊，遠處台階合成一條帶。</td>
+</tr>
+<tr class="odd">
+<td>瀑橋 08</td>
+<td>頭中心 (0.49, 0.49)，橋中點 (0.50, 0.54)</td>
+<td>橋上留一條可看見水色的窄縫，步姿立即有離地感。左右崖頂高度有偏差，橋自然傾斜。</td>
+</tr>
+<tr class="even">
+<td>洞口 12</td>
+<td>火心 (0.54, 0.71)，人物面中心 (0.64, 0.64)</td>
+<td>狼頭在火左，背包在人物右。火與人偏開，煙和眼睛才可同時被看見。</td>
+</tr>
+<tr class="odd">
+<td>林火 13</td>
+<td>火心 (0.49, 0.72)，人物面中心 (0.58, 0.58)</td>
+<td>狼尾包住人物右邊，左側狼嘴伸近火；煙的淺筆穿過深色狼身才顯形。</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>鏡頭切換。</strong> 01 是站在旅人附近望遠城，04 是抬高觀察點看桌面，11 幾乎從頭頂望落，07 像整理行裝的陳列頁，17 讓道路往消失方向收窄，21 則接近側視舞台。同一個畫風可容納全部六種鏡頭。選鏡頭的依據是該看清哪個動作，例如選餐需要看見頁面，過橋需要看清足與橋的位置。</p>
+<p><strong>主體大小。</strong> 試作單人環境遠景，可先用全畫高約 6–12% 作站立人物高度（不連坐騎），再看縮圖能否讀出動作。食堂用桌面、手和臉一起定焦；商店特寫可把雙手放得比顧客整個頭更大。不要把坐在狼上的人物高度連狼身合計，否則換場時角色會突然變大。</p>
+<p><strong>建立三張小稿。</strong> 先用兩色畫出剪影和可通行空隙；第二張用四級明度加上光區、遮擋和目的地；第三張才上色。檢查第一張能否分出橋與水，第二張能否找出注視方向，第三張的最鮮色有沒有把眼睛帶離故事。粉山圖的天、地和雲可在灰階接近；只要求與故事相關的交界仍可辨認。</p>
+<h3 id="32-距離的四層畫法">3.2　距離的四層畫法</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>層次</th>
+<th>外形、對比、紋理</th>
+<th>在遊戲裏的對應</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>最近遮擋</td>
+<td>常從框外切入大葉、木樑、樹或岩；形大、內部局部暗到合併。亮葉脈或暖邊只出現在少數轉折。</td>
+<td>少量前景卡片，與玩家重疊時移位、遮罩或淡出。</td>
+</tr>
+<tr class="even">
+<td>可活動層</td>
+<td>足底、木橋、桌緣、石階用可辨認的邊界。臉、手和互動物之間留出空隙。</td>
+<td>角色、可走地面、互動物；碰撞面貼合可見承重邊。</td>
+</tr>
+<tr class="odd">
+<td>中景</td>
+<td>以重複屋群、崖、樹帶提示視距。重複形有大小與遮擋差，一組可共用一塊陰影。</td>
+<td>可拆的環境組件，優先保留天際線與台地輪廓。</td>
+</tr>
+<tr class="even">
+<td>遠景</td>
+<td>山峰、城市、雲以少數大色群相疊，窗、鳥、樹縮成短筆；天光滲入局部色。夜景遠方也可非常亮，如 13。</td>
+<td>遠山／城市背景片；細節按鏡頭輸出尺寸合併。</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="4-色彩腳本與光線">4　色彩腳本與光線</h2>
+<p>以下每列是一幕可直接試畫的 sRGB 起始配色。列的次序是<strong>大面環境、第二環境色、深錨、受光面、敘事點色</strong>。深錨指幫觀者定位形體的暗色，例如髮、狼、橋底。色碼是近似提案，同列色塊的使用面積應有明顯差別。</p>
+<div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>模式／參考</th>
+<th>大面環境</th>
+<th>第二環境色</th>
+<th>深錨</th>
+<th>受光面</th>
+<th>敘事點色</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>晴港 01</td>
+<td>水天青 <span class="swatch" style="background:#46E1EC" aria-hidden="true"></span><code>#46E1EC</code></td>
+<td>瓦灰紫 <span class="swatch" style="background:#937F96" aria-hidden="true"></span><code>#937F96</code></td>
+<td>木暗棕 <span class="swatch" style="background:#492B31" aria-hidden="true"></span><code>#492B31</code></td>
+<td>帆布乳黃 <span class="swatch" style="background:#FFE1A1" aria-hidden="true"></span><code>#FFE1A1</code></td>
+<td>攤橙 <span class="swatch" style="background:#F58B37" aria-hidden="true"></span><code>#F58B37</code></td>
+</tr>
+<tr class="even">
+<td>花海黃昏 03</td>
+<td>天黃 <span class="swatch" style="background:#FFD852" aria-hidden="true"></span><code>#FFD852</code></td>
+<td>遠丘藍紫 <span class="swatch" style="background:#898CD0" aria-hidden="true"></span><code>#898CD0</code></td>
+<td>狼墨紫 <span class="swatch" style="background:#201B2C" aria-hidden="true"></span><code>#201B2C</code></td>
+<td>草尖黃綠 <span class="swatch" style="background:#CCED76" aria-hidden="true"></span><code>#CCED76</code></td>
+<td>花粉 <span class="swatch" style="background:#F7529D" aria-hidden="true"></span><code>#F7529D</code></td>
+</tr>
+<tr class="odd">
+<td>燈籠食堂 04</td>
+<td>陶土 <span class="swatch" style="background:#B86E49" aria-hidden="true"></span><code>#B86E49</code></td>
+<td>巷青 <span class="swatch" style="background:#207488" aria-hidden="true"></span><code>#207488</code></td>
+<td>棕紫 <span class="swatch" style="background:#422C3A" aria-hidden="true"></span><code>#422C3A</code></td>
+<td>桌面蜜黃 <span class="swatch" style="background:#FFCB7E" aria-hidden="true"></span><code>#FFCB7E</code></td>
+<td>燈籠橙 <span class="swatch" style="background:#FB903E" aria-hidden="true"></span><code>#FB903E</code></td>
+</tr>
+<tr class="even">
+<td>乾旱紅谷 05</td>
+<td>沙杏 <span class="swatch" style="background:#F8B562" aria-hidden="true"></span><code>#F8B562</code></td>
+<td>天藍 <span class="swatch" style="background:#86CFE6" aria-hidden="true"></span><code>#86CFE6</code></td>
+<td>岩酒棕 <span class="swatch" style="background:#582727" aria-hidden="true"></span><code>#582727</code></td>
+<td>沙光 <span class="swatch" style="background:#FFD48A" aria-hidden="true"></span><code>#FFD48A</code></td>
+<td>小鳥金 <span class="swatch" style="background:#FFC13D" aria-hidden="true"></span><code>#FFC13D</code></td>
+</tr>
+<tr class="odd">
+<td>濕林／石階 06、20</td>
+<td>苔綠 <span class="swatch" style="background:#42AF79" aria-hidden="true"></span><code>#42AF79</code></td>
+<td>青綠 <span class="swatch" style="background:#168C86" aria-hidden="true"></span><code>#168C86</code></td>
+<td>樹深青 <span class="swatch" style="background:#103C46" aria-hidden="true"></span><code>#103C46</code></td>
+<td>薄荷光 <span class="swatch" style="background:#A3F5B8" aria-hidden="true"></span><code>#A3F5B8</code></td>
+<td>暖果紅 <span class="swatch" style="background:#F56A43" aria-hidden="true"></span><code>#F56A43</code></td>
+</tr>
+<tr class="even">
+<td>水瀑 08</td>
+<td>水淺青 <span class="swatch" style="background:#9CF6F6" aria-hidden="true"></span><code>#9CF6F6</code></td>
+<td>石湖藍 <span class="swatch" style="background:#227CA4" aria-hidden="true"></span><code>#227CA4</code></td>
+<td>石靛藍 <span class="swatch" style="background:#123E66" aria-hidden="true"></span><code>#123E66</code></td>
+<td>泡沫白 <span class="swatch" style="background:#F5FFFA" aria-hidden="true"></span><code>#F5FFFA</code></td>
+<td>鳥黃 <span class="swatch" style="background:#FFB937" aria-hidden="true"></span><code>#FFB937</code></td>
+</tr>
+<tr class="odd">
+<td>晚霞群山 10、14</td>
+<td>霧粉 <span class="swatch" style="background:#F4B8D9" aria-hidden="true"></span><code>#F4B8D9</code></td>
+<td>山薰衣草 <span class="swatch" style="background:#AF9BDD" aria-hidden="true"></span><code>#AF9BDD</code></td>
+<td>近景墨紫 <span class="swatch" style="background:#312638" aria-hidden="true"></span><code>#312638</code></td>
+<td>雲淡粉 <span class="swatch" style="background:#FFE2EA" aria-hidden="true"></span><code>#FFE2EA</code></td>
+<td>草地橘 <span class="swatch" style="background:#EF975B" aria-hidden="true"></span><code>#EF975B</code></td>
+</tr>
+<tr class="even">
+<td>洞火 12、15</td>
+<td>林夜藍 <span class="swatch" style="background:#193C79" aria-hidden="true"></span><code>#193C79</code></td>
+<td>岩藍紫 <span class="swatch" style="background:#474164" aria-hidden="true"></span><code>#474164</code></td>
+<td>洞暗紫 <span class="swatch" style="background:#211D30" aria-hidden="true"></span><code>#211D30</code></td>
+<td>火心黃 <span class="swatch" style="background:#FFDD69" aria-hidden="true"></span><code>#FFDD69</code></td>
+<td>反光橘 <span class="swatch" style="background:#FF813B" aria-hidden="true"></span><code>#FF813B</code></td>
+</tr>
+<tr class="odd">
+<td>城鎮日光 17</td>
+<td>路灰米 <span class="swatch" style="background:#D4D1B7" aria-hidden="true"></span><code>#D4D1B7</code></td>
+<td>草鼠尾綠 <span class="swatch" style="background:#9ABD85" aria-hidden="true"></span><code>#9ABD85</code></td>
+<td>樹深綠 <span class="swatch" style="background:#376B64" aria-hidden="true"></span><code>#376B64</code></td>
+<td>牆象牙 <span class="swatch" style="background:#F3EDDC" aria-hidden="true"></span><code>#F3EDDC</code></td>
+<td>交通黃 <span class="swatch" style="background:#E9AC36" aria-hidden="true"></span><code>#E9AC36</code></td>
+</tr>
+<tr class="even">
+<td>裝備平鋪 07</td>
+<td>毯米白 <span class="swatch" style="background:#EDE8D0" aria-hidden="true"></span><code>#EDE8D0</code></td>
+<td>衣天藍 <span class="swatch" style="background:#67A9E0" aria-hidden="true"></span><code>#67A9E0</code></td>
+<td>布靛紫 <span class="swatch" style="background:#393456" aria-hidden="true"></span><code>#393456</code></td>
+<td>襪暖白 <span class="swatch" style="background:#F6F6EF" aria-hidden="true"></span><code>#F6F6EF</code></td>
+<td>零錢金 <span class="swatch" style="background:#E7A23F" aria-hidden="true"></span><code>#E7A23F</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>冷暖如何分配。</strong> 12 的暖色有一個具體來源。先畫火心，在最近的手掌、鼻底、狼嘴下沿留下暖面；洞口岩唇吃到一整片火光，水面只接到一列斷橙筆。兩側仍有未受光的暗藍。13 多一個遠處亮青光源，冷亮開口與暖亮火堆的面積、位置要分開。04 有成串燈籠和斜入的環境光，暖色可攤得更開。這三幕不宜共用同一張橙色光暈。</p>
+<p><strong>影色隨受光物改變。</strong> 11 黃地的狼影為透明感的赭橙，狼本身仍黑紫；17 車路的橫向影是藍灰，綠地內的陰影則偏青綠。試作時從物件本色另挑一塊偏冷或偏暖的暗色，放在物件旁比較；保留本色與投影的色相關聯。白眼在夜景可染奶黃，眼白與瞳孔的相對明度仍然清楚。</p>
+<p><strong>高光的形狀有意思。</strong> 09 商品上的白十字表示閃亮；08 的白長線表示水勢；01 雲邊的淺粒像光穿過薄霧。三種白筆若互換，材質就會改變。大範圍柔和漸變適合天空、遠山霧或局部光暈。鼻、手、背包則以少數啞色面交界塑形。</p>
+<h2 id="5-角色動物與表情的造型文法">5　角色、動物與表情的造型文法</h2>
+<h3 id="51-同一旅人的轉面">5.1　同一旅人的轉面</h3>
+<ul>
+<li><strong>正面（04、11、20）</strong>　頭形橫向略寬，下頜以一條鈍弧收起。深髮像一片帽沿壓着額頭，髮尖成幾個不等大的角。眼白分開，內各一粒暗瞳。兩瞳偏移便有注視方向。鼻可縮成暖三角或一點，嘴僅一個短橢圓。兩耳只露外形；近臉鏡頭才需要耳內一筆。20 的鼻頰有暖色面，眼白仍是臉上最乾淨的形。</li>
+<li><strong>側面（01、08、09、14）</strong>　把可見的眼推近臉的前緣，保留額、鼻口與下巴的剪影。09 仰頭令大眼轉向上方，伸手貼向櫃；14 一隻向前的腳和小劍的角度已足夠讀出行走。遠距離不必在外側硬擠第二隻眼。</li>
+<li><strong>背面（06、10）</strong>　以髮底、露耳、帽子傾斜、肩帶及兩腿的間隙交代方向。06 張臂站定，10 的小孩在狼身旁抬起道具。背面沒有五官可借用，手臂與身體之間那塊背景形狀格外重要。</li>
+<li><strong>比例試作</strong>　正面站立含髮、由頭頂至腳底先畫成約 2.3–2.8 個頭高，再用圖 20 對照頭寬、肩線和鞋底距離。坐姿、俯視、背上騎乘分開校正。近身裝備會遮身，不能照遮擋後看得見的長度推算腿骨。</li>
+<li><strong>表情試作</strong>　好奇用瞳孔偏向目標、嘴微張；專注用眉線稍平、瞳孔下移、雙手靠近物件；休息用肩降低、四肢貼近支撐面。只在眼睛放大而身體沒有回應，通常會失去參考圖的敘事感。</li>
+</ul>
+<h3 id="52-體型差異如何幫助認角色">5.2　體型差異如何幫助認角色</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>對象</th>
+<th>必須從外輪廓讀到</th>
+<th>可以放入貼圖或局部色塊的細節</th>
+<th>換鏡頭要保住甚麼</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>小旅人</td>
+<td>大頭、短身、短靴，帽羽／背包／伸手之中選可見識別物</td>
+<td>眉、臉頰、帶扣、衣襟、髮內幾筆</td>
+<td>眼線高度、帽羽根部、鞋底與腳掌對齊；衣物按所選參考版本固定</td>
+</tr>
+<tr class="even">
+<td>小鳥</td>
+<td>一粒偏扁的暖圓形、一小截喙、短尾，有時只見兩條腳</td>
+<td>一個眼白和瞳點、翅膀短彎、腹部小斑</td>
+<td>在港口是遠處視線對手，在食堂是頁邊陪伴，在頭頂是人物朝向的提示</td>
+</tr>
+<tr class="odd">
+<td>狼</td>
+<td>長楔嘴、尖耳、帶折角的頸毛、長背與尾；站姿腿間可見地面</td>
+<td>內耳、窄眼、灰紫頰面、順長軸的短毛筆</td>
+<td>側面拉長，頂視留窄鼻樑，蜷臥讓尾巴與腹部之間保留安放人物的縫</td>
+</tr>
+<tr class="even">
+<td>巨貓</td>
+<td>圓頭接長身、兩小耳、長背托住騎者，尾部與後腿錯開</td>
+<td>細眼、鬚、項圈及黃飾</td>
+<td>小孩與貓比例，大貓四足需支撐重量。參照 19</td>
+</tr>
+<tr class="odd">
+<td>大店主／食客</td>
+<td>寬肩和大手像圓鈍石塊；角、耳或頭盔打破頭部輪廓</td>
+<td>皮膚斑點、少數肌膚短線、袖口、面頰</td>
+<td>手掌與商品、嘴與食物的接觸點，決定這一刻的表演</td>
+</tr>
+<tr class="even">
+<td>機械人／苔巨人</td>
+<td>一個靠方圓外殼分件，一個靠下垂苔冠包住厚臂</td>
+<td>顯示屏表情、殼縫／石紋、苔上細草</td>
+<td>先分清臉和背景，再決定表面紋理。兩者共享可親的姿態，輪廓各自獨立</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>連戲備註。</strong> 平鋪圖的棕袋與港口圖的藍包綠色捲墊可見差異。做同一關卡的轉面時先選一個版本，另列裝備替換表。系列中亦有單車小孩、黃衣女孩等其他角色；大圓白眼是若干旅人圖的特徵，17、18、19 的簡眼造型亦屬這批樣本。</p>
+<h2 id="6-筆觸邊緣與材質字典">6　筆觸、邊緣與材質字典</h2>
+<p>遠看像剪紙拼色，近看色塊邊有乾刷和紙齒般的缺墨感。部分顏色薄擦透出底色，另一些保持厚實。輪廓一段可非常清楚，轉入相近色的陰面時便局部消失。洞口圖的暗筆線比平鋪圖多，商品和眼周也可有深線；用線的位置及用途，比全幅套同一描邊粗度更重要。</p>
+<div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>筆法／用物</th>
+<th>起筆、方向、間距、收筆</th>
+<th>參照及放大後應見到的結果</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>大面鋪色</td>
+<td>用有實心中心的寬筆先閉合形狀，沿長軸拖一至兩次近色。讓一段邊斷出少量底色。</td>
+<td>07 衣袖、05 岩面。輪廓清楚，內部有低對比顏料厚薄。</td>
+</tr>
+<tr class="even">
+<td>岩石剖面</td>
+<td>用兩三塊不同明度的折面決定體積。轉角後改排線方向，線群之間留整塊靜面。</td>
+<td>05 紅岩有斜線和少量礦點，08 藍崖長筆近乎垂直。</td>
+</tr>
+<tr class="odd">
+<td>木、皮、繩</td>
+<td>木線沿板長軸，偶爾一個節眼；皮用翻蓋弧、斷續縫線及一個暗側；繩用幾道橫繞短筆。</td>
+<td>01 棧道與攤柱、07 背包。縮小後木縫與帶孔仍可見。</td>
+</tr>
+<tr class="even">
+<td>苔、草、泥</td>
+<td>苔頂亮、邊緣鈍垂，草以三數筆成簇，間距與高度有長短；泥層可露水平帶。</td>
+<td>06 梯邊、18 巨人、19 草橋。大量留白讓細草像稀疏生長。</td>
+</tr>
+<tr class="odd">
+<td>葉、花、藤</td>
+<td>大葉先造瓣或挖出缺口；以中脈帶少量側脈。小花以杯形、圓瓣或平碟加一個花心。藤以疏密不同的珠／葉轉彎。</td>
+<td>03 前景花有大面和深芯，20 的葉脈可由中心放射。葉片間的負形也參與造型。</td>
+</tr>
+<tr class="even">
+<td>水、泡、雲、煙</td>
+<td>水簾長直帶，水池橫短筆；泡用少量套弧或空心點。雲由重疊的圓肩或扁平長塊組成，煙用一條粗細變化的曲線。</td>
+<td>08 瀑面與 12 倒影互相比對。13 的煙是引導視線的線，無須畫成寫實粒子。</td>
+</tr>
+<tr class="odd">
+<td>毛、羽、布</td>
+<td>毛色先合成大面，頸、尾端才露三角簇；羽以簡短斜紋，布以袖口、摺邊和交疊色面表示。</td>
+<td>11 狼頭、07 帽羽及衣襟。毛筆方向順體積，絨毛不用覆蓋每一寸。</td>
+</tr>
+<tr class="even">
+<td>金屬、玻璃、陶</td>
+<td>金屬用冷淺切面和短亮線；玻璃用帶色透明面、邊角反光；碗口畫淺橢圓和內圈，堆疊時共享外形。</td>
+<td>09 短劍及玻璃櫃、04 疊碗。窄白線只在面轉向或故事焦點出現。</td>
+</tr>
+<tr class="odd">
+<td>遠山、遠城</td>
+<td>拉一條完整天際線，內部少量低對比幾何。窗縮成有疏密的豎點，遠鳥可只是一個折筆。</td>
+<td>01 城鎮、10 紫山、17 遠郊；移走個別窗仍應感到那是一群房子。</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>試畫一個 1024 px 短邊的畫面。</strong> 先用寬約 40–160 px 的筆畫光區、山和地；改用 8–30 px 定植物瓣、髮束、背包翻蓋；最後在近處用 1–4 px 筆補木紋、細草及少量乾邊。這些是工作順序和相對尺度建議，筆徑要按實際物件大小調整。一簇草旁保留至少能容下另一簇草的空地，比硬調顆粒強度更能改善滿版噪點。把畫縮到短邊 160 px 時，花海應合成色帶、瀑布仍有方向、臉的外形還在。回到原尺寸才應看得清局部顆粒。</p>
+<h2 id="7-把一幅畫拆成可重做的製作步驟">7　把一幅畫拆成可重做的製作步驟</h2>
+<p>以新場景「雨後送信的小旅人踏過兩岸之間的木板」為例。可用 08 研究空間、07 研究袋子、06 研究濕林光。每張參考各負責一個決定，避免模型在同一畫面同時畫出碼頭、桌椅、洞穴和花海。</p>
+<ol type="1">
+<li><strong>定故事幀。</strong> 旅人一腳已落板、另一腳仍抬起，目光看着前岸的小郵箱。袋口露出半封信。這三者之中，至少讓腳和視線在縮圖可讀。</li>
+<li><strong>排大形。</strong> 直幅約 5:7。左右岸用不同寬度，橋橫跨中段。上方一塊淺水霧讓頭、信封及抬起的腳可見。先把所有花葉收起，確認兩岸相隔。</li>
+<li><strong>按距離鋪色。</strong> 遠林淺灰綠、瀑面奶青、近岸深靛、木板暖棕。小郵箱朱紅，放在前岸故事終點。若郵箱已很搶眼，人物附近的花降低彩度。</li>
+<li><strong>畫接觸。</strong> 踩實那隻腳加一小段暗接觸；離板的腳留水色。背帶在肩下消失、在軀幹側面重現，袋重才像落在身上。</li>
+<li><strong>只在物件所需的位置畫紋理。</strong> 岸壁用垂筆，木板用順紋，瀑底只加數個白弧。眼和信封附近留平面，避免細紋穿過。</li>
+<li><strong>交叉讀圖。</strong> 蓋住顏色看四級明度，蓋住小鳥看故事是否仍成立，以目標設備尺寸看鞋與橋可否分辨。若動作不明，先移腳或換背景值，再處理筆刷。</li>
+</ol>
+<h2 id="8-可以直接交畀圖像模型的提示詞">8　可以直接交畀圖像模型的提示詞</h2>
+<p><strong>組裝次序</strong>　「單一交付物及鏡頭」＋「一個動作與接觸點」＋「人物／道具的識別形」＋「前中後三層」＋「當幕的色彩與光源」＋「各材料的筆觸」＋「實際輸出限制」。可附相關原圖並注明各自用途。模型支援參考強度時，把內容／構圖參考和外觀參考分開控制；各平台參數尺度不同。</p>
+<h3 id="a-環境插畫整段可直接使用">A　環境插畫，整段可直接使用</h3>
+<blockquote>
+<p>繪製一幅直幅 5:7 的敘事插畫。雨後，一名小郵差從左岸踏過斜木板，望向右岸紅色郵箱。右腳踏實，左腳離板，雙腳之間露出淺青色水面；頭頂勿與岸線相切。人物在畫面中央略下，身高約畫高十分之一。短靴、鈍圓大頭、深色塊狀頭髮，側面只見一隻清楚的白眼，肩帶壓住方形皮郵袋，袋口露半封信。最遠以幾塊淺灰薄荷色樹冠融入天光，中景是完整的奶青水簾，近景用兩個不對稱的靛藍切面岩岸夾住木板。前景葉片大且有寬缺口；三五筆草為一組，路上留空。用啞面不透明水粉般的色塊，局部乾邊露底。木紋平行橋面，岩紋垂落，落水用長筆、池面用橫筆，只有碰石處出現白弧。讓郵箱與視線構成第二個焦點。畫面無標題、外框或署名。</p>
+</blockquote>
+<h3 id="b-角色轉面供連續圖或模型製作">B　角色轉面，供連續圖或模型製作</h3>
+<blockquote>
+<p>同一名原創郵差，正面、左側、背面、前四分之三，四個全身等高視圖，平行投影，同一地面基線，各視圖分隔。約兩個半頭高，帽頂微偏、右側一根短羽、深色整塊髮、圓眼配小暗瞳、短身短靴。腰右側棕郵袋，背帶由左肩到右腰，四視圖維持解剖方位一致。正面雙眼、純側面一個眼形、背面清楚顯示髮尾和背帶。手離開身體少許以看清輪廓。藍綠上衣、靛色短褲、米色鞋口，以大啞面色塊、袖口兩三筆斷線表現布料。淺暖灰背景、均勻柔光、無地景；保留完整帽羽和鞋底。各視圖分開核對比例後供建模使用。</p>
+</blockquote>
+<h3 id="c-遊戲關卡背景橫向移動">C　遊戲關卡背景，橫向移動</h3>
+<blockquote>
+<p>16:9 側視可橫向延伸的林間渡口。玩家由左往右，主要行走面在畫面下三分之一。中間一段窄橋的兩端明確落在岸上。前景深青大葉只從角落入畫，角色通道保留連續而安靜的淺苔色。中景橋底用一個完整深藍拱洞，橋頂短草遇到承重邊便停。遠方山與圓頂屋壓成低反差灰綠層，光從左上方照亮草邊。以霧面大色塊、露底乾邊、沿材料方向的斷筆呈現。輸出純背景，不放玩家、HUD、字樣。橋與兩岸完整可見，左右延展處保持同一地面高度和光向。</p>
+</blockquote>
+<h3 id="d-背包物品圖示">D　背包物品圖示</h3>
+<blockquote>
+<p>一個方底圓翻蓋的舊郵袋，三分之四角度，可見正面、右側袋與提帶中間的空洞；外形飽滿微歪，底部承重略平。主面赤陶棕、側面深梅棕，翻蓋頂緣一小片暖赭；鈍黃扣釘是唯一高彩點。縫線只沿蓋角斷續轉彎，皮面留大塊安靜區域。置中、完整、四周留約一成空間，單物件，透明背景，沒有地面和投影。48 像素大小仍可辨認袋蓋、提帶和扣位，細縫線可隨縮小而消失。</p>
+</blockquote>
+<h3 id="e-3d-模型材質生成-brief英文方便跨工具使用">E　3D 模型／材質生成 brief（英文，方便跨工具使用）</h3>
+<blockquote>
+<p>Create one game-ready stylized moss courier golem. A heavy earthen torso supports an overhanging rounded moss cap. Two pale oval eyes sit inside a quiet green face patch. A small satchel hangs from the left shoulder to the right hip. Use blunt cut planes for stone, a scalloped lip for moss, and an actual open loop for the bag handle. Keep the silhouette readable in front, side and three-quarter orthographic views. Hand-paint broad matte albedo blocks. Put short downward strokes below the moss lip and a few slanted hatches on individual stone faces. Keep a large quiet patch beside the eyes. Separate the moss cap, body and satchel into material regions. Deliver a neutral-light turnaround and a second in-scene view under cool forest light. Keep topology around shoulders and hips suitable for a short, weight-bearing walk cycle.</p>
+</blockquote>
+<p><strong>偏差控制詞。</strong> 有獨立 negative prompt 欄位時可用：photoreal pores, glossy vinyl skin, chrome reflections, uniform black contour around every shape, individual hair strands, dense noise on every surface, full-frame bloom, over-detailed distant foliage, watermark, artist signature。沒有該欄位就把最重要的一至兩項改成正面指示，例如「皮袋由翻蓋、暗側及幾針縫線表示，整面啞光」。煙霧、漸層、局部深線或商品閃光在附件中都有用途，勿全部封禁。</p>
+<h2 id="9-遊戲資產美術規格">9　遊戲資產美術規格</h2>
+<h3 id="91-同一關卡需要交付甚麼">9.1　同一關卡需要交付甚麼</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>資產</th>
+<th>拆件與約束</th>
+<th>驗收畫面</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>玩家角色</td>
+<td>固定頭高、裝備版本、鞋底基線和影子中心。側身行走時測最前腳、最後腳及雙腳重疊幀。拆件動畫在肩、髖預留遮蓋。</td>
+<td>同一角色置於晴地、樹蔭和夜火三張底圖，臉或朝向仍可讀。背帶不可因水平翻轉而跳肩。</td>
+</tr>
+<tr class="even">
+<td>路、橋、平台</td>
+<td>承重面有一條可辨識的上邊，苔可略垂到側壁。直段、角、端頭、過渡各準備形狀變體。</td>
+<td>用角色實際高度走完整段，腳落在所見橋面。重複拼接數次，沒有規則間距的「花牆」。</td>
+</tr>
+<tr class="odd">
+<td>植物、岩石組</td>
+<td>製作少量有主方向的大剪影，搭配幾組草筆和花點，記錄可旋轉／可鏡像項。帶有主光的物件翻轉時要同步改光。</td>
+<td>多件連排，天際線有高低，最小草筆在縮放時不閃。</td>
+</tr>
+<tr class="even">
+<td>NPC、攤位及互動物</td>
+<td>用手勢、提手、開口或明度差提示用途。發光或閃點集中於當前物件；每件都閃會消耗提示的辨識力。</td>
+<td>玩家接近前能辨認售貨、閱讀、休息等動作，互動提示不蓋臉。</td>
+</tr>
+<tr class="odd">
+<td>圖示、物品欄</td>
+<td>選定同一投影角度、留白、光向及基線。裝備交換用同一鏡頭輸出，圖示保留物件的功能性開口。</td>
+<td>48 px 看輪廓和用途，96 px 看蓋、扣、刀鞘或水壺提帶。分別放在亮與暗 UI 上。</td>
+</tr>
+<tr class="even">
+<td>火、水、風</td>
+<td>火焰以外焰和淺色內芯兩塊形狀交替；水花用幾組套弧出入；風用少量連續曲線帶動局部草。</td>
+<td>暫停時像一幅完整插畫；播放時火芯、煙的起點、水勢方向連貫。</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="92-圖層視差與動態">9.2　圖層、視差與動態</h3>
+<p><strong>側視關卡的試作層序</strong>　天空 → 遠山／天際線 → 中景林與建築 → 可走平台及背後道具 → 角色與近側道具 → 前景遮擋 → 局部效果 → UI。以遊戲層的螢幕位移量為 1.0，遠山可先試 0.15、中景 0.45、近遮擋 1.10，再按關卡速度及暈動感校正。給橫移後露出的區域補畫；一張靜態插畫切開圖層後，遮擋後面常是空的。以角色腳底作排序點，橋欄前後段分開，確保走過欄杆時遮擋合理。</p>
+<p><strong>運動節奏。</strong> 先畫「讀得到動詞」的關鍵姿勢。走路保留一個承重腳、一個擺動腳；騎狼先改狼的背線和四足伸縮，小孩跟隨起伏。呼吸在胸背、羽尖或袋帶上作小變形，保持臉和腳底穩定。試作可用 6–8 張循環畫走路，用 3–4 張畫火舌。這是動畫延伸方案，靜態附件無法提供原動畫幀率。</p>
+<p><strong>尺寸與取樣。</strong> 水粉邊依賴細微覆蓋率。先以目標展示尺寸兩倍左右繪製，再做降採樣預覽；如最終角色只有 48 px 高，單一深瞳、鞋口和帽羽比十幾條 1 px 紋理重要。透明紋理圖集應延展邊緣色、預留間距，避免縮小濾波產生白邊。播放畫面若出現顆粒閃爍，先降低紋理頻率，檢查 mipmap 和縮放方式；保留原來的大色面。</p>
+<h2 id="10-3d-製作規格由插畫剪影變成可轉動模型">10　3D 製作規格：由插畫剪影變成可轉動模型</h2>
+<h3 id="101-分清幾何貼圖與鏡頭效果的工作">10.1　分清幾何、貼圖與鏡頭效果的工作</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>例子</th>
+<th>幾何／形體</th>
+<th>貼圖與著色</th>
+<th>場景燈光／鏡頭</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>旅人</td>
+<td>頭部偏寬，頰和下頜是一段連續鈍弧；鼻尖、耳、靴底、帽羽及包體影響剪影。髮束合成幾個外形。</td>
+<td>眼、瞳、眉可用可替換面片或貼花。衣襟交疊及袖口用色面，短縫線用貼圖。</td>
+<td>以正、側、背及四分之三近似正交鏡頭比對頭高。把側面遠眼遮在頭形內。</td>
+</tr>
+<tr class="even">
+<td>狼／大貓</td>
+<td>狼的長楔嘴、頸毛折角、背和尾進幾何；貓的圓頭、短鼻、粗背另作一型。預留坐騎背面的接觸區。</td>
+<td>畫內耳、臉頰色塊、疏落順毛筆。眼睛留給表情控制。</td>
+<td>檢驗側面四足間的洞、俯視嘴的長度、蜷臥時尾巴與小孩的空間。</td>
+</tr>
+<tr class="odd">
+<td>郵袋、樹幹、崖壁</td>
+<td>提帶成真空洞；崖頂向側面折下去；大樹枝與樹幹的連接有厚度。小倒角只在輪廓轉折留亮面。</td>
+<td>木紋、縫線和岩紋跟隨 UV 方向，避免跨轉角延續同一排線。</td>
+<td>袋柄內部需見背景；最終畫面檢查岩紋不會因傾斜視角縮成摩爾紋。</td>
+</tr>
+<tr class="even">
+<td>草、葉、花</td>
+<td>影響剪影的主葉可用簡化曲面；遠處草花可用成簇卡片。葉的寬缺口要在最終鏡頭保住。</td>
+<td>中脈、花心、草筆及泥層用色面，葉群根部可共用一塊深色。</td>
+<td>避免所有卡片同角度受光或向鏡頭轉到突然相交。較遠 LOD 保留整叢的外形。</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="102-兩種可落地的材質設定">10.2　兩種可落地的材質設定</h3>
+<p><strong>固定插畫鏡頭。</strong> 用 unlit／自發光式輸出展示手繪貼圖，將設計好的大光面、局部投影及受光邊畫在指定圖層。接觸影可另作軟邊色塊以便移動。此路線適合固定視角小場景、物品轉盤封面及 UI。若物件會轉身，寬廣的方向性投影應留在場景層，避免高光黏着模型打轉。</p>
+<p><strong>動態遊戲鏡頭。</strong> 底色保留本地色、材質筆觸與非常淺的結構暗部。漫反射可先用柔邊兩至三段色階，兩段交界稍寬，使大面保持平靜。用環境色為暗面染色，僅在受光轉折加少量暖緣。啞面材質可從粗糙度 0.8–1.0、非金屬底材的金屬度 0 起步；短劍等道具可用手繪亮切面表現金屬讀感。各引擎光照模型不同，以最終截圖調整。避免同時烘焙強方向光並疊加同方向強即時光，否則鼻底、袋蓋和岩壁會出現兩道投影。</p>
+<p><strong>材質分工。</strong> 底色貼圖以 sRGB 載入；粗糙度、遮罩等數據貼圖用線性／非色彩模式。UV 在布、木、岩不同面分開控制筆觸方向；將主要刷痕固定於物件空間或 UV，鏡頭移動時才不會滑過表面。需要紙質感時用弱而穩定的低對比層，在近、中、遠實際遊戲尺寸測試。眼、輪廓、背包扣等識別位可用單獨遮罩保護。</p>
+<p><strong>可動角色交付。</strong> 一張四視圖定尺寸；一個中立光模型看原色；一個主遊戲鏡頭截圖看實際相似度；一組動作看關節和接觸。肩帶要在抬手後仍貼胸，腰包不穿髖，腳掌在承重幀不滑。縮細後輪廓完整才決定多邊形預算。圖中看不到的袋底、狼腹或角色背扣應標成補設面，跨版本沿用同一設計。</p>
+<h2 id="11-高相似度迭代和驗收">11　高相似度迭代和驗收</h2>
+<h3 id="111-讓每次比較都回答一個問題">11.1　讓每次比較都回答一個問題</h3>
+<ol type="1">
+<li><strong>定一張主參考、兩張輔助。</strong> 例如「場景按 08 的空間，角色按 20 的正面，袋子按 07 的皮面」。若要生成單一已知構圖，固定畫幅和主要錨點；若要擴展新關卡，固定層次關係與人物尺度，改故事與地形。</li>
+<li><strong>先做小圖。</strong> 在同一畫布看參考與候選。先比較最大三塊色的面積、最重要負形和人物朝向。這三項錯一項，就回到草稿或構圖控制。</li>
+<li><strong>再做受控變體。</strong> 模型允許時固定版本、seed、尺寸、提示詞及參考圖，逐次只改一個變數，例如先改人物大小、下一次才改近景暗度。記錄模型版本、檔名和改動。相同 seed 跨模型或版本不保證同圖。</li>
+<li><strong>成對檢查一致性。</strong> 將同角色放入 01 式晴港與 12 式夜火，再把同一個包做成 48 px 圖示和 3D 四分之三視圖。光色可以轉，頭比、包蓋、肩帶位置、手與物件的關係要對得上。</li>
+<li><strong>最後看實際輸出。</strong> 靜態圖同時看縮圖、原尺寸與局部。遊戲看運動中截圖。3D 看中立光和關卡光。每次退件留一句可執行的修改，例如「右移頭部，令眼睛落在整塊淺瀑面」，比「再畫得似啲」有效。</li>
+</ol>
+<h3 id="112-100-分內部評分表">11.2　100 分內部評分表</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>項目</th>
+<th style="text-align: right;">配分</th>
+<th>滿分時可觀察到的結果</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>敘事與視線</td>
+<td style="text-align: right;">15</td>
+<td>一眼說得出誰做甚麼、望向何處，手或腳與物件接觸正確。</td>
+</tr>
+<tr class="even">
+<td>構圖與尺度</td>
+<td style="text-align: right;">20</td>
+<td>大形、主錨點、空隙和遠中近層成立；人物大小符合指定鏡頭。</td>
+</tr>
+<tr class="odd">
+<td>色彩與光區</td>
+<td style="text-align: right;">20</td>
+<td>當幕的大面主色、深錨、受光區與小點色關係正確，夜火／日光各有明確來源。</td>
+</tr>
+<tr class="even">
+<td>角色／物件識別</td>
+<td style="text-align: right;">15</td>
+<td>縮小後仍認得輪廓、比例、朝向及指定裝備。</td>
+</tr>
+<tr class="odd">
+<td>邊緣、材質與筆觸</td>
+<td style="text-align: right;">20</td>
+<td>啞面色塊清晰，近看可分木、石、草、水，遠看局部紋理能安靜合併。</td>
+</tr>
+<tr class="even">
+<td>交付用途</td>
+<td style="text-align: right;">10</td>
+<td>插畫在目標比例成立；遊戲在移動中可辨；模型在指定轉面及關卡光下仍一致。</td>
+</tr>
+</tbody>
+</table></div>
+<p>每項按完成程度給 0、半分或滿分。內部試作可先以 85 分作進入細修的門檻；單一資產沒有故事動作時，把第一項讀為「用途及握持／穿戴位置是否明確」，構圖項讀為「外形及負形」。這是美術審閱分數，沒有「85% 或 100% 複刻」的統計含義。</p>
+<h3 id="113-常見失真與最短修法">11.3　常見失真與最短修法</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>看見的問題</th>
+<th>先查哪裏</th>
+<th>下一版只改這件事</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>像普通可愛奇幻海報</td>
+<td>角色太大，背景全為裝飾，缺少故事動詞</td>
+<td>在草稿明確一個動作、一個目的物和兩者的距離，再決定人物大小。</td>
+</tr>
+<tr class="even">
+<td>配色看似準確，人物仍消失</td>
+<td>髮外沿、眼或抬腳與後景同值／相切</td>
+<td>移動背後一整塊水霧或陰影，讓接觸邊清楚。</td>
+</tr>
+<tr class="odd">
+<td>像平滑向量圖</td>
+<td>每段邊同樣銳利，形內沒有沿物件走的筆</td>
+<td>保住主剪影，只在一段暗邊擦出紙齒，並補一組有方向的材料筆。</td>
+</tr>
+<tr class="even">
+<td>像開了全屏噪點</td>
+<td>顆粒大小、密度在天空、皮膚、岩面完全一致</td>
+<td>減掉天空和臉部噪點，靠岩壁切面和順紋筆恢復材料差別。</td>
+</tr>
+<tr class="odd">
+<td>像亮膠玩具</td>
+<td>每個圓面都有同一白光斑，暗面灰黑</td>
+<td>刪除皮、布、苔上的圓白斑，重畫本色與一個染色暗面；亮切面只留在金屬等需要處。</td>
+</tr>
+<tr class="even">
+<td>夜景糊成藍橙漸層</td>
+<td>火光沒有跟隨表面轉折</td>
+<td>分別畫下頜、手掌、岩唇與斷開的水面反光，讓遠處暗面保持完整。</td>
+</tr>
+<tr class="odd">
+<td>圖示精細但小尺寸認不出</td>
+<td>大輪廓相似，扣、眼、縫線全部擠在中心</td>
+<td>把功能性負形放大，例如提帶的洞、壺頸、鞋口；次要縫線先合併。</td>
+</tr>
+<tr class="even">
+<td>3D 正面相似，一轉就失真</td>
+<td>用正面貼圖補了側面應有的幾何</td>
+<td>在側視剪影重修鼻、下頜、包厚、尾巴轉折，再校正貼花及光線。</td>
+</tr>
+<tr class="odd">
+<td>連續場景像不同角色</td>
+<td>頭身比、帽羽方向、肩帶穿法跟着視角改變</td>
+<td>取同一四視圖疊比頭高和穿戴點，場景變色只進入燈光與配色層。</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="12-給-ai-或美術團隊的最小交接單">12　給 AI 或美術團隊的最小交接單</h2>
+<p>複製以下欄位，每次填一個具體任務，再附對應圖號。需要機器讀取可使用同目錄的《style-spec.json》，當中附完整場景示例、配色、材質及驗收欄位。</p>
+<pre class="text"><code>交付物、長寬比和最小展示尺寸 =
+主參考圖號及用途 =
+輔助圖號及各自只負責的決定 =
+一句故事動作／道具用途 =
+鏡頭、主體高度、視線及接觸點 =
+最近遮擋／可走面／中景／遠景 =
+需保留的輪廓、空隙和裝備版本 =
+當幕大面色、第二環境色、深錨、受光面、敘事點色 =
+主光來源及三個受光表面 =
+各材料筆觸方向，留白位置 =
+遊戲分層／模型可動與補設面要求 =
+縮圖、原尺寸、運動畫面或轉面的驗收條件 =</code></pre>
+<p><strong>使用例。</strong> 如果下一個任務只是「做一個郵袋 3D 模型」，主參考揀 07；借 01 看它在人物背上的閱讀尺度。最先核對翻蓋形、厚度、提帶空洞與肩帶落點。森林、營火、狼、藍天、水花都不用帶入這個任務。做同一郵袋的夜景版本時，把貼圖和輪廓鎖住，只換光、暗面及高光落點。這樣一件資產便能從道具欄走入關卡，仍然像同一件物件。</p>
+</main></body></html>

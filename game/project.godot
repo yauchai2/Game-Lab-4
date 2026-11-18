@@ -1,0 +1,12 @@
+config_version=5
+[application]
+config/name="借影之森 · 晚餐在對岸"
+run/main_scene="res://Cliff.tscn"
+config/features=PackedStringArray("4.6", "GL Compatibility")
+[display]
+window/size/viewport_width=1152
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+[rendering]
+renderer/rendering_method="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.29, 0.38, 0.40, 1)
