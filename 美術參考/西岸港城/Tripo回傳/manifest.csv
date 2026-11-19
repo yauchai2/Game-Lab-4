@@ -1,6 +1,7 @@
 ﻿資產ID,名稱,原始檔名,GLB 檔,位元組,三角面,內嵌圖像,SHA-256,Godot 4.6.3
 B01,單層白牆雙坡屋,tripo_convert_8042f2ac-943e-40c1-ad0e-be87e5a3c65e.glb,B01.glb,596328,1234,1,810b020bea9fc07267334b4e5097e9b6f960aa43c26ba16b477b58d3494e4c1a,GLTFDocument 讀入及場景建立成功
 B02,窄面住宅,tripo_convert_679dbbcc-cf3e-46ec-ac1a-8b48338bdd84.glb,B02.glb,624528,1135,1,43985cde0a12c6da49df67f3207bf85a63c15fee7f077873c73279b57c8e05b7,GLTFDocument 讀入及場景建立成功
+C01,小旅人,C01_hvuv.glb,C01.glb,259124,1218,1,cdd1207ad7e279510d7fb70aea3487cfbf774ea5af8bc84132b6fbf021576f32,讀入及場景建立成功，65 骨並保有蒙皮，無內嵌動畫
 N01,深青棕櫚,tripo_convert_26d46227-1390-4643-b136-85b667342ced.glb,N01.glb,731424,953,1,05b97dda12ea9f083344ce8333d7e276bb8f5bfa208012f4285255ee55878832,GLTFDocument 讀入及場景建立成功
 N02,圓團灌木,tripo_convert_e27de3b0-f793-408d-8126-384a8e3c2272.glb,N02.glb,434564,1146,1,526ee9b3c9c48a2f26ad9636a33f17fe539d481ae718814dd08d64db512a0343,GLTFDocument 讀入及場景建立成功
 N03,花叢,tripo_convert_274b7e71-1806-4acd-bdaa-11f6dcb9a3a2.glb,N03.glb,640552,1210,1,74956f40fe1985fd75cdc8e1f71cb948928507d2d761dbb4cb9ce0b03bf99ccc,GLTFDocument 讀入及場景建立成功
