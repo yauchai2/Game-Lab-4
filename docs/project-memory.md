@@ -18,16 +18,12 @@
 2. **玩法、武器定職業、巨獸夥伴與雙軌 Build 系統**：[核心玩法與雙軌配裝企劃](核心玩法與雙軌配裝企劃.md)
 3. **沉默主角規範、頭五分鐘黃金開局分鏡、對白與 Godot 4 實作清單**：[序章黃金五分鐘分鏡與實作規格](序章黃金五分鐘分鏡與實作規格.md)
 
-## 下一階段製作目標：序章黃金五分鐘（`PrologueCloudhill.tscn`）
+## 最新可玩灰盒原型：序章黃金五分鐘（`PrologueCloudhill.tscn`）
 
-- 依 [序章黃金五分鐘分鏡與實作規格](序章黃金五分鐘分鏡與實作規格.md) 實作連續單場景（A 區林間營火空地標題無縫切換晨光 → B 區骨盔哥布林清倉行 → C 區枯木衝撞與窄縫石門開閘 → D 區雲海石橋稻草人哨長首戰與蓋章退休 → 掉落首件改變手感的神裝《彈簧試驗鞍座》 → 雲海全景瞭望台）。
-- 技術規範：Godot 4.6.3、固定斜側 2.5D 正交視角、破防打擊停頓（Hitstop）採用 **60 FPS 整數幀計數器（Integer Frame Counter）**，不改動 `Engine.time_scale`。
-- 視覺概念圖：林間營火空地 2.5D 無角色概念圖已生成，可作為 A 區打光與構圖基準。
-
-## 現行可玩技術驗證灰盒（`Harbor.tscn`）
-
-- 目前 `game/project.godot` 按 F5 仍啟動既有灰盒 [game/harbor/Harbor.tscn](../game/harbor/Harbor.tscn)，作為上下騎（`F`）、下騎穿窄門開閘（`E`）、巨獸頂住（`Q`）與拾取換裝的既有技術骨架參考。
-- 新版序章實作完成後，主入口將切換至 `PrologueCloudhill.tscn`。
+- 已完成第一版可玩灰盒原型並設為 `game/project.godot` 主入口（F5 啟動）：[PrologueCloudhill.tscn](../game/prologue/PrologueCloudhill.tscn)、[PrologueBlockout.gd](../game/prologue/PrologueBlockout.gd)、[PrologueCloudhill.gd](../game/prologue/PrologueCloudhill.gd)。
+- 涵蓋完整頭五分鐘體驗：A 區林間營火夜色標題無縫過渡晨光 → B 區骨盔哥布林 `-50¢` 購劍與沉默主角圖示泡泡（Emote Bubbles）→ C 區騎狼按 `Q` 撞碎枯木路障與下騎鑽窄縫開石門 → D 區稻草人哨長首戰（60 FPS 整數幀 Hitstop、紅光蓄力破防、胖黃鳥蓋「正式退休」紅章、即時變身橋頭茶攤）→ 開箱裝備《彈簧試驗鞍座》（下騎彈飛 200% 暴擊下劈）→ 雲海瞭望台拉鏡遠景與遠方旅人剪影。
+- 驗證狀態：已完成靜態語法與嚴格型別檢查（本機終端未安裝 Godot CLI，實機 F5 試玩手感待創作總監於 Godot 4.6.3 驗收）。
+- 既有技術灰盒 [game/harbor/Harbor.tscn](../game/harbor/Harbor.tscn) 仍完整保留，可供對照或按 F6 執行。
 
 ## 可沿用的 3D 美術與技術資產
 

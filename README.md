@@ -10,16 +10,17 @@
 2. [核心玩法與雙軌配裝企劃](docs/核心玩法與雙軌配裝企劃.md)：核心玩法循環、武器定職業、退休巨獸夥伴、旅人 × 巨獸雙軌裝備與 Build 系統。
 3. [序章黃金五分鐘分鏡與實作規格](docs/序章黃金五分鐘分鏡與實作規格.md)：沉默主角表達規範、A–D 區無縫場景動線、完整分鏡對白與 Godot 4 實作清單。
 
-## 本機試玩（現行技術驗證灰盒）
+## 本機試玩（最新頭五分鐘灰盒原型）
 
-用 **Godot 4.6.3** 開啟 [game/project.godot](game/project.godot)，按 **F5**。目前公開版先啟動既有灰盒場景 [game/harbor/Harbor.tscn](game/harbor/Harbor.tscn)，供驗證騎乘、下騎穿窄門開閘與人獸合擊破防的基礎操作；後續序章將依最新 [序章黃金五分鐘分鏡與實作規格](docs/序章黃金五分鐘分鏡與實作規格.md) 實作。
+用 **Godot 4.6.3** 開啟 [game/project.godot](game/project.godot)，按 **F5** 即可直接啟動新版序章灰盒 [game/prologue/PrologueCloudhill.tscn](game/prologue/PrologueCloudhill.tscn)（舊港城技術灰盒 [game/harbor/Harbor.tscn](game/harbor/Harbor.tscn) 仍保留，可開啟後按 F6 單獨執行）。
 
-| 按鍵 | 灰盒操作 |
+| 按鍵 | 頭五分鐘灰盒操作 |
 | --- | --- |
-| WASD 或方向鍵 | 移動 |
-| E / F | 互動 / 上下騎 |
-| Q / 滑鼠左鍵 | 指揮獸伴破防頂住 / 攻擊 |
-| 空白鍵 / R | 裝備盾後舉盾 / 重新開始 |
+| WASD 或方向鍵 | 移動（標題畫面按任意鍵／點擊無縫轉清晨） |
+| E | 互動（哥布林購劍／開閘拉桿／蓋退休章／開寶箱／懸賞板） |
+| F | 上下騎（裝備《彈簧試驗鞍座》後下騎可彈飛高空暴擊下劈） |
+| Q | 騎乘撞碎枯木路障／首領紅光蓄力時指揮巨狼破防（Stagger） |
+| 滑鼠左鍵 / J / R | 揮劍攻擊 / 重新開始 |
 
 ## AI 代理與協作者
 
