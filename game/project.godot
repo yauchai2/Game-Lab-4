@@ -1,7 +1,6 @@
 config_version=5
 [application]
-config/name="邊境遠征 · 西岸港城灰盒"
-run/main_scene="res://harbor/Harbor.tscn"
+config/name="Game Lab 4"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 [display]
 window/size/viewport_width=1280

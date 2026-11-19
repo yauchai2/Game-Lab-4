@@ -2,27 +2,16 @@
 
 一款以大型獸伴、狩獵、裝備與遠征為核心的童話奇幻 RPG。旅人可以騎乘獸伴，在戰鬥中互相掩護，也會遇上需要兩種體型才能通過的地形。
 
-## 本機試玩
+## Godot 專案
 
-用 **Godot 4.6.3** 開啟 [game/project.godot](game/project.godot)，按 **F5**。預設進入[西岸港城灰盒](game/harbor/Harbor.tscn)，可試騎乘、下騎過窄門、開閘會合，以及獸伴頂住巨蟹、旅人射斷盾扣和拾取裝備。
-
-| 按鍵 | 灰盒操作 |
-| --- | --- |
-| WASD 或方向鍵 | 移動 |
-| E / F | 互動 / 上下騎 |
-| Q / 滑鼠左鍵 | 指揮獸伴頂住 / 射箭 |
-| 空白鍵 / R | 裝備盾後舉盾 / 重新開始 |
+可以用 Godot 4.6.3 開啟 [game/project.godot](game/project.godot)。舊港城與斷崖原型已移除，目前沒有可執行的主場景。
 
 ## AI 代理與協作者
 
 1. 先讀 [AGENTS.md](AGENTS.md) 的工作指引和 [專案記憶](docs/project-memory.md) 的版本狀態。Claude 也可從 [CLAUDE.md](CLAUDE.md) 進入。
-2. 遊戲程式與場景在 [game/](game/)，原型的關卡及互動程式在 [game/harbor/](game/harbor/)。
+2. Godot 專案在 [game/](game/)。
 3. 西岸港城的場景參考、模型清單和交接狀態見 [美術資產交接](美術參考/西岸港城/README.md)。
 
-## 下一版序章〈借一晚火〉
+## 劇情企劃
 
-初出茅廬的旅人在港外遇上哥布林頭目，大型獸伴衝出救援。兩人到荒廢營地取得短劍和圓盾，並肩打倒頭目，在營火旁過夜，翌晨於城門分別。這是下一輪製作方向，現行可玩版本仍是上述港城與巨蟹灰盒。開局的場景、教學和鏡頭摘要見[專案記憶](docs/project-memory.md#下一版序章借一晚火)。
-
-## 歷史試作
-
-「借影」玩法已退役。可以在 [早期開工企劃](開工決策與首輪試作.md) 和 [斷崖灰盒](game/Cliff.tscn) 回顧當時的設計。
+Gemini 的《補簽遠行》故事總綱、玩法和頭五分鐘分鏡在[劇情設計分支](https://github.com/yauchai2/Game-Lab-4/tree/docs/story-worldbuilding-after-ceasefire)。舊版[開工企劃](開工決策與首輪試作.md)留作歷史資料。
