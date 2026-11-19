@@ -1,0 +1,21 @@
+﻿資產ID,名稱,原始檔名,GLB 檔,位元組,三角面,內嵌圖像,SHA-256,Godot 4.6.3
+B01,單層白牆雙坡屋,tripo_convert_8042f2ac-943e-40c1-ad0e-be87e5a3c65e.glb,B01.glb,596328,1234,1,810b020bea9fc07267334b4e5097e9b6f960aa43c26ba16b477b58d3494e4c1a,GLTFDocument 讀入及場景建立成功
+B02,窄面住宅,tripo_convert_679dbbcc-cf3e-46ec-ac1a-8b48338bdd84.glb,B02.glb,624528,1135,1,43985cde0a12c6da49df67f3207bf85a63c15fee7f077873c73279b57c8e05b7,GLTFDocument 讀入及場景建立成功
+N01,深青棕櫚,tripo_convert_26d46227-1390-4643-b136-85b667342ced.glb,N01.glb,731424,953,1,05b97dda12ea9f083344ce8333d7e276bb8f5bfa208012f4285255ee55878832,GLTFDocument 讀入及場景建立成功
+N02,圓團灌木,tripo_convert_e27de3b0-f793-408d-8126-384a8e3c2272.glb,N02.glb,434564,1146,1,526ee9b3c9c48a2f26ad9636a33f17fe539d481ae718814dd08d64db512a0343,GLTFDocument 讀入及場景建立成功
+N03,花叢,tripo_convert_274b7e71-1806-4acd-bdaa-11f6dcb9a3a2.glb,N03.glb,640552,1210,1,74956f40fe1985fd75cdc8e1f71cb948928507d2d761dbb4cb9ce0b03bf99ccc,GLTFDocument 讀入及場景建立成功
+N04,寬葉地被,tripo_convert_96234999-df7b-4760-b155-1c937135faba.glb,N04.glb,488492,1211,1,7f30de2863fd09d4ff441a63aaec3befd39de7d9f6bbbeb6176c71869c054b74,GLTFDocument 讀入及場景建立成功
+N05,灰紫岩,tripo_convert_f90f5564-847d-4a99-aa00-ca5695351346.glb,N05.glb,394456,1164,1,417b479b85f77a5159f82127a1d14229199723c66ab70dd32a10b4b48a7543ae,GLTFDocument 讀入及場景建立成功
+P01,木桶,tripo_convert_15832c87-b1ff-4dfe-a45f-9428d3ab0618.glb,P01.glb,592088,1082,1,e5184ec23665aa4f81dc96b169e57880bf5462b93f7fe18824bcca58bb3e1a47,GLTFDocument 讀入及場景建立成功
+P02,船舵招牌,tripo_convert_f19a63d0-e3c6-4bc5-9dce-5fe16add06e8.glb,P02.glb,511756,1156,1,31330c646dd921950d433ac9d498c9665534f360f761f9a939cd6c771a397543,GLTFDocument 讀入及場景建立成功
+P03,紙燈籠,tripo_convert_fa86c13d-bb0a-4269-8cfd-2da66dbc8569.glb,P03.glb,467516,1116,1,2f46cc13043269e783ffe63b36a4b0ec98a9b6d1e885ede1ee8bb1ecd5e3bd62,GLTFDocument 讀入及場景建立成功
+P04,捲帆布,tripo_convert_da5ea7d2-d404-41b0-a204-169a87ed275a.glb,P04.glb,506636,1160,1,0968eb6e6cb30406629adde4fe5cd47dda0695cd1ac332faad07adc9999ad798,GLTFDocument 讀入及場景建立成功
+P05,藤籃,tripo_convert_c4575cc4-5f38-40c8-aed3-4d4b36ca1134.glb,P05.glb,471884,1240,1,61e85208684da2d49f1e63178e1f6ffdc06306c8e72d16aa18bec1efc1369649,GLTFDocument 讀入及場景建立成功
+P06,銀藍魚,tripo_convert_6d3893c9-6508-4899-9c49-c39232a4dcf8.glb,P06.glb,850336,1154,1,8d2b38274012602ef04df216923f2258cffacdec9aba8756fa8578d776e9815b,GLTFDocument 讀入及場景建立成功
+P07,陶罐,tripo_convert_dcd1ac8e-3624-4cb6-a315-15287cb84b1e.glb,P07.glb,481984,1230,1,953fc114ce956af812a541ad1163ed4ca991ea8b3a1d3f789cdae1b63a751eb3,GLTFDocument 讀入及場景建立成功
+P08,鐵砧,tripo_convert_aed636c0-9de5-41d4-87ae-04f5a5071495.glb,P08.glb,478472,1168,1,29802fc9a3ec72d82c72b04e4e6bfd2a32262c2a3155c2b4128b212a4da53470,GLTFDocument 讀入及場景建立成功
+S01,石拱門,tripo_convert_690a1ab2-e29b-4665-b99f-20e9bb723ecb.glb,S01.glb,499388,1170,1,9180b35164359ba9838f373a0906490dc6d698ce6b4aba0cdbee53a2998e2ee0,GLTFDocument 讀入及場景建立成功
+S02,水井,tripo_convert_7bfc6901-3a5f-49f9-af0a-90ba00078aa7.glb,S02.glb,1907520,1228,1,85ddf08ea0a7039a404e1617e73b3f6214eee50b2b7a0b632448758b53ad39a8,GLTFDocument 讀入及場景建立成功
+S06,小划艇,tripo_convert_7d8ec4ac-b04b-4534-b2a5-0ae7feb69074.glb,S06.glb,849872,1083,1,247e332b9aca1da5d83ba05be25d8369cd54e152b5cecabebe41bcf8e4cfe906,GLTFDocument 讀入及場景建立成功
+S07,市集棚布,tripo_convert_849be299-6e1d-47c2-bdae-ded81fc24d71.glb,S07.glb,353164,1106,1,8239a8ee206bc3941a9e614b974de1f2b7b22f9d346478c2bec74b0a703eb07c,GLTFDocument 讀入及場景建立成功
+S08,鍛爐,tripo_convert_92a0f4e3-523d-4e2e-b522-52a707423736.glb,S08.glb,1953620,1026,1,cb2558f15a2bc7f75f8fce505383b1912465f79f906054283817687f85019e76,GLTFDocument 讀入及場景建立成功
