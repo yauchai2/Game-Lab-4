@@ -1,0 +1,411 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1580" height="1010" viewBox="0 0 1580 1010" lang="zh-Hant">
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="7.2" refY="5" markerWidth="3.2" markerHeight="3.2" orient="auto-start-reverse"><path d="M0,0L10,5L0,10Z" fill="#b45e31"/></marker>
+<marker id="b" viewBox="0 0 10 10" refX="7.2" refY="5" markerWidth="3.2" markerHeight="3.2" orient="auto-start-reverse"><path d="M0,0L10,5L0,10Z" fill="#347e90"/></marker>
+<marker id="c" viewBox="0 0 10 10" refX="7.2" refY="5" markerWidth="3.2" markerHeight="3.2" orient="auto-start-reverse"><path d="M0,0L10,5L0,10Z" fill="#76609b"/></marker>
+<clipPath id="map"><rect x="51" y="157" width="1079.3" height="677.7" rx="11"/></clipPath></defs>
+<g font-family="Noto Sans CJK TC, Noto Sans CJK HK, sans-serif">
+<rect x="0" y="0" width="1580" height="1010" rx="0" fill="#f8f4e9" stroke="none" stroke-width="1"/>
+<text x="51" y="66" fill="#223d45" font-size="49" font-weight="850" text-anchor="start">西岸港城</text>
+<text x="52" y="111" fill="#485c59" font-size="26" font-weight="650" text-anchor="start">首場景 NPC 與通行配置</text>
+<text x="1127" y="72" fill="#526663" font-size="17" font-weight="650" text-anchor="end">關卡配置 v0.1</text>
+<text x="1127" y="108" fill="#526663" font-size="16" font-weight="550" text-anchor="end">橙瓦埠港區  ·  Godot 灰盒用  ·  86 × 54 m</text>
+<rect x="1152" y="43" width="377" height="81" rx="12" fill="#ede9dc" stroke="#d7d0be" stroke-width="1"/>
+<text x="1174" y="75" fill="#294650" font-size="17" font-weight="700" text-anchor="start">首次登岸  →  前往青眠林</text>
+<text x="1174" y="101" fill="#526663" font-size="15" font-weight="550" text-anchor="start">返城驗傷  →  辨刀  →  長桌記錄</text>
+<g clip-path="url(#map)">
+<rect x="51.0" y="157.0" width="1079.3" height="677.7" rx="0" fill="#cee4e1" stroke="none" stroke-width="1"/>
+<polyline points="51.00,219.75 1130.30,219.75" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="51.00,282.50 1130.30,282.50" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="51.00,345.25 1130.30,345.25" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="51.00,408.00 1130.30,408.00" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="51.00,470.75 1130.30,470.75" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="51.00,533.50 1130.30,533.50" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="51.00,596.25 1130.30,596.25" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="51.00,659.00 1130.30,659.00" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="51.00,721.75 1130.30,721.75" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="51.00,784.50 1130.30,784.50" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="113.75,157.00 113.75,834.70" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="176.50,157.00 176.50,834.70" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="239.25,157.00 239.25,834.70" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="302.00,157.00 302.00,834.70" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="364.75,157.00 364.75,834.70" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="427.50,157.00 427.50,834.70" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="490.25,157.00 490.25,834.70" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="553.00,157.00 553.00,834.70" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="615.75,157.00 615.75,834.70" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="678.50,157.00 678.50,834.70" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="741.25,157.00 741.25,834.70" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="804.00,157.00 804.00,834.70" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="866.75,157.00 866.75,834.70" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="929.50,157.00 929.50,834.70" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="992.25,157.00 992.25,834.70" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="1055.00,157.00 1055.00,834.70" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="1117.75,157.00 1117.75,834.70" stroke="#b7d2cf" stroke-width="0.7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polygon points="51.00,157.00 1130.30,157.00 1130.30,483.30 1105.20,571.15 1004.80,583.70 929.50,596.25 804.00,589.98 640.85,608.80 540.45,621.35 452.60,638.92 427.50,696.65 389.85,709.20 339.65,646.45 276.90,608.80 201.60,596.25 51.00,546.05" fill="#b9b6b0" stroke="#918e8c" stroke-width="1.6" stroke-linejoin="round"/>
+<polygon points="51.00,157.00 1130.30,157.00 1130.30,458.20 1092.65,495.85 1004.80,533.50 891.85,546.05 753.80,551.07 628.30,558.60 540.45,571.15 465.15,583.70 389.85,583.70 339.65,571.15 201.60,546.05 51.00,508.40" fill="#efe4c8" stroke="#b2a486" stroke-width="1.5" stroke-linejoin="round"/>
+<polygon points="51.00,157.00 904.40,157.00 879.30,244.85 791.45,251.12 703.60,236.06 603.20,282.50 502.80,244.85 389.85,295.05 302.00,257.40 214.15,307.60 138.85,282.50 51.00,320.15" fill="#d8e0c7" stroke="none" stroke-width="1" stroke-linejoin="round"/>
+<polygon points="879.30,157.00 1130.30,157.00 1130.30,377.88 1080.10,385.41 1029.90,390.43 979.70,375.37 929.50,345.25 891.85,302.58 854.20,257.40" fill="#b9c9a9" stroke="#8eaa84" stroke-width="1.6" stroke-linejoin="round"/>
+<polygon points="904.40,157.00 1130.30,157.00 1130.30,342.74 1080.10,362.82 1021.12,362.82 974.68,341.49 937.03,307.60 910.68,257.40" fill="#d3e1c6" stroke="#88a17f" stroke-width="1.5" stroke-linejoin="round"/>
+<polygon points="113.75,533.50 189.05,529.74 289.45,546.05 345.93,571.15 339.65,633.90 251.80,659.00 126.30,633.90" fill="#e4d4b6" stroke="#ae9a76" stroke-width="1.2" stroke-linejoin="round"/>
+<polygon points="101.20,583.70 176.50,571.15 302.00,571.15 372.28,596.25 402.40,637.66 366.01,702.93 337.14,730.54 113.75,734.30 82.38,702.93 82.38,633.90" fill="#d8ab82" stroke="#987657" stroke-width="2" stroke-linejoin="round"/>
+<polygon points="465.15,659.00 553.00,621.35 653.40,615.08 753.80,611.31 866.75,608.80 967.15,593.74 1042.45,586.21 1105.20,621.35 1105.20,697.91 1024.88,738.06 916.95,746.85 603.20,751.87 502.80,739.32 461.39,714.22" fill="#d8ab82" stroke="#987657" stroke-width="2" stroke-linejoin="round"/>
+<polyline points="101.20,637.66 334.63,637.66" stroke="#b98e68" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="101.20,651.47 334.63,651.47" stroke="#b98e68" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="101.20,665.28 334.63,665.28" stroke="#b98e68" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="101.20,679.08 334.63,679.08" stroke="#b98e68" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="101.20,692.89 334.63,692.89" stroke="#b98e68" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="101.20,706.69 334.63,706.69" stroke="#b98e68" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="101.20,720.50 334.63,720.50" stroke="#b98e68" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="502.80,659.00 1023.62,659.00" stroke="#b98e68" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="502.80,674.06 1023.62,674.06" stroke="#b98e68" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="502.80,689.12 1023.62,689.12" stroke="#b98e68" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="502.80,704.18 1023.62,704.18" stroke="#b98e68" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="502.80,719.24 1023.62,719.24" stroke="#b98e68" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="502.80,734.30 1023.62,734.30" stroke="#b98e68" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="404.28,695.39 419.97,630.13 457.62,595.00" stroke="#918c90" stroke-width="1.35" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="432.52,672.81 445.70,634.53 478.96,612.57" stroke="#918c90" stroke-width="1.35" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="787.69,596.25 829.10,589.35 871.77,585.58" stroke="#918c90" stroke-width="1.35" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="896.87,593.11 949.58,584.33" stroke="#918c90" stroke-width="1.35" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="108.73,728.02 158.93,729.91" stroke="#715f4c" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" fill="none" stroke-dasharray="4 5"/>
+<polyline points="202.86,729.28 334.63,723.63" stroke="#715f4c" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" fill="none" stroke-dasharray="4 5"/>
+<polyline points="515.35,734.30 603.20,746.85 829.10,743.09" stroke="#715f4c" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" fill="none" stroke-dasharray="4 5"/>
+<polyline points="841.65,743.09 992.25,735.56" stroke="#715f4c" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" fill="none" stroke-dasharray="4 5"/>
+<polyline points="1044.96,721.75 1098.92,692.89" stroke="#715f4c" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" fill="none" stroke-dasharray="4 5"/>
+<polyline points="979.70,354.03 993.50,358.43" stroke="#715f4c" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" fill="none" stroke-dasharray="4 5"/>
+<polyline points="1042.45,369.85 1080.10,368.47 1117.75,354.03" stroke="#715f4c" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" fill="none" stroke-dasharray="4 5"/>
+<rect x="205.365" y="366.58500000000004" width="335.08500000000004" height="178.21" rx="13" fill="#f7ebd2" stroke="#d3c3a3" stroke-width="1"/>
+<rect x="480.21000000000004" y="286.89250000000004" width="144.32500000000002" height="90.98750000000001" rx="5" fill="#e6d4b3" stroke="#c4ae8e" stroke-width="1"/>
+<circle cx="88.65" cy="295.05" r="16.817000000000004" fill="#b4c49e" stroke="#91a582" stroke-width="1"/>
+<circle cx="97.05850000000001" cy="303.12216" r="12.78092" fill="#bdd0a8" stroke="none" stroke-width="1"/>
+<circle cx="126.30000000000001" cy="257.4" r="16.566000000000003" fill="#b4c49e" stroke="#91a582" stroke-width="1"/>
+<circle cx="134.58300000000003" cy="265.35168" r="12.590160000000003" fill="#bdd0a8" stroke="none" stroke-width="1"/>
+<circle cx="389.85" cy="182.1" r="13.805000000000001" fill="#b4c49e" stroke="#91a582" stroke-width="1"/>
+<circle cx="396.75250000000005" cy="188.7264" r="10.491800000000001" fill="#bdd0a8" stroke="none" stroke-width="1"/>
+<circle cx="455.11000000000007" cy="257.4" r="15.06" fill="#b4c49e" stroke="#91a582" stroke-width="1"/>
+<circle cx="462.6400000000001" cy="264.6288" r="11.445599999999999" fill="#bdd0a8" stroke="none" stroke-width="1"/>
+<circle cx="694.815" cy="208.45499999999998" r="16.942500000000003" fill="#b4c49e" stroke="#91a582" stroke-width="1"/>
+<circle cx="703.28625" cy="216.5874" r="12.8763" fill="#bdd0a8" stroke="none" stroke-width="1"/>
+<circle cx="753.8000000000001" cy="257.4" r="15.06" fill="#b4c49e" stroke="#91a582" stroke-width="1"/>
+<circle cx="761.33" cy="264.6288" r="11.445599999999999" fill="#bdd0a8" stroke="none" stroke-width="1"/>
+<circle cx="847.9250000000001" cy="269.95" r="17.57" fill="#b4c49e" stroke="#91a582" stroke-width="1"/>
+<circle cx="856.71" cy="278.3836" r="13.3532" fill="#bdd0a8" stroke="none" stroke-width="1"/>
+<circle cx="879.3000000000001" cy="357.8" r="15.06" fill="#b4c49e" stroke="#91a582" stroke-width="1"/>
+<circle cx="886.8299999999999" cy="365.02880000000005" r="11.445599999999999" fill="#bdd0a8" stroke="none" stroke-width="1"/>
+<circle cx="1110.22" cy="269.95" r="12.55" fill="#b4c49e" stroke="#91a582" stroke-width="1"/>
+<circle cx="1116.4950000000001" cy="275.97400000000005" r="9.538" fill="#bdd0a8" stroke="none" stroke-width="1"/>
+<circle cx="1117.75" cy="226.025" r="15.06" fill="#b4c49e" stroke="#91a582" stroke-width="1"/>
+<circle cx="1125.28" cy="233.2538" r="11.445599999999999" fill="#bdd0a8" stroke="none" stroke-width="1"/>
+<circle cx="440.05" cy="596.25" r="15.06" fill="#b4c49e" stroke="#91a582" stroke-width="1"/>
+<circle cx="447.58000000000004" cy="603.4788000000001" r="11.445599999999999" fill="#bdd0a8" stroke="none" stroke-width="1"/>
+<circle cx="457.62" cy="646.45" r="17.319" fill="#b4c49e" stroke="#91a582" stroke-width="1"/>
+<circle cx="466.2795" cy="654.7631200000001" r="13.16244" fill="#bdd0a8" stroke="none" stroke-width="1"/>
+<circle cx="176.5" cy="556.09" r="10.6675" fill="#b4c49e" stroke="#91a582" stroke-width="1"/>
+<circle cx="181.83375" cy="561.2103999999999" r="8.1073" fill="#bdd0a8" stroke="none" stroke-width="1"/>
+<circle cx="860.475" cy="589.975" r="14.056000000000003" fill="#b4c49e" stroke="#91a582" stroke-width="1"/>
+<circle cx="867.503" cy="596.72188" r="10.682560000000002" fill="#bdd0a8" stroke="none" stroke-width="1"/>
+<circle cx="1080.1000000000001" cy="522.205" r="14.809" fill="#b4c49e" stroke="#91a582" stroke-width="1"/>
+<circle cx="1087.5045" cy="529.31332" r="11.25484" fill="#bdd0a8" stroke="none" stroke-width="1"/>
+<circle cx="201.60000000000002" cy="327.68" r="14.558" fill="#b4c49e" stroke="#91a582" stroke-width="1"/>
+<circle cx="208.87900000000002" cy="334.66784" r="11.06408" fill="#bdd0a8" stroke="none" stroke-width="1"/>
+<rect x="129.4375" y="219.1225" width="56.475" height="51.455" rx="3" fill="#e9c8a3" stroke="#987e5d" stroke-width="1.5"/>
+<text x="157.675" y="249.619" fill="#26343a" font-size="14" font-weight="700" text-anchor="middle">B01</text>
+<rect x="214.15" y="194.65" width="50.2" height="60.24" rx="3" fill="#d8dece" stroke="#987e5d" stroke-width="1.5"/>
+<text x="239.25" y="229.539" fill="#26343a" font-size="14" font-weight="700" text-anchor="middle">B02</text>
+<rect x="312.98125" y="220.69125" width="53.337500000000006" height="58.35750000000001" rx="3" fill="#ebd4ac" stroke="#987e5d" stroke-width="1.5"/>
+<text x="339.65000000000003" y="254.639" fill="#26343a" font-size="14" font-weight="700" text-anchor="middle">B02</text>
+<rect x="117.20125" y="324.22875" width="55.847500000000004" height="57.1025" rx="3" fill="#e9c8a3" stroke="#987e5d" stroke-width="1.5"/>
+<text x="145.125" y="357.549" fill="#26343a" font-size="14" font-weight="700" text-anchor="middle">B01</text>
+<rect x="211.01250000000002" y="280.6175" width="56.475" height="56.475" rx="3" fill="#ebd4ac" stroke="#987e5d" stroke-width="1.5"/>
+<text x="239.25" y="313.624" fill="#26343a" font-size="14" font-weight="700" text-anchor="middle">B01</text>
+<rect x="359.73" y="286.89250000000004" width="52.71000000000001" height="58.98500000000001" rx="3" fill="#d8dece" stroke="#987e5d" stroke-width="1.5"/>
+<text x="386.08500000000004" y="321.154" fill="#26343a" font-size="14" font-weight="700" text-anchor="middle">B02</text>
+<rect x="154.53750000000002" y="562.365" width="56.475" height="50.2" rx="3" fill="#ebd4ac" stroke="#987e5d" stroke-width="1.5"/>
+<text x="182.775" y="592.234" fill="#26343a" font-size="14" font-weight="700" text-anchor="middle">B01</text>
+<rect x="243.01500000000001" y="587.4649999999999" width="67.77000000000001" height="52.71000000000001" rx="3" fill="#f5d7a2" stroke="#987e5d" stroke-width="1.5"/>
+<text x="276.9" y="618.589" fill="#26343a" font-size="14" font-weight="700" text-anchor="middle"></text>
+<rect x="501.545" y="230.41750000000002" width="90.36000000000001" height="56.475" rx="3" fill="#c4d3da" stroke="#987e5d" stroke-width="1.5"/>
+<text x="546.725" y="263.424" fill="#26343a" font-size="14" font-weight="700" text-anchor="middle"></text>
+<rect x="720.5425" y="348.70124999999996" width="74.045" height="60.8675" rx="3" fill="#e9c9aa" stroke="#987e5d" stroke-width="1.5"/>
+<text x="757.565" y="383.904" fill="#26343a" font-size="14" font-weight="700" text-anchor="middle">B05</text>
+<rect x="814.6675" y="357.48625000000004" width="48.945" height="55.847500000000004" rx="3" fill="#ecdaba" stroke="#987e5d" stroke-width="1.5"/>
+<text x="839.14" y="390.179" fill="#26343a" font-size="14" font-weight="700" text-anchor="middle">B06</text>
+<rect x="880.1785000000001" y="370.852" width="58.483000000000004" height="41.666" rx="3" fill="#c1d2d7" stroke="#987e5d" stroke-width="1.5"/>
+<text x="909.4200000000001" y="396.45399999999995" fill="#26343a" font-size="14" font-weight="700" text-anchor="middle"></text>
+<rect x="965.5812500000001" y="236.065" width="53.337500000000006" height="50.2" rx="3" fill="#e4c7a2" stroke="#987e5d" stroke-width="1.5"/>
+<text x="992.25" y="265.934" fill="#26343a" font-size="14" font-weight="700" text-anchor="middle">B01</text>
+<path d="M268.115,640.175 L285.685,640.175" stroke="#726347" stroke-width="3.5" fill="none"/>
+<path d="M537.94,286.89250000000004 L555.51,286.89250000000004" stroke="#726347" stroke-width="3.5" fill="none"/>
+<path d="M748.78,409.56875 L766.35,409.56875" stroke="#726347" stroke-width="3.5" fill="none"/>
+<path d="M830.355,413.33375 L847.9250000000001,413.33375" stroke="#726347" stroke-width="3.5" fill="none"/>
+<path d="M900.6350000000001,412.51800000000003 L918.2050000000002,412.51800000000003" stroke="#726347" stroke-width="3.5" fill="none"/>
+<path d="M983.465,286.265 L1001.0350000000001,286.265" stroke="#726347" stroke-width="3.5" fill="none"/>
+<circle cx="1063.785" cy="266.185" r="26.9825" fill="#edd6a4" stroke="#8d977c" stroke-width="1"/>
+<circle cx="1063.785" cy="266.185" r="20.2055" fill="#fcf5e1" stroke="#61777a" stroke-width="1.8"/>
+<text x="1063.785" y="271.205" fill="#254750" font-size="14" font-weight="750" text-anchor="middle">B08</text>
+<text x="1065.04" y="227.28" fill="#36554b" font-size="15" font-weight="740" text-anchor="middle">燈塔平台 +7.2 m</text>
+<path d="M1055.0,286.89250000000004 L1072.5700000000002,286.89250000000004" stroke="#726347" stroke-width="3.5" fill="none"/>
+<rect x="899.19175" y="395.199" width="17.9465" height="11.797" rx="3" fill="#b67f64" stroke="#7a5a4a" stroke-width="1.5"/>
+<text x="908.165" y="405.8665" fill="#26343a" font-size="14" font-weight="700" text-anchor="middle"></text>
+<text x="909.4200000000001" y="431.21750000000003" fill="#59472e" font-size="12" font-weight="700" text-anchor="middle">S08 鍛爐</text>
+<rect x="269.9975" y="408.753" width="38.905" height="23.594" rx="3" fill="#eec484" stroke="#967c60" stroke-width="1"/>
+<text x="289.45000000000005" y="424.4405" fill="#384844" font-size="13" font-weight="720" text-anchor="middle">魚</text>
+<rect x="345.2975" y="378.63300000000004" width="38.905" height="23.594" rx="3" fill="#f2dfae" stroke="#967c60" stroke-width="1"/>
+<text x="364.75" y="394.32050000000004" fill="#384844" font-size="13" font-weight="720" text-anchor="middle">果</text>
+<rect x="424.3625" y="384.908" width="38.905" height="23.594" rx="3" fill="#e5a39b" stroke="#967c60" stroke-width="1"/>
+<text x="443.81500000000005" y="400.5955" fill="#384844" font-size="13" font-weight="720" text-anchor="middle">布</text>
+<rect x="438.1675" y="502.878" width="38.905" height="23.594" rx="3" fill="#aabfa3" stroke="#967c60" stroke-width="1"/>
+<text x="457.62" y="518.5654999999999" fill="#384844" font-size="13" font-weight="720" text-anchor="middle">陶</text>
+<rect x="106.8475" y="630.8880000000001" width="38.905" height="23.594" rx="3" fill="#eac789" stroke="#967c60" stroke-width="1"/>
+<text x="126.30000000000001" y="646.5755000000001" fill="#384844" font-size="13" font-weight="720" text-anchor="middle">小攤</text>
+<circle cx="364.75" cy="460.71000000000004" r="15.4365" fill="#b8c5cc" stroke="#648088" stroke-width="1.7"/>
+<circle cx="364.75" cy="460.71000000000004" r="8.1575" fill="#8babaf" stroke="none" stroke-width="1"/>
+<text x="364.75" y="465.1025" fill="#233b48" font-size="12" font-weight="740" text-anchor="middle">S02</text>
+<text x="335.885" y="357.8" fill="#2d4749" font-size="21" font-weight="750" text-anchor="middle">主市集 +4.0 m</text>
+<text x="763.84" y="316.385" fill="#2d4749" font-size="21" font-weight="750" text-anchor="middle">工坊街 +4.0 m</text>
+<text x="549.2350000000001" y="212.22" fill="#2d4749" font-size="21" font-weight="750" text-anchor="middle">燈籠食堂</text>
+<text x="245.525" y="188.375" fill="#2d4749" font-size="21" font-weight="750" text-anchor="middle">住宅街</text>
+<text x="136.34" y="707.3175" fill="#5d422b" font-size="17" font-weight="730" text-anchor="middle">登岸碼頭 +0.8 m</text>
+<text x="673.48" y="732.4175" fill="#5d422b" font-size="17" font-weight="740" text-anchor="middle">造船場 +0.8 m</text>
+<text x="411.185" y="768.1850000000001" fill="#486e73" font-size="13" font-weight="650" text-anchor="middle">水灣隔開兩座碼頭</text>
+<text x="753.8000000000001" y="809.6" fill="#416b70" font-size="20" font-weight="740" text-anchor="middle">港灣  ·  水面 +0.0 m</text>
+<polygon points="374.59,648.82 399.69,557.20 354.91,544.94 329.81,636.55" fill="#f4e9d0" stroke="#9c8a6c" stroke-width="1.35" stroke-linejoin="round"/>
+<text x="314.55" y="560.4825000000001" fill="#59472e" font-size="13" font-weight="700" text-anchor="middle">T1 登岸坡道</text>
+<polygon points="555.51,558.60 555.51,648.33 600.69,648.33 600.69,558.60" fill="#f4e9d0" stroke="#9c8a6c" stroke-width="1.35" stroke-linejoin="round"/>
+<polyline points="555.51,566.08 600.69,566.08" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="555.51,573.56 600.69,573.56" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="555.51,581.03 600.69,581.03" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="555.51,588.51 600.69,588.51" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="555.51,595.99 600.69,595.99" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="555.51,603.47 600.69,603.47" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="555.51,610.94 600.69,610.94" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="555.51,618.42 600.69,618.42" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="555.51,625.90 600.69,625.90" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="555.51,633.38 600.69,633.38" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="555.51,640.85 600.69,640.85" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<text x="625.79" y="597.5050000000001" fill="#59472e" font-size="13" font-weight="700" text-anchor="middle">T2 西石梯</text>
+<polygon points="956.80,520.95 956.80,623.86 1002.60,623.86 1002.60,520.95" fill="#f4e9d0" stroke="#9c8a6c" stroke-width="1.35" stroke-linejoin="round"/>
+<polyline points="956.80,529.53 1002.60,529.53" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="956.80,538.10 1002.60,538.10" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="956.80,546.68 1002.60,546.68" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="956.80,555.25 1002.60,555.25" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="956.80,563.83 1002.60,563.83" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="956.80,572.40 1002.60,572.40" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="956.80,580.98 1002.60,580.98" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="956.80,589.56 1002.60,589.56" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="956.80,598.13 1002.60,598.13" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="956.80,606.71 1002.60,606.71" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="956.80,615.28 1002.60,615.28" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<text x="1028.645" y="563.62" fill="#59472e" font-size="13" font-weight="700" text-anchor="middle">T3 東石梯</text>
+<polygon points="1038.68,468.24 1038.68,363.45 996.01,363.45 996.01,468.24" fill="#f4e9d0" stroke="#9c8a6c" stroke-width="1.35" stroke-linejoin="round"/>
+<polyline points="1038.68,459.51 996.01,459.51" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="1038.68,450.77 996.01,450.77" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="1038.68,442.04 996.01,442.04" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="1038.68,433.31 996.01,433.31" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="1038.68,424.58 996.01,424.58" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="1038.68,415.84 996.01,415.84" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="1038.68,407.11 996.01,407.11" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="1038.68,398.38 996.01,398.38" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="1038.68,389.65 996.01,389.65" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="1038.68,380.91 996.01,380.91" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="1038.68,372.18 996.01,372.18" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<text x="1075.08" y="436.865" fill="#59472e" font-size="13" font-weight="700" text-anchor="middle">T4 登塔梯</text>
+<polygon points="564.29,396.71 564.29,347.13 529.15,347.13 529.15,396.71" fill="#f4e9d0" stroke="#9c8a6c" stroke-width="1.35" stroke-linejoin="round"/>
+<polyline points="564.29,392.57 529.15,392.57" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="564.29,388.44 529.15,388.44" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="564.29,384.31 529.15,384.31" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="564.29,380.18 529.15,380.18" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="564.29,376.05 529.15,376.05" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="564.29,371.92 529.15,371.92" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="564.29,367.79 529.15,367.79" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="564.29,363.66 529.15,363.66" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="564.29,359.53 529.15,359.53" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="564.29,355.39 529.15,355.39" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="564.29,351.26 529.15,351.26" stroke="#c0af8f" stroke-width="0.9" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<text x="603.2" y="374.115" fill="#59472e" font-size="13" font-weight="700" text-anchor="middle">T5 食堂梯</text>
+<polyline points="349.69,544.17 404.91,544.17" stroke="#887354" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<text x="404.91" y="530.99" fill="#59472e" font-size="12" font-weight="700" text-anchor="middle">S01 石拱門</text>
+<g transform="translate(184.03,771.95) rotate(-11) scale(12.55)">
+<path d="M-3.675,0 Q-2.2784999999999997,-1.725 1.9845,-1.725 L3.381,-1.3110000000000002 L3.381,1.3110000000000002 L1.9845,1.725 Q-2.2784999999999997,1.725 -3.675,0Z" fill="#c8875e" stroke="#565959" stroke-width=".12"/>
+<path d="M-2.5725,0 L2.646,0" fill="none" stroke="#f2dbc1" stroke-width=".12"/>
+</g>
+<text x="135.085" y="786.3825" fill="#41362a" font-size="13" font-weight="740" text-anchor="middle">S05</text>
+<polygon points="169.97,734.30 195.70,734.30 196.08,765.68 170.35,765.68" fill="#edcca3" stroke="#9c7854" stroke-width="1.5" stroke-linejoin="round"/>
+<polyline points="170.48,739.32 195.33,739.32" stroke="#ae8967" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="170.48,746.85 195.33,746.85" stroke="#ae8967" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="170.48,754.38 195.33,754.38" stroke="#ae8967" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="170.48,760.66 195.33,760.66" stroke="#ae8967" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<text x="222.935" y="756.89" fill="#56472f" font-size="13" font-weight="740" text-anchor="middle">G1 跳板</text>
+<rect x="627.0450000000001" y="637.665" width="70.28" height="31.375" rx="3" fill="#eed7af" stroke="#967657" stroke-width="1.5"/>
+<text x="662.1850000000001" y="658.1215" fill="#26343a" font-size="14" font-weight="700" text-anchor="middle">工作棚</text>
+<g transform="translate(787.6850000000001,642.6850000000001) rotate(-3) scale(12.55)">
+<path d="M-3.71,0 Q-2.3002,-1.4 2.0034,-1.4 L3.4132000000000002,-1.0639999999999998 L3.4132000000000002,1.0639999999999998 L2.0034,1.4 Q-2.3002,1.4 -3.71,0Z" fill="#bc895f" stroke="#565959" stroke-width=".12"/>
+<path d="M-2.597,0 L2.6712,0" fill="none" stroke="#f2dbc1" stroke-width=".12"/>
+</g>
+<text x="787.6850000000001" y="648.3325000000001" fill="#41362a" font-size="13" font-weight="740" text-anchor="middle">S04</text>
+<polygon points="868.00,633.90 891.85,625.74 915.70,633.90 923.23,650.21 910.68,664.65 880.55,665.28 864.87,655.24" fill="#dcb099" stroke="#ab7a61" stroke-width="1" stroke-linejoin="round"/>
+<text x="892.4775" y="649.3365" fill="#533b31" font-size="14" font-weight="740" text-anchor="middle">S03</text>
+<polyline points="862.36,621.35 925.11,621.35 925.11,669.04 862.36,669.04 862.36,621.35" stroke="#a56c56" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round" fill="none" stroke-dasharray="3 3"/>
+<g transform="translate(920.715,773.8325) rotate(-13) scale(12.55)">
+<path d="M-2.175,0 Q-1.3484999999999998,-0.885 1.1744999999999999,-0.885 L2.001,-0.6726 L2.001,0.6726 L1.1744999999999999,0.885 Q-1.3484999999999998,0.885 -2.175,0Z" fill="#92b2bb" stroke="#565959" stroke-width=".12"/>
+<path d="M-1.5224999999999997,0 L1.5659999999999998,0" fill="none" stroke="#f2dbc1" stroke-width=".12"/>
+</g>
+<g transform="translate(1013.585,765.0475) rotate(-12) scale(12.55)">
+<path d="M-2.175,0 Q-1.3484999999999998,-0.885 1.1744999999999999,-0.885 L2.001,-0.6726 L2.001,0.6726 L1.1744999999999999,0.885 Q-1.3484999999999998,0.885 -2.175,0Z" fill="#d69c78" stroke="#565959" stroke-width=".12"/>
+<path d="M-1.5224999999999997,0 L1.5659999999999998,0" fill="none" stroke="#f2dbc1" stroke-width=".12"/>
+</g>
+<text x="980.9549999999999" y="798.3050000000001" fill="#40676d" font-size="13" font-weight="680" text-anchor="middle">S06 小划艇 ×2</text>
+<polyline points="183.40,784.50 183.40,754.38 183.40,691.63 236.74,672.81 276.90,672.81 276.90,649.59" stroke="#fffbef" stroke-width="7.6" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="183.40,784.50 183.40,754.38 183.40,691.63 236.74,672.81 276.90,672.81 276.90,649.59" stroke="#b45e31" stroke-width="4.3" stroke-linejoin="round" stroke-linecap="round" fill="none" marker-end="url(#a)"/>
+<polyline points="276.90,672.81 345.93,672.81 352.20,642.69 377.30,551.07 377.30,509.66 406.17,480.79" stroke="#fffbef" stroke-width="7.6" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="276.90,672.81 345.93,672.81 352.20,642.69 377.30,551.07 377.30,509.66 406.17,480.79" stroke="#b45e31" stroke-width="4.3" stroke-linejoin="round" stroke-linecap="round" fill="none" marker-end="url(#a)"/>
+<polyline points="578.10,537.27 578.10,648.96 603.20,700.41 952.09,700.41 979.70,669.04 979.70,623.86 979.70,520.95 952.09,476.40 622.02,476.40 578.10,505.89 578.10,537.27" stroke="#fffbef" stroke-width="7.6" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="578.10,537.27 578.10,648.96 603.20,700.41 952.09,700.41 979.70,669.04 979.70,623.86 979.70,520.95 952.09,476.40 622.02,476.40 578.10,505.89 578.10,537.27" stroke="#347e90" stroke-width="4.3" stroke-linejoin="round" stroke-linecap="round" fill="none" marker-end="url(#b)"/>
+<polyline points="929.50,476.40 1017.35,476.40 1017.35,363.45 1044.96,320.15 1063.79,300.70" stroke="#fffbef" stroke-width="7.6" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="929.50,476.40 1017.35,476.40 1017.35,363.45 1044.96,320.15 1063.79,300.70" stroke="#76609b" stroke-width="4.3" stroke-linejoin="round" stroke-linecap="round" fill="none" marker-end="url(#c)"/>
+<polyline points="406.17,480.79 496.53,480.79 546.73,480.79 578.10,505.89" stroke="#7a8b72" stroke-width="2.7" stroke-linejoin="round" stroke-linecap="round" fill="none" stroke-dasharray="5 5"/>
+<polyline points="546.73,480.79 546.73,396.71 546.73,347.13 546.73,293.80" stroke="#7a8b72" stroke-width="2.7" stroke-linejoin="round" stroke-linecap="round" fill="none" stroke-dasharray="5 5"/>
+<polyline points="308.28,463.22 191.56,463.22 138.85,445.65 76.10,445.65" stroke="#7a8b72" stroke-width="2.7" stroke-linejoin="round" stroke-linecap="round" fill="none" stroke-dasharray="5 5"/>
+<circle cx="183.4025" cy="784.5" r="10.4165" fill="#b45e31" stroke="#faf6ea" stroke-width="2"/>
+<text x="183.4025" y="788.8925" fill="white" font-size="12" font-weight="750" text-anchor="middle">A</text>
+<circle cx="578.1" cy="537.2650000000001" r="10.4165" fill="#347e90" stroke="#faf6ea" stroke-width="2"/>
+<text x="578.1" y="541.6575" fill="white" font-size="12" font-weight="750" text-anchor="middle">B</text>
+<circle cx="1063.785" cy="300.6975" r="10.4165" fill="#76609b" stroke="#faf6ea" stroke-width="2"/>
+<text x="1063.785" y="305.09000000000003" fill="white" font-size="12" font-weight="750" text-anchor="middle">C</text>
+<text x="277.52750000000003" y="581.19" fill="#75462a" font-size="14" font-weight="740" text-anchor="middle">報到處</text>
+<text x="760.075" y="447.53249999999997" fill="#596452" font-size="14" font-weight="700" text-anchor="middle">市集至工坊的主街</text>
+<text x="163.95" y="480.79" fill="#5d7158" font-size="13" font-weight="640" text-anchor="middle">住宅街支路</text>
+<polyline points="92.41,253.63 92.41,198.41" stroke="#355254" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polygon points="92.41,190.88 85.76,209.21 99.07,209.21" fill="#355254" stroke="none" stroke-width="1" stroke-linejoin="round"/>
+<text x="92.41499999999999" y="183.98250000000002" fill="#355254" font-size="13" font-weight="740" text-anchor="middle">N</text>
+<text x="92.41499999999999" y="268.695" fill="#355254" font-size="12" font-weight="630" text-anchor="middle">−Z</text>
+<rect x="96.18" y="803.9525" width="62.75" height="3.1375" rx="0" fill="#355254" stroke="none" stroke-width="1"/>
+<rect x="158.93" y="803.9525" width="62.75" height="3.1375" rx="0" fill="#f5f4e8" stroke="#355254" stroke-width="1"/>
+<polyline points="96.18,800.82 96.18,809.60" stroke="#355254" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="158.93,800.82 158.93,809.60" stroke="#355254" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="221.68,800.82 221.68,809.60" stroke="#355254" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<text x="96.18" y="823.4050000000001" fill="#355254" font-size="12" font-weight="680" text-anchor="middle">0</text>
+<text x="158.93" y="823.4050000000001" fill="#355254" font-size="12" font-weight="680" text-anchor="middle">5</text>
+<text x="221.68" y="823.4050000000001" fill="#355254" font-size="12" font-weight="680" text-anchor="middle">10 m</text>
+</g>
+<rect x="51" y="157" width="1079.3" height="677.7" rx="11" fill="none" stroke="#6b9899" stroke-width="1.7"/>
+<g clip-path="url(#map)">
+<polyline points="138.85,445.65 201.60,395.45 201.60,288.77" stroke="#f7ebd2" stroke-width="22" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="138.85,445.65 201.60,395.45 201.60,288.77" stroke="#7a8b72" stroke-width="2.7" stroke-linejoin="round" stroke-linecap="round" fill="none" stroke-dasharray="5 5"/>
+<polyline points="624.54,312.62 674.74,312.62 674.74,279.99 660.93,219.75 660.93,188.38" stroke="#f7f0d9" stroke-width="35" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<polyline points="624.54,312.62 674.74,312.62 674.74,279.99 660.93,219.75 660.93,188.38" stroke="#27634e" stroke-width="2.9" stroke-linejoin="round" stroke-linecap="round" fill="none" stroke-dasharray="5 4"/>
+<polyline points="674.74,312.62 674.74,375.37 647.12,426.82 647.12,476.40" stroke="#789281" stroke-width="2.7" stroke-linejoin="round" stroke-linecap="round" fill="none" stroke-dasharray="5 5"/>
+<text x="650.89" y="334.5825" fill="#27634e" font-size="13" font-weight="760" text-anchor="middle">R1</text>
+<rect x="243.6425" y="591.8575000000001" width="66.515" height="48.3175" rx="4" fill="#fef9de" stroke="#285f53" fill-opacity=".63" stroke-width="2.0"/>
+<rect x="502.17250000000007" y="232.9275" width="89.105" height="53.337500000000006" rx="4" fill="#fef9de" stroke="#285f53" fill-opacity=".63" stroke-width="2.0"/>
+<rect x="880.6805" y="390.179" width="57.479000000000006" height="21.586000000000002" rx="4" fill="#fef9de" stroke="#285f53" fill-opacity=".63" stroke-width="2.0"/>
+<text x="272.5075" y="613.1925000000001" fill="#233e43" font-size="14" font-weight="720" text-anchor="middle">B03</text>
+<text x="543.5875000000001" y="243.59500000000003" fill="#233e43" font-size="13" font-weight="720" text-anchor="middle">B04</text>
+<text x="919.0835000000001" y="403.98400000000004" fill="#233e43" font-size="13" font-weight="720" text-anchor="middle">B07</text>
+<circle cx="295.09749999999997" cy="618.8399999999999" r="2.8865000000000003" fill="#9a4e31" stroke="#fff8e8" stroke-width="0.7"/>
+<polyline points="295.10,618.84 305.14,623.23" stroke="#9a4e31" stroke-width="1.45" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<circle cx="305.13750000000005" cy="623.2325000000001" r="12.4245" fill="#9a4e31" stroke="#fff8e8" stroke-width="1.45"/>
+<text x="305.13750000000005" y="627.2485" fill="white" font-size="10" font-weight="730" text-anchor="middle">01</text>
+<circle cx="571.825" cy="261.165" r="2.8865000000000003" fill="#9a4e31" stroke="#fff8e8" stroke-width="0.7"/>
+<polyline points="571.83,261.17 592.53,266.19" stroke="#9a4e31" stroke-width="1.45" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<circle cx="592.5325" cy="266.185" r="12.4245" fill="#9a4e31" stroke="#fff8e8" stroke-width="1.45"/>
+<text x="592.5325" y="270.201" fill="white" font-size="10" font-weight="730" text-anchor="middle">02</text>
+<circle cx="603.2" cy="341.485" r="2.8865000000000003" fill="#9a4e31" stroke="#fff8e8" stroke-width="0.7"/>
+<polyline points="603.20,341.49 586.26,331.45" stroke="#9a4e31" stroke-width="1.45" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<circle cx="586.2575" cy="331.44500000000005" r="12.4245" fill="#9a4e31" stroke="#fff8e8" stroke-width="1.45"/>
+<text x="586.2575" y="335.461" fill="white" font-size="10" font-weight="730" text-anchor="middle">03</text>
+<circle cx="892.4775" cy="395.45000000000005" r="2.8865000000000003" fill="#9a4e31" stroke="#fff8e8" stroke-width="0.7"/>
+<polyline points="892.48,395.45 881.81,379.76" stroke="#9a4e31" stroke-width="1.45" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<circle cx="881.8100000000001" cy="379.76250000000005" r="12.4245" fill="#9a4e31" stroke="#fff8e8" stroke-width="1.45"/>
+<text x="881.8100000000001" y="383.7785" fill="white" font-size="10" font-weight="730" text-anchor="middle">04</text>
+<circle cx="289.45000000000005" cy="406.745" r="2.8865000000000003" fill="#526c78" stroke="#fff8e8" stroke-width="0.7"/>
+<polyline points="289.45,406.75 266.86,391.69" stroke="#526c78" stroke-width="1.45" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<circle cx="266.86" cy="391.685" r="12.4245" fill="#526c78" stroke="#fff8e8" stroke-width="1.45"/>
+<text x="266.86" y="395.701" fill="white" font-size="10" font-weight="730" text-anchor="middle">05</text>
+<circle cx="787.6850000000001" cy="674.0600000000001" r="2.8865000000000003" fill="#526c78" stroke="#fff8e8" stroke-width="0.7"/>
+<polyline points="787.69,674.06 820.32,679.71" stroke="#526c78" stroke-width="1.45" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<circle cx="820.315" cy="679.7075" r="12.4245" fill="#526c78" stroke="#fff8e8" stroke-width="1.45"/>
+<text x="820.315" y="683.7235000000001" fill="white" font-size="10" font-weight="730" text-anchor="middle">06</text>
+<circle cx="183.4025" cy="784.5" r="2.8865000000000003" fill="#927333" stroke="#fff8e8" stroke-width="0.7"/>
+<polyline points="183.40,784.50 220.43,786.38" stroke="#927333" stroke-width="1.45" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<circle cx="220.425" cy="786.3825" r="12.4245" fill="#927333" stroke="#fff8e8" stroke-width="1.45"/>
+<text x="220.425" y="790.3985" fill="white" font-size="10" font-weight="730" text-anchor="middle">L</text>
+<circle cx="660.9300000000001" cy="234.81" r="2.8865000000000003" fill="#465271" stroke="#fff8e8" stroke-width="0.7"/>
+<polyline points="660.93,234.81 709.88,252.38" stroke="#465271" stroke-width="1.45" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<circle cx="709.875" cy="252.38" r="12.4245" fill="#465271" stroke="#fff8e8" stroke-width="1.45"/>
+<text x="709.875" y="256.396" fill="white" font-size="10" font-weight="730" text-anchor="middle">W</text>
+<circle cx="518.4875" cy="269.3225" r="2.8865000000000003" fill="#27634e" stroke="#fff8e8" stroke-width="0.7"/>
+<polyline points="518.49,269.32 495.27,274.34" stroke="#27634e" stroke-width="1.45" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<circle cx="495.27" cy="274.3425" r="12.4245" fill="#27634e" stroke="#fff8e8" stroke-width="1.45"/>
+<text x="495.27" y="278.3585" fill="white" font-size="10" font-weight="730" text-anchor="middle">D1</text>
+<circle cx="660.9300000000001" cy="188.375" r="2.8865000000000003" fill="#27634e" stroke="#fff8e8" stroke-width="0.7"/>
+<polyline points="660.93,188.38 682.26,175.82" stroke="#27634e" stroke-width="1.45" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<circle cx="682.265" cy="175.825" r="12.4245" fill="#27634e" stroke="#fff8e8" stroke-width="1.45"/>
+<text x="682.265" y="179.841" fill="white" font-size="10" font-weight="730" text-anchor="middle">F1</text>
+<circle cx="660.9300000000001" cy="219.75" r="2.8865000000000003" fill="#27634e" stroke="#fff8e8" stroke-width="0.7"/>
+<polyline points="660.93,219.75 637.09,209.71" stroke="#27634e" stroke-width="1.45" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+<circle cx="637.085" cy="209.71" r="12.4245" fill="#27634e" stroke="#fff8e8" stroke-width="1.45"/>
+<text x="637.085" y="213.726" fill="white" font-size="10" font-weight="730" text-anchor="middle">F2</text>
+</g>
+<text x="751.29" y="185.2375" fill="#27634e" font-size="14" font-weight="740" text-anchor="middle">青眠林口</text>
+<rect x="1152" y="156" width="377" height="679" rx="13" fill="#fffdf5" stroke="#ded6c3" stroke-width="1"/>
+<text x="1176" y="194" fill="#233e43" font-size="23" font-weight="790" text-anchor="start">NPC 與事件點</text>
+<circle cx="1191" cy="224" r="12" fill="#9a4e31"/>
+<text x="1191" y="228" fill="white" font-size="10" font-weight="750" text-anchor="middle">01</text>
+<text x="1212" y="228" fill="#233e43" font-size="16" font-weight="750" text-anchor="start">報到員</text>
+<text x="1212" y="246" fill="#536763" font-size="13" font-weight="540" text-anchor="start">B03 前廳，提供方向</text>
+<circle cx="1191" cy="272" r="12" fill="#9a4e31"/>
+<text x="1191" y="276" fill="white" font-size="10" font-weight="750" text-anchor="middle">02</text>
+<text x="1212" y="276" fill="#233e43" font-size="16" font-weight="750" text-anchor="start">食堂掌櫃</text>
+<text x="1212" y="294" fill="#536763" font-size="13" font-weight="540" text-anchor="start">B04 一樓，領乾糧</text>
+<circle cx="1191" cy="320" r="12" fill="#9a4e31"/>
+<text x="1191" y="324" fill="white" font-size="10" font-weight="750" text-anchor="middle">03</text>
+<text x="1212" y="324" fill="#233e43" font-size="16" font-weight="750" text-anchor="start">獸醫</text>
+<text x="1212" y="342" fill="#536763" font-size="13" font-weight="540" text-anchor="start">食堂露台，返城驗傷</text>
+<circle cx="1191" cy="368" r="12" fill="#9a4e31"/>
+<text x="1191" y="372" fill="white" font-size="10" font-weight="750" text-anchor="middle">04</text>
+<text x="1212" y="372" fill="#233e43" font-size="16" font-weight="750" text-anchor="start">陶芮</text>
+<text x="1212" y="390" fill="#536763" font-size="13" font-weight="540" text-anchor="start">B07 棚口，辨認刀痕</text>
+<circle cx="1191" cy="416" r="12" fill="#526c78"/>
+<text x="1191" y="420" fill="white" font-size="10" font-weight="750" text-anchor="middle">05</text>
+<text x="1212" y="420" fill="#233e43" font-size="16" font-weight="750" text-anchor="start">魚販</text>
+<text x="1212" y="438" fill="#536763" font-size="13" font-weight="540" text-anchor="start">市集魚攤，日常招呼</text>
+<circle cx="1191" cy="464" r="12" fill="#526c78"/>
+<text x="1191" y="468" fill="white" font-size="10" font-weight="750" text-anchor="middle">06</text>
+<text x="1212" y="468" fill="#233e43" font-size="16" font-weight="750" text-anchor="start">船匠</text>
+<text x="1212" y="486" fill="#536763" font-size="13" font-weight="540" text-anchor="start">船骨旁，日常工作</text>
+<circle cx="1191" cy="512" r="12" fill="#927333"/>
+<text x="1191" y="516" fill="white" font-size="10" font-weight="750" text-anchor="middle">L</text>
+<text x="1212" y="516" fill="#233e43" font-size="16" font-weight="750" text-anchor="start">栗粒</text>
+<text x="1212" y="534" fill="#536763" font-size="13" font-weight="540" text-anchor="start">初到港區時隨旅人</text>
+<circle cx="1191" cy="560" r="12" fill="#465271"/>
+<text x="1191" y="564" fill="white" font-size="10" font-weight="750" text-anchor="middle">W</text>
+<text x="1212" y="564" fill="#233e43" font-size="16" font-weight="750" text-anchor="start">烏麥</text>
+<text x="1212" y="582" fill="#536763" font-size="13" font-weight="540" text-anchor="start">只在青眠林事件後返城</text>
+<circle cx="1191" cy="608" r="12" fill="#27634e"/>
+<text x="1191" y="612" fill="white" font-size="10" font-weight="750" text-anchor="middle">D1</text>
+<text x="1212" y="612" fill="#233e43" font-size="16" font-weight="750" text-anchor="start">食堂長桌</text>
+<text x="1212" y="630" fill="#536763" font-size="13" font-weight="540" text-anchor="start">查看告示，返城記錄觀察</text>
+<circle cx="1191" cy="656" r="12" fill="#27634e"/>
+<text x="1191" y="660" fill="white" font-size="10" font-weight="750" text-anchor="middle">F1</text>
+<text x="1212" y="660" fill="#233e43" font-size="16" font-weight="750" text-anchor="start">青眠林口</text>
+<text x="1212" y="678" fill="#536763" font-size="13" font-weight="540" text-anchor="start">領乾糧後可出發</text>
+<circle cx="1191" cy="704" r="12" fill="#27634e"/>
+<text x="1191" y="708" fill="white" font-size="10" font-weight="750" text-anchor="middle">F2</text>
+<text x="1212" y="708" fill="#233e43" font-size="16" font-weight="750" text-anchor="start">返城位置</text>
+<text x="1212" y="726" fill="#536763" font-size="13" font-weight="540" text-anchor="start">朝南回到食堂露台</text>
+<path d="M1178,755 L1503,755" stroke="#dfd9c9" stroke-width="1" fill="none"/>
+<rect x="1179" y="775" width="22" height="14" rx="3" fill="#fff9de" stroke="#285f53" stroke-width="2"/>
+<text x="1212" y="787" fill="#233e43" font-size="14" font-weight="650" text-anchor="start">可進入的建物範圍</text>
+<path d="M1179,810 L1201,810" stroke="#27634e" stroke-width="3" fill="none"/>
+<text x="1212" y="815" fill="#233e43" font-size="14" font-weight="650" text-anchor="start">R1 短坡與北側林徑</text>
+<rect x="51" y="856" width="1478" height="101" rx="11" fill="#efeadd" stroke="#dcd4c2" stroke-width="1"/>
+<text x="76" y="892" fill="#b45e31" font-size="19" font-weight="770" text-anchor="start">A  登岸主線</text>
+<text x="76" y="922" fill="#4e625c" font-size="15" font-weight="560" text-anchor="start">貨船 → 石拱 → 市集 → 食堂</text>
+<text x="431" y="892" fill="#347e90" font-size="19" font-weight="770" text-anchor="start">B  造船場環路</text>
+<text x="431" y="922" fill="#4e625c" font-size="15" font-weight="560" text-anchor="start">工坊街與兩道石梯全程往返</text>
+<text x="785" y="892" fill="#76609b" font-size="19" font-weight="770" text-anchor="start">C  燈塔支路</text>
+<text x="785" y="922" fill="#4e625c" font-size="15" font-weight="560" text-anchor="start">外平台開放，塔門關閉</text>
+<text x="1141" y="892" fill="#596861" font-size="19" font-weight="770" text-anchor="start">封閉區域</text>
+<text x="1141" y="922" fill="#4e625c" font-size="15" font-weight="560" text-anchor="start">住宅內、船骨工作區、海面與崖壁</text>
+</g></svg>
