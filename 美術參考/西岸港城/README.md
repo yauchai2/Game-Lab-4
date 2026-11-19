@@ -2,26 +2,26 @@
 
 以「ChatGPT 圖像 2026年11月19日 上午01_59_49」為首場景構圖基準。後續資產優先做偏可愛、簡單的 Low-poly，用大切面、啞面水粉色塊與少量乾刷呈現。實際可通行尺寸及裝配點依資產用途驗收。
 
-[3D 美術規格](../西岸港城-3D美術規格.md) · [資產與組裝計畫](資產與組裝計畫.md) · [三視圖製作與驗收標準](三視圖製作與驗收標準.md) · [首場景平面配置與組裝定位](平面配置與組裝定位.md) · [首場景關卡與 NPC 計畫](首場景關卡與NPC計畫.md)
+[3D 美術規格](../西岸港城-3D美術規格.md) · [資產與組裝計畫](資產與組裝計畫.md) · [三視圖製作與驗收標準](三視圖製作與驗收標準.md) · [首場景平面配置與組裝定位](平面配置與組裝定位.md) · [首場景關卡與 NPC 計畫](首場景關卡與NPC計畫.md) · [植栽公告板與全域風場](https://github.com/yauchai2/Game-Lab-4/blob/docs/west-harbor-art-style/美術參考/西岸港城/植栽公告板與全域風場.md)
 
-**多視圖來源更正。** B03–B08、S03–S05、C02、C03 的既有正交圖與驗收圖都由 Blender 簡模渲染，屬幾何底稿。這 11 件的 GPT Image 正式多視圖待生成與驗收。舊檔沿用原路徑供查閱，狀態以此頁為準。
+**11 件 GPT Image 多視圖已補齊。** 共 35 張獨立 Tripo 輸入 PNG，完整原稿及製程見[出圖紀錄](GPT-Image多視圖出圖紀錄.md)。
 
 ## 已有成果
 
 | ID | 資產 | 版本及可用檔案 |
 | --- | --- | --- |
-| B03 | 碼頭藍旗報到處 | **Blender 幾何底稿。GPT Image 多視圖待補。** [正面](Tripo送件/B03/B03_front.png) · [左側](Tripo送件/B03/B03_left.png) · [背面](Tripo送件/B03/B03_back.png) · [斜角驗收](Tripo送件/B03/B03_qa_angle.png) |
-| S04 | 半成品木船骨 | **Blender 幾何底稿。GPT Image 多視圖待補。** [船首](Tripo送件/S04/S04_front.png) · [左舷](Tripo送件/S04/S04_left.png) · [船尾](Tripo送件/S04/S04_back.png) · [頂視驗收](Tripo送件/S04/S04_qa_top.png) · [斜角驗收](Tripo送件/S04/S04_qa_angle.png) |
+| B03 | 碼頭藍旗報到處 | **GPT Image 多視圖已出圖。** [正面](GPT-Image送件/B03/B03_front.png) · [左側](GPT-Image送件/B03/B03_left.png) · [背面](GPT-Image送件/B03/B03_back.png) |
+| S04 | 半成品木船骨 | **GPT Image 多視圖已出圖。** [船首](GPT-Image送件/S04/S04_front.png) · [左舷](GPT-Image送件/S04/S04_left.png) · [船尾](GPT-Image送件/S04/S04_back.png) |
 | N01 | 深青棕櫚 | 單張斜角送件圖。repo 版採較矮厚的樹幹、較少的葉緣細節。[簡化版斜角](Tripo送件/N01/N01_oblique.png) |
-| S05 | 登岸用矮身貨船 | **Blender 幾何底稿。GPT Image 多視圖待補。** 左舷跳板開口約 1.9 m，右舷連續。[船首](Tripo送件/S05/S05_front.png) · [左舷](Tripo送件/S05/S05_left.png) · [船尾](Tripo送件/S05/S05_back.png) · [右舷](Tripo送件/S05/S05_right.png) · [頂視驗收](Tripo送件/S05/S05_qa_top.png) · [斜角驗收](Tripo送件/S05/S05_qa_angle.png) |
+| S05 | 登岸用矮身貨船 | **GPT Image 多視圖已出圖。** 左舷跳板開口約 1.9 m，右舷連續。[船首](GPT-Image送件/S05/S05_front.png) · [左舷](GPT-Image送件/S05/S05_left.png) · [船尾](GPT-Image送件/S05/S05_back.png) · [右舷](GPT-Image送件/S05/S05_right.png) |
 | S01 | 厚石步道拱門 | 單張斜角送件圖。奶油色厚拱石、拱孔一路開至地面，兩側矮牆由場景拼接。回傳 GLB 後檢查透空與通行尺寸。[斜角送件圖](Tripo送件/S01/S01_oblique.png) |
 | S02 | 市集水井 | 單張偏高斜角送件圖。灰藍石井、通透井口與厚木支架，捲輪、井繩及水桶另裝。回傳 GLB 後檢查井口深度與木架下方留空。[斜角送件圖](Tripo送件/S02/S02_oblique.png) |
-| B04 | 藍瓦燈籠食堂 | **Blender 幾何底稿。GPT Image 多視圖待補。** 厚藍瓦屋頂、兩個敞開入口與看得見深度的木地板；燈籠、門簾、桌椅和露台另裝。回傳 GLB 後檢查兩入口淨空。[正面](Tripo送件/B04/B04_front.png) · [左側](Tripo送件/B04/B04_left.png) · [背面](Tripo送件/B04/B04_back.png) · [斜角驗收](Tripo送件/B04/B04_qa_angle.png) |
-| B05 | 帆布工坊主屋 | **Blender 幾何底稿。GPT Image 多視圖待補。** 紅瓦屋身、七塊拱石與內凹木框，底稿最大門洞淨寬約 3 m。帆布、門簾和布捲另裝，回傳 GLB 後檢查拱洞深度與可走空間。[正面](Tripo送件/B05/B05_front.png) · [左側](Tripo送件/B05/B05_left.png) · [背面](Tripo送件/B05/B05_back.png) · [斜角驗收](Tripo送件/B05/B05_qa_angle.png) |
-| B06 | 船舵招牌作坊 | **Blender 幾何底稿。GPT Image 多視圖待補。** 窄白牆、低紅瓦、內凹雙木門與平整側牆。船舵招牌和藍棚另裝。回傳 GLB 後用鄰屋確認側牆與屋簷接面。[正面](Tripo送件/B06/B06_front.png) · [左側](Tripo送件/B06/B06_left.png) · [背面](Tripo送件/B06/B06_back.png) · [斜角驗收](Tripo送件/B06/B06_qa_angle.png) |
-| B07 | 鐵匠棚 | **Blender 幾何底稿。GPT Image 多視圖待補。** 前低後高的藍瓦斜頂、木柱、淺石地坪與後牆。正面及兩側留空；鍛爐、鐵砧與火光另裝。回傳 GLB 後檢查操作區淨空。[正面](Tripo送件/B07/B07_front.png) · [左側](Tripo送件/B07/B07_left.png) · [背面](Tripo送件/B07/B07_back.png) · [斜角驗收](Tripo送件/B07/B07_qa_angle.png) |
-| B08 | 海岬燈塔 | **Blender 幾何底稿。GPT Image 多視圖待補。** 略收窄的白石塔身、藍環帶、外挑平台與八角燈室，琥珀色窗面供 Tripo 辨識材質分區。欄杆、玻璃材質和光源在 Godot 組裝。[正面](Tripo送件/B08/B08_front.png) · [左側](Tripo送件/B08/B08_left.png) · [背面](Tripo送件/B08/B08_back.png) · [斜角驗收](Tripo送件/B08/B08_qa_angle.png) |
-| S03 | 船塢木吊車 | **Blender 幾何底稿。GPT Image 多視圖待補。** 右側補足吊臂末端的滑輪叉架。雙木柱、斜撐與橫臂間留空；吊繩、掛鉤和繩網貨包另裝。回傳 GLB 後檢查滑輪中心、臂端吊點和斜撐透空。[正面](Tripo送件/S03/S03_front.png) · [左側](Tripo送件/S03/S03_left.png) · [背面](Tripo送件/S03/S03_back.png) · [右側](Tripo送件/S03/S03_right.png) · [斜角驗收](Tripo送件/S03/S03_qa_angle.png) |
+| B04 | 藍瓦燈籠食堂 | **GPT Image 多視圖已出圖。** 厚藍瓦屋頂、兩個敞開入口與看得見深度的木地板；燈籠、門簾、桌椅和露台另裝。回傳 GLB 後檢查兩入口淨空。[正面](GPT-Image送件/B04/B04_front.png) · [左側](GPT-Image送件/B04/B04_left.png) · [背面](GPT-Image送件/B04/B04_back.png) |
+| B05 | 帆布工坊主屋 | **GPT Image 多視圖已出圖。** 紅瓦屋身、七塊拱石與內凹木框，底稿最大門洞淨寬約 3 m。帆布、門簾和布捲另裝，回傳 GLB 後檢查拱洞深度與可走空間。[正面](GPT-Image送件/B05/B05_front.png) · [左側](GPT-Image送件/B05/B05_left.png) · [背面](GPT-Image送件/B05/B05_back.png) |
+| B06 | 船舵招牌作坊 | **GPT Image 多視圖已出圖。** 窄白牆、低紅瓦、內凹雙木門與平整側牆。船舵招牌和藍棚另裝。回傳 GLB 後用鄰屋確認側牆與屋簷接面。[正面](GPT-Image送件/B06/B06_front.png) · [左側](GPT-Image送件/B06/B06_left.png) · [背面](GPT-Image送件/B06/B06_back.png) |
+| B07 | 鐵匠棚 | **GPT Image 多視圖已出圖。** 前低後高的藍瓦斜頂、木柱、淺石地坪與後牆。正面及兩側留空；鍛爐、鐵砧與火光另裝。回傳 GLB 後檢查操作區淨空。[正面](GPT-Image送件/B07/B07_front.png) · [左側](GPT-Image送件/B07/B07_left.png) · [背面](GPT-Image送件/B07/B07_back.png) |
+| B08 | 海岬燈塔 | **GPT Image 多視圖已出圖。** 略收窄的白石塔身、藍環帶、外挑平台與八角燈室，琥珀色窗面供 Tripo 辨識材質分區。欄杆、玻璃材質和光源在 Godot 組裝。[正面](GPT-Image送件/B08/B08_front.png) · [左側](GPT-Image送件/B08/B08_left.png) · [背面](GPT-Image送件/B08/B08_back.png) |
+| S03 | 船塢木吊車 | **GPT Image 多視圖已出圖。** 右側補足吊臂末端的滑輪叉架。雙木柱、斜撐與橫臂間留空；吊繩、掛鉤和繩網貨包另裝。回傳 GLB 後檢查滑輪中心、臂端吊點和斜撐透空。[正面](GPT-Image送件/S03/S03_front.png) · [左側](GPT-Image送件/S03/S03_left.png) · [背面](GPT-Image送件/S03/S03_back.png) · [右側](GPT-Image送件/S03/S03_right.png) |
 | B01 | 單層白牆雙坡屋 | 單張斜角送件圖。矮白牆、厚珊瑚紅瓦、小藍窗和木門。用作可重用的背景屋外殼，可另做屋瓦換色與門窗飾件。[斜角送件圖](Tripo送件/B01/B01_oblique.png) |
 | B02 | 較高的窄面住宅 | 單張斜角送件圖。兩層窄白牆、厚藍灰瓦及小窗，作為可重複擺放的高住宅外殼。[斜角送件圖](Tripo送件/B02/B02_oblique.png) |
 | S06 | 岸邊小划艇 | 單張偏高斜角送件圖。藍白船身、開口船艙與兩張橫向座板清楚可見。赭紅白版沿用同一母件換色，船槳和繫繩另裝。[斜角送件圖](Tripo送件/S06/S06_oblique.png) |
@@ -40,11 +40,11 @@
 | N04 | 寬葉地被 | 單張稍高斜角送件圖。低矮的大葉自同一株基部向外展開，保留葉尖間的空隙，可放住宅盆栽、造船場崖腳及攤邊。花盆另裝。[斜角送件圖](Tripo送件/N04/N04_oblique.png) |
 | N05 | 灰紫稜面岩 | 單張斜角送件圖。低矮不對稱外形、灰紫大切面與較平底緣，可旋轉縮放成群。大型承重岩坡由地形組件塑形。[斜角送件圖](Tripo送件/N05/N05_oblique.png) |
 | C01 | 小旅人 | 創作總監已有 3D 模型，後續沿用。模型檔案與匯入驗證待交接。 |
-| C02 | 狼形獸伴 | **Blender 幾何底稿。GPT Image 多視圖待補。** 深靛背、灰紫頰側、尖耳和楔形長嘴。四爪同一接地基準，低垂尾巴與後腿分開。回傳 GLB 後檢查四足骨架、爪底及尾巴可動空間。[正面](Tripo送件/C02/C02_front.png) · [左側](Tripo送件/C02/C02_left.png) · [背面](Tripo送件/C02/C02_back.png) · [斜角驗收](Tripo送件/C02/C02_qa_angle.png) |
-| C03 | 港民基礎人物 | **Blender 幾何底稿。GPT Image 多視圖待補。** 中性 A 姿勢、青綠上衣、赭色長褲與短靴。帽髮、圍裙和職業道具另裝。回傳 GLB 後檢查雙足接地、肩手變形與基本骨架。[正面](Tripo送件/C03/C03_front.png) · [左側](Tripo送件/C03/C03_left.png) · [背面](Tripo送件/C03/C03_back.png) · [斜角驗收](Tripo送件/C03/C03_qa_angle.png) |
+| C02 | 狼形獸伴 | **GPT Image 多視圖已出圖。** 深靛背、灰紫頰側、尖耳和楔形長嘴。四爪同一接地基準，低垂尾巴與後腿分開。回傳 GLB 後檢查四足骨架、爪底及尾巴可動空間。[正面](GPT-Image送件/C02/C02_front.png) · [左側](GPT-Image送件/C02/C02_left.png) · [背面](GPT-Image送件/C02/C02_back.png) |
+| C03 | 港民基礎人物 | **GPT Image 多視圖已出圖。** 中性 A 姿勢、青綠上衣、赭色長褲與短靴。帽髮、圍裙和職業道具另裝。回傳 GLB 後檢查雙足接地、肩手變形與基本骨架。[正面](GPT-Image送件/C03/C03_front.png) · [左側](GPT-Image送件/C03/C03_left.png) · [背面](GPT-Image送件/C03/C03_back.png) |
 
 資產表的 Blender 影像供構造與正交投影核對。檔名含 `qa_` 的圖供人工驗收。正式多視圖以確認完成的 GPT Image 輸出為準。收到 Tripo 產出的 GLB 後，再補模型路徑及通行、骨架或裝配的驗證結果。
 
 ## 下一階段
 
-原定清單有 31 件圖檔，當中 11 件多視圖目前只有 Blender 幾何底稿。依三視圖規格補齊並驗收 GPT Image 輸出後，再交由 Tripo 生成正式模型。C01 沿用使用者已有的模型。
+多視圖 11 件與既有單圖 20 件均可按資產 ID 取用。由 Tripo 生成正式模型後，再記錄各 GLB 的尺度、遮空、骨架與組裝結果。C01 沿用使用者已有的模型。
