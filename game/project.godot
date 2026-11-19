@@ -1,10 +1,10 @@
 config_version=5
 [application]
-config/name="借影之森 · 晚餐在對岸"
-run/main_scene="res://Cliff.tscn"
+config/name="邊境遠征 · 西岸港城灰盒"
+run/main_scene="res://harbor/Harbor.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 [display]
-window/size/viewport_width=1152
+window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
 [rendering]
