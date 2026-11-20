@@ -939,12 +939,16 @@ func _make_body(body: CharacterBody3D, pos: Vector3, radius: float) -> void:
 	add_shape(body, shape, Vector3.UP * radius)
 	body.position = pos
 
-# --- 2.5D Orthographic Camera + Gradient Storybook Sky + Cinematic Break Director ---
+# --- 2.5D Perspective Fixed Oblique Top-Down Camera (3D Pseudo-Isometric, Subtle Foreshortening) ---
+const DEFAULT_CAM_FOV := 26.0
+
 func setup_camera_and_lighting(cam_size: float, bg_col: Color, amb_col: Color, amb_energy: float, sun_col: Color, sun_energy: float, sky_top_col := Color.TRANSPARENT, sky_horizon_col := Color.TRANSPARENT, ground_col := Color.TRANSPARENT) -> void:
 	default_cam_size = cam_size
 	add_child(camera)
-	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-	camera.size = cam_size
+	camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+	camera.fov = DEFAULT_CAM_FOV
+	camera.near = 0.5
+	camera.far = 280.0
 	camera.current = true
 	position_camera(feet(), 1.0)
 
@@ -1002,8 +1006,8 @@ func exit_cinematic_shot() -> void:
 		return
 	cinematic_active = false
 	cinematic_timer = 0.0
-	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-	camera.size = default_cam_size
+	camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+	camera.fov = DEFAULT_CAM_FOV
 	_set_letterbox(false)
 	position_camera(feet(), 1.0)
 
@@ -1030,7 +1034,9 @@ func position_camera(target: Vector3, lerp_weight: float) -> void:
 		camera.position = camera.position.lerp(cinematic_cam_pos, clampf(lerp_weight * 1.4, 0.0, 1.0)) if lerp_weight < 1.0 else cinematic_cam_pos
 		camera.look_at(cinematic_look_at)
 		return
-	var offset := Vector3(3.2, 14.2, 16.5)
+	var oblique_dir := Vector3(3.2, 14.2, 16.5).normalized()
+	var dist := default_cam_size / (2.0 * tan(deg_to_rad(DEFAULT_CAM_FOV * 0.5)))
+	var offset := oblique_dir * dist
 	var desired := target + offset
 	camera.position = camera.position.lerp(desired, lerp_weight) if lerp_weight < 1.0 else desired
 	camera.look_at(camera.position - offset)
