@@ -1,29 +1,33 @@
 extends Node3D
 
-# Shared Amelicart-inspired matte gouache palette
-const NIGHT_GRASS := Color("#2f4659")
-const DAY_GRASS := Color("#d89448")
-const MEADOW_GREEN := Color("#8db858")
-const TRAIL := Color("#e5be8a")
+# Shared @amelicart-inspired matte gouache palette (warm-vs-cool contrast)
+const NIGHT_GRASS := Color("#2c4357")
+const NIGHT_GRASS_LIGHT := Color("#39586e")
+const DAY_GRASS := Color("#dc9648")
+const DAY_GRASS_WARM := Color("#e8a856")
+const MEADOW_GREEN := Color("#88b655")
+const MEADOW_LIGHT := Color("#a1c96b")
+const TRAIL := Color("#e8c38e")
+const TRAIL_STONE := Color("#d8b68c")
 const BOARDWALK := Color("#c97e49")
-const STONE := Color("#8a8796")
-const STONE_LIGHT := Color("#b7b3c4")
+const STONE := Color("#888596")
+const STONE_LIGHT := Color("#bab6c8")
 const TIMBER := Color("#78523d")
-const TIMBER_LIGHT := Color("#a87854")
-const WHITE_WALL := Color("#f7f3ea")
-const CORAL_ROOF := Color("#d9786c")
+const TIMBER_LIGHT := Color("#ac7b56")
+const WHITE_WALL := Color("#f9f3e8")
+const CORAL_ROOF := Color("#db776b")
 const BLUE_CURTAIN := Color("#1e6fa8")
 const BUNTING_BLUE := Color("#5d96d8")
 const PINE_DARK := Color("#1e3148")
-const PINE_ORANGE := Color("#d9532f")
+const PINE_ORANGE := Color("#d95732")
 const PINE_TEAL := Color("#2e6b6b")
-const MIST_CYAN := Color("#5ae8e5")
+const MIST_CYAN := Color("#66eae6")
 const FIRE_ORANGE := Color("#ff9838")
 const GOLD := Color("#f5c65b")
 const GOBLIN_GREEN := Color("#6ec25a")
-const PINK_PEAK := Color("#d896c8")
-const PURPLE_PEAK := Color("#9688d4")
-const CLOUD_WHITE := Color("#f7eaf2")
+const PINK_PEAK := Color("#da97ca")
+const PURPLE_PEAK := Color("#988ad6")
+const CLOUD_WHITE := Color("#f8ecf3")
 const STAMP_RED := Color("#e03c3c")
 
 # Storybook UI Palette
@@ -55,7 +59,10 @@ var inv_open := false
 var selected_inv_idx := -1
 
 var player := CharacterBody3D.new()
+var player_visual := Node3D.new()
 var wolf := CharacterBody3D.new()
+var wolf_visual := Node3D.new()
+var wolf_tail: Node3D
 var bird := Node3D.new()
 var camera := Camera3D.new()
 var sun := DirectionalLight3D.new()
@@ -65,6 +72,13 @@ var player_sword: MeshInstance3D
 var wolf_spring_pad: MeshInstance3D
 var player_emote: Label3D
 var wolf_emote: Label3D
+
+# Organic world animation pools (gentle breeze, bobbing motes, living NPCs)
+var sway_items: Array[Dictionary] = []
+var float_motes: Array[Dictionary] = []
+var living_npcs: Array[Dictionary] = []
+var _walk_phase := 0.0
+var _wolf_phase := 0.0
 
 # Upgraded Storybook HUD nodes
 var hud_layer: CanvasLayer
@@ -103,7 +117,7 @@ var inv_currency_label: Label
 var inv_list_box: VBoxContainer
 var inv_feedback_label: Label
 
-# --- Procedural matte gouache geometry helpers ---
+# --- Procedural matte gouache & organic storybook builders ---
 func box(parent: Node3D, pos: Vector3, size: Vector3, color: Color, solid := false, unshaded := false) -> MeshInstance3D:
 	var shape := BoxMesh.new()
 	shape.size = size
@@ -138,8 +152,8 @@ func mesh_at(parent: Node3D, pos: Vector3, mesh: Mesh, color: Color, unshaded :=
 
 func sphere(parent: Node3D, pos: Vector3, size: Vector3, color: Color, unshaded := false) -> MeshInstance3D:
 	var mesh := SphereMesh.new()
-	mesh.radial_segments = 12
-	mesh.rings = 6
+	mesh.radial_segments = 14
+	mesh.rings = 7
 	var instance := mesh_at(parent, pos, mesh, color, unshaded)
 	instance.scale = size
 	return instance
@@ -149,8 +163,156 @@ func cylinder(parent: Node3D, pos: Vector3, top_r: float, bottom_r: float, h: fl
 	mesh.top_radius = top_r
 	mesh.bottom_radius = bottom_r
 	mesh.height = h
-	mesh.radial_segments = 10
+	mesh.radial_segments = 14
 	return mesh_at(parent, pos, mesh, color, unshaded)
+
+func organic_mound(parent: Node3D, pos: Vector3, rx: float, rz: float, h: float, color: Color, rot_deg := 0.0, unshaded := false) -> MeshInstance3D:
+	var m := cylinder(parent, pos, rx * 0.94, rx, h, color, unshaded)
+	m.scale = Vector3(1.0, 1.0, rz / maxf(rx, 0.01))
+	m.rotation_degrees.y = rot_deg
+	return m
+
+func curved_path(points: Array[Vector3], width: float, color: Color, stone_accent := Color.TRANSPARENT) -> void:
+	if points.size() < 2:
+		return
+	for i in range(points.size() - 1):
+		var a := points[i]
+		var b := points[i + 1]
+		var dist := a.distance_to(b)
+		var steps := maxi(3, int(ceil(dist / (width * 0.42))))
+		for s in range(steps + 1):
+			var t := float(s) / float(steps)
+			var p := a.lerp(b, t)
+			var jitter := Vector3(sin(float(i * 11 + s * 7)) * 0.12, 0.0, cos(float(i * 5 + s * 9)) * 0.12)
+			var r := width * (0.48 + sin(float(i * 3 + s * 5)) * 0.07)
+			var disc := cylinder(self, Vector3(p.x + jitter.x, 0.016, p.z + jitter.z), r, r * 1.06, 0.032, color)
+			disc.scale.z = 0.82 + absf(sin(float(i * 7 + s * 3))) * 0.34
+			disc.rotation_degrees.y = fmod(float(i * 37 + s * 23), 180.0)
+			if stone_accent != Color.TRANSPARENT and (s % 2 == 0):
+				var st := cylinder(self, Vector3(p.x - jitter.x * 1.4, 0.025, p.z + jitter.z * 1.2), r * 0.34, r * 0.38, 0.03, stone_accent)
+				st.scale.z = 0.75
+				st.rotation_degrees.y = float(s * 41)
+
+func boulder_cluster(pos: Vector3, scl := 1.0, col := STONE, with_moss := true, solid := true, rot_deg := 0.0) -> Node3D:
+	var root := Node3D.new()
+	root.position = pos
+	root.rotation_degrees.y = rot_deg
+	add_child(root)
+	sphere(root, Vector3(0.0, 0.55 * scl, 0.0), Vector3(1.55, 1.05, 1.32) * scl, col)
+	sphere(root, Vector3(0.75 * scl, 0.38 * scl, 0.42 * scl), Vector3(0.92, 0.72, 0.85) * scl, col.darkened(0.08))
+	sphere(root, Vector3(-0.68 * scl, 0.32 * scl, -0.35 * scl), Vector3(0.85, 0.62, 0.78) * scl, col.lightened(0.06))
+	if with_moss:
+		sphere(root, Vector3(0.05 * scl, 0.96 * scl, -0.05 * scl), Vector3(1.18, 0.38, 0.98) * scl, Color("#4e7c48"))
+	if solid:
+		var body := StaticBody3D.new()
+		root.add_child(body)
+		var sh := SphereShape3D.new()
+		sh.radius = 0.95 * scl
+		add_shape(body, sh, Vector3(0.0, 0.65 * scl, 0.0))
+	return root
+
+func cozy_tree(pos: Vector3, scale_val := 1.0, foliage_col := MEADOW_GREEN, lean_deg := 0.0, solid := false) -> Node3D:
+	var root := Node3D.new()
+	root.position = pos
+	root.scale = Vector3.ONE * scale_val
+	root.rotation_degrees.y = fmod(absf(pos.x * 37.0 + pos.z * 53.0), 360.0)
+	add_child(root)
+	var trunk := cylinder(root, Vector3(0, 1.15, 0), 0.22, 0.36, 2.3, TIMBER)
+	trunk.rotation_degrees.z = lean_deg
+	var crown := Node3D.new()
+	crown.position = Vector3(-sin(deg_to_rad(lean_deg)) * 1.1, 2.55, 0)
+	root.add_child(crown)
+	sphere(crown, Vector3(0.0, 0.0, 0.0), Vector3(2.35, 1.85, 2.15), foliage_col)
+	sphere(crown, Vector3(0.85, -0.25, 0.45), Vector3(1.55, 1.35, 1.50), foliage_col.lightened(0.08))
+	sphere(crown, Vector3(-0.78, -0.18, -0.42), Vector3(1.48, 1.28, 1.42), foliage_col.darkened(0.08))
+	sphere(crown, Vector3(0.15, 0.68, -0.15), Vector3(1.32, 1.05, 1.25), foliage_col.lightened(0.12))
+	sway_items.append({"node": crown, "base_rot": crown.rotation, "amp": 0.025, "speed": 1.6, "phase": pos.x * 0.7 + pos.z * 0.5})
+	if solid:
+		var body := StaticBody3D.new()
+		root.add_child(body)
+		var sh := CylinderShape3D.new()
+		sh.radius = 0.55 * scale_val
+		sh.height = 2.4 * scale_val
+		add_shape(body, sh, Vector3(0, 1.2 * scale_val, 0))
+	return root
+
+func pine_tree(pos: Vector3, scale_val := 1.0, tint := PINE_DARK, solid := false) -> Node3D:
+	var root := Node3D.new()
+	root.position = pos
+	root.scale = Vector3.ONE * scale_val
+	root.rotation_degrees = Vector3(sin(pos.x) * 3.0, fmod(absf(pos.x * 41.0 + pos.z * 29.0), 360.0), cos(pos.z) * 4.0)
+	add_child(root)
+	cylinder(root, Vector3(0, 1.05, 0), 0.22, 0.34, 2.1, TIMBER)
+	var foliage := Node3D.new()
+	foliage.position = Vector3(0, 1.8, 0)
+	root.add_child(foliage)
+	cylinder(foliage, Vector3(0.06, 0.65, 0), 0.25, 1.55, 2.0, tint)
+	cylinder(foliage, Vector3(-0.08, 1.95, 0.05), 0.16, 1.18, 1.8, tint.lightened(0.07))
+	sphere(foliage, Vector3(0.0, 2.85, 0.0), Vector3(0.85, 0.95, 0.85), tint.lightened(0.13))
+	sway_items.append({"node": foliage, "base_rot": foliage.rotation, "amp": 0.022, "speed": 1.4, "phase": pos.x * 0.6 + pos.z * 0.4})
+	if solid:
+		var body := StaticBody3D.new()
+		root.add_child(body)
+		var sh := CylinderShape3D.new()
+		sh.radius = 0.65 * scale_val
+		sh.height = 2.4 * scale_val
+		add_shape(body, sh, Vector3(0, 1.2 * scale_val, 0))
+	return root
+
+func flower_patch(pos: Vector3, count: int, colors: Array[Color], spread := 1.6) -> void:
+	for i in range(count):
+		var ang := float(i) * 2.399 + pos.x * 0.3
+		var dist := sqrt(float(i + 1) / float(count)) * spread
+		var fp := pos + Vector3(cos(ang) * dist, 0.06, sin(ang) * dist)
+		var col := colors[i % colors.size()]
+		sphere(self, fp, Vector3(0.18, 0.14, 0.18), col, true)
+		if i % 2 == 0:
+			cylinder(self, fp + Vector3(0.12, 0.06, -0.08), 0.02, 0.05, 0.24, Color("#497542"))
+
+func lantern_post(pos: Vector3, height := 2.6, glow_col := FIRE_ORANGE, rot_deg := 0.0) -> Node3D:
+	var root := Node3D.new()
+	root.position = pos
+	root.rotation_degrees.y = rot_deg
+	add_child(root)
+	var pole := cylinder(root, Vector3(0, height * 0.5, 0), 0.08, 0.11, height, TIMBER)
+	pole.rotation_degrees.z = 4.0
+	var arm := box(root, Vector3(0.32, height - 0.18, 0), Vector3(0.75, 0.10, 0.10), TIMBER_LIGHT)
+	arm.rotation_degrees.z = -8.0
+	var lamp := sphere(root, Vector3(0.62, height - 0.52, 0), Vector3(0.42, 0.48, 0.42), glow_col, true)
+	sway_items.append({"node": lamp, "base_rot": lamp.rotation, "amp": 0.08, "speed": 2.2, "phase": pos.x + pos.z})
+	return root
+
+func bunting_line(a: Vector3, b: Vector3, sag: float, colors: Array[Color], flag_count := 7) -> void:
+	for i in range(flag_count):
+		var t := float(i + 1) / float(flag_count + 1)
+		var p := a.lerp(b, t)
+		p.y -= sin(t * PI) * sag
+		var flag := cylinder(self, p, 0.22, 0.02, 0.42, colors[i % colors.size()], true)
+		flag.scale.z = 0.25
+		flag.rotation.y = atan2(b.x - a.x, b.z - a.z) + PI * 0.5
+		sway_items.append({"node": flag, "base_rot": flag.rotation, "amp": 0.11, "speed": 2.6, "phase": float(i) * 0.6})
+
+func spawn_ambient_motes(center: Vector3, span: Vector3, count: int, col: Color, size := 0.11) -> void:
+	for i in range(count):
+		var base_p := center + Vector3(
+			randf_range(-span.x * 0.5, span.x * 0.5),
+			randf_range(0.5, span.y),
+			randf_range(-span.z * 0.5, span.z * 0.5)
+		)
+		var mote := sphere(self, base_p, Vector3.ONE * size, col, true)
+		float_motes.append({"node": mote, "base": base_p, "phase": randf_range(0.0, TAU), "speed": randf_range(0.9, 1.9), "amp": randf_range(0.25, 0.55)})
+
+func register_living_npc(node: Node3D, base_y := 0.0, bob_amp := 0.06, speed := 3.2) -> void:
+	living_npcs.append({"node": node, "base_y": base_y, "amp": bob_amp, "speed": speed, "phase": randf_range(0.0, TAU)})
+
+func invisible_boundary_wall(pos: Vector3, size: Vector3, rot_deg := 0.0) -> void:
+	var body := StaticBody3D.new()
+	body.position = pos
+	body.rotation_degrees.y = rot_deg
+	add_child(body)
+	var sh := BoxShape3D.new()
+	sh.size = size
+	add_shape(body, sh, Vector3.ZERO)
 
 func label_at(parent: Node3D, pos: Vector3, words: String, color := Color.WHITE, font_size := 36) -> Label3D:
 	var label := Label3D.new()
@@ -170,59 +332,65 @@ func marker(pos: Vector3, color: Color, radius := 0.58) -> MeshInstance3D:
 	mesh.top_radius = radius
 	mesh.bottom_radius = radius
 	mesh.height = 0.04
-	return mesh_at(self, pos + Vector3.UP * 0.03, mesh, color, true)
+	return mesh_at(self, pos + Vector3.UP * 0.035, mesh, color, true)
 
-func pine_tree(pos: Vector3, scale_val := 1.0, tint := PINE_DARK) -> void:
+func transition_signpost(pos: Vector3, title: String, color := GOLD, rot_deg := -12.0) -> void:
 	var root := Node3D.new()
 	root.position = pos
-	root.scale = Vector3.ONE * scale_val
+	root.rotation_degrees.y = rot_deg
 	add_child(root)
-	cylinder(root, Vector3(0, 1.1, 0), 0.24, 0.34, 2.2, TIMBER)
-	cylinder(root, Vector3(0, 2.5, 0), 0.12, 1.45, 2.2, tint)
-	cylinder(root, Vector3(0, 3.9, 0), 0.06, 1.10, 1.9, tint.lightened(0.08))
-
-func transition_signpost(pos: Vector3, title: String, color := GOLD) -> void:
-	cylinder(self, pos + Vector3(0, 0.85, 0), 0.09, 0.11, 1.7, TIMBER)
-	box(self, pos + Vector3(0.25, 1.45, 0), Vector3(1.1, 0.36, 0.12), TIMBER_LIGHT)
-	marker(pos + Vector3(0, 0, 0.8), color, 0.85)
+	var post := cylinder(root, Vector3(0, 0.85, 0), 0.09, 0.12, 1.75, TIMBER)
+	post.rotation_degrees.z = 3.5
+	var board := box(root, Vector3(0.28, 1.42, 0), Vector3(1.18, 0.36, 0.12), TIMBER_LIGHT)
+	board.rotation_degrees.z = -5.0
+	marker(pos + Vector3(0, 0, 0.6), color, 0.82)
 	label_at(self, pos + Vector3(0, 2.35, 0), title, color, 34)
 
-# --- Core Trio Builders ---
+# --- Core Trio Builders (with lively organic animations) ---
 func setup_core_trio(spawn_pos: Vector3) -> void:
 	_make_body(player, spawn_pos, PLAYER_RADIUS)
-	box(player, Vector3(0, 0.36, 0), Vector3(0.46, 0.56, 0.34), Color("#4da1e8"))
-	sphere(player, Vector3(0, 0.84, 0.02), Vector3(0.50, 0.50, 0.48), Color("#f4c9a8"))
-	cylinder(player, Vector3(0, 1.12, 0), 0.08, 0.32, 0.32, Color("#498e62"))
-	box(player, Vector3(-0.22, 1.24, -0.05), Vector3(0.08, 0.30, 0.14), Color("#d7e4ff"))
-	box(player, Vector3(0, 0.44, -0.25), Vector3(0.36, 0.36, 0.18), Color("#8c5234"))
-	player_sword = box(player, Vector3(0.38, 0.48, 0.25), Vector3(0.11, 0.11, 0.85), Color("#e6f4ff"))
+	player.add_child(player_visual)
+	# Compact storybook proportions (rounded tunic, scarf, feather cap, leather pack)
+	cylinder(player_visual, Vector3(0, 0.34, 0), 0.24, 0.28, 0.52, Color("#4da1e8"))
+	sphere(player_visual, Vector3(0, 0.60, 0.02), Vector3(0.42, 0.18, 0.38), Color("#d96b43"))
+	sphere(player_visual, Vector3(0, 0.85, 0.02), Vector3(0.52, 0.50, 0.48), Color("#f4c9a8"))
+	cylinder(player_visual, Vector3(0, 1.13, 0), 0.08, 0.33, 0.32, Color("#498e62"))
+	var feather := box(player_visual, Vector3(-0.22, 1.25, -0.05), Vector3(0.08, 0.32, 0.14), Color("#d7e4ff"))
+	feather.rotation_degrees.z = 16.0
+	sphere(player_visual, Vector3(0, 0.44, -0.26), Vector3(0.38, 0.38, 0.24), Color("#8c5234"))
+	player_sword = box(player_visual, Vector3(0.38, 0.48, 0.28), Vector3(0.11, 0.11, 0.88), Color("#e6f4ff"))
 	player_sword.visible = PrologueState.has_sword
-	player_emote = label_at(player, Vector3(0, 1.75, 0), "", Color("#fff59d"), 46)
+	player_emote = label_at(player, Vector3(0, 1.82, 0), "", Color("#fff59d"), 46)
 
 	_make_body(wolf, spawn_pos + Vector3(-1.45, 0, -0.55), WOLF_RADIUS)
+	wolf.add_child(wolf_visual)
 	var fur := Color("#464b59")
-	var fur_light := Color("#747d91")
-	box(wolf, Vector3(0, 0.78, 0), Vector3(1.12, 0.86, 1.82), fur)
-	box(wolf, Vector3(0, 1.05, 0.88), Vector3(0.72, 0.65, 0.72), fur)
-	box(wolf, Vector3(0, 0.85, 1.32), Vector3(0.42, 0.32, 0.48), fur_light)
+	var fur_light := Color("#788196")
+	sphere(wolf_visual, Vector3(0, 0.78, 0.0), Vector3(1.18, 0.90, 1.88), fur)
+	sphere(wolf_visual, Vector3(0, 0.92, 0.68), Vector3(0.95, 0.78, 0.78), fur_light)
+	sphere(wolf_visual, Vector3(0, 1.08, 0.95), Vector3(0.76, 0.66, 0.76), fur)
+	sphere(wolf_visual, Vector3(0, 0.88, 1.38), Vector3(0.42, 0.32, 0.52), fur_light)
 	for sx in [-0.36, 0.36]:
 		for sz in [-0.62, 0.62]:
-			box(wolf, Vector3(sx, 0.30, sz), Vector3(0.24, 0.60, 0.26), fur)
-		cylinder(wolf, Vector3(sx * 0.62, 1.54, 0.92), 0.03, 0.16, 0.42, fur)
-	var tail := box(wolf, Vector3(0, 0.95, -1.18), Vector3(0.28, 0.28, 0.78), fur)
-	tail.rotation_degrees.x = 24.0
-	box(wolf, Vector3(0, 1.24, -0.10), Vector3(0.92, 0.16, 0.72), Color("#a87b54"))
-	wolf_spring_pad = cylinder(wolf, Vector3(0, 1.42, -0.10), 0.38, 0.38, 0.22, GOLD)
+			cylinder(wolf_visual, Vector3(sx, 0.30, sz), 0.13, 0.11, 0.62, fur)
+		cylinder(wolf_visual, Vector3(sx * 0.60, 1.56, 0.96), 0.03, 0.17, 0.44, fur)
+	wolf_tail = Node3D.new()
+	wolf_tail.position = Vector3(0, 0.92, -0.88)
+	wolf_visual.add_child(wolf_tail)
+	var tail_mesh := sphere(wolf_tail, Vector3(0, 0.08, -0.42), Vector3(0.34, 0.30, 0.86), fur)
+	tail_mesh.rotation_degrees.x = 24.0
+	sphere(wolf_visual, Vector3(0, 1.24, -0.08), Vector3(0.96, 0.22, 0.76), Color("#a87b54"))
+	wolf_spring_pad = cylinder(wolf_visual, Vector3(0, 1.42, -0.08), 0.38, 0.38, 0.22, GOLD)
 	wolf_spring_pad.visible = PrologueState.has_spring_saddle
-	wolf_emote = label_at(wolf, Vector3(0, 2.25, 0.5), "", Color("#d0ecff"), 40)
+	wolf_emote = label_at(wolf, Vector3(0, 2.28, 0.5), "", Color("#d0ecff"), 40)
 
 	if PrologueState.mounted:
 		wolf.position = spawn_pos
 		player.position = wolf.position + Vector3.UP * 1.38
 
 	add_child(bird)
-	sphere(bird, Vector3.ZERO, Vector3(0.32, 0.28, 0.34), Color("#ffbf3c"))
-	box(bird, Vector3(0, 0.0, 0.19), Vector3(0.10, 0.08, 0.12), Color("#e8632c"))
+	sphere(bird, Vector3.ZERO, Vector3(0.34, 0.30, 0.36), Color("#ffbf3c"))
+	box(bird, Vector3(0, 0.0, 0.20), Vector3(0.10, 0.08, 0.12), Color("#e8632c"))
 	bird.position = player.position + Vector3(0, 1.45, 0)
 
 func _make_body(body: CharacterBody3D, pos: Vector3, radius: float) -> void:
@@ -286,7 +454,6 @@ func setup_hud() -> void:
 	hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_layer.add_child(hud_root)
 
-	# 1. Top-Left: Vitals & Active Gear Card
 	var vitals_card := PanelContainer.new()
 	vitals_card.position = Vector2(20, 18)
 	vitals_card.custom_minimum_size = Vector2(310, 74)
@@ -318,7 +485,6 @@ func setup_hud() -> void:
 	gear_tags_label = _styled_label("", 13, Color("#6b4a35"), false)
 	v_box.add_child(gear_tags_label)
 
-	# 2. Top-Right: Zone Badge & Objective Card
 	var obj_card := PanelContainer.new()
 	obj_card.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	obj_card.offset_left = -410
@@ -338,7 +504,6 @@ func setup_hud() -> void:
 	objective_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	o_box.add_child(objective_label)
 
-	# 3. Top-Center: Boss HP Bar
 	boss_panel = PanelContainer.new()
 	boss_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 	boss_panel.offset_left = -220
@@ -369,7 +534,6 @@ func setup_hud() -> void:
 	boss_hp_bar.add_theme_stylebox_override("fill", make_panel_style(Color("#f06b4f"), Color.TRANSPARENT, 8, 0, 0, 0))
 	b_box.add_child(boss_hp_bar)
 
-	# 4. Bottom-Center Stack
 	var bottom_stack := VBoxContainer.new()
 	bottom_stack.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
 	bottom_stack.offset_left = -380
@@ -451,7 +615,6 @@ func _build_inventory_modal() -> void:
 	inv_currency_label = _styled_label("", 15, Color("#8a4b16"), false)
 	root_v.add_child(inv_currency_label)
 
-	# Currency Crafting Action Buttons
 	var craft_row := HBoxContainer.new()
 	craft_row.add_theme_constant_override("separation", 8)
 	root_v.add_child(craft_row)
@@ -633,7 +796,52 @@ func move_body(body: CharacterBody3D, dir: Vector3, speed: float) -> void:
 		body.rotation.y = atan2(dir.x, dir.z)
 	body.move_and_slide()
 
+func _animate_living_world(delta: float) -> void:
+	var t := Time.get_ticks_msec() * 0.001
+	# Gentle breeze sway on foliage, lanterns, bunting
+	for item in sway_items:
+		if is_instance_valid(item["node"]):
+			var n: Node3D = item["node"]
+			var base_r: Vector3 = item["base_rot"]
+			n.rotation.z = base_r.z + sin(t * float(item["speed"]) + float(item["phase"])) * float(item["amp"])
+	# Floating ambient fireflies / petals / cloud dust
+	for m in float_motes:
+		if is_instance_valid(m["node"]):
+			var mn: Node3D = m["node"]
+			var bp: Vector3 = m["base"]
+			var ph := float(m["phase"])
+			var sp := float(m["speed"])
+			var am := float(m["amp"])
+			mn.position = bp + Vector3(sin(t * sp * 0.7 + ph) * am, sin(t * sp + ph) * am * 0.8, cos(t * sp * 0.6 + ph) * am)
+	# Breathing / cheerful bounce on friendly NPCs & mobs
+	for npc in living_npcs:
+		if is_instance_valid(npc["node"]):
+			var nn: Node3D = npc["node"]
+			nn.position.y = float(npc["base_y"]) + absf(sin(t * float(npc["speed"]) + float(npc["phase"]))) * float(npc["amp"])
+
+	# Lively walk bob on player & bounding + tail wag on wolf
+	var p_speed := flat(player.velocity).length()
+	if p_speed > 0.4 and not PrologueState.mounted and not air_slam_active:
+		_walk_phase += delta * 12.5
+		player_visual.position.y = absf(sin(_walk_phase)) * 0.11
+		player_visual.rotation.z = sin(_walk_phase) * 0.07
+	else:
+		player_visual.position.y = sin(t * 2.8) * 0.02
+		player_visual.rotation.z = lerpf(player_visual.rotation.z, 0.0, clampf(delta * 8.0, 0.0, 1.0))
+
+	var w_speed := flat(wolf.velocity).length()
+	if w_speed > 0.4:
+		_wolf_phase += delta * 10.5
+		wolf_visual.position.y = absf(sin(_wolf_phase)) * 0.12
+		wolf_visual.rotation.x = sin(_wolf_phase) * 0.05
+	else:
+		wolf_visual.position.y = sin(t * 2.1) * 0.025
+		wolf_visual.rotation.x = lerpf(wolf_visual.rotation.x, 0.0, clampf(delta * 6.0, 0.0, 1.0))
+	if wolf_tail and is_instance_valid(wolf_tail):
+		wolf_tail.rotation.y = sin(t * (7.5 if w_speed > 0.4 else 3.6)) * 0.32
+
 func step_shared_physics(delta: float, cam_override_target := Vector3.INF) -> bool:
+	_animate_living_world(delta)
 	if hitstop_frames > 0:
 		hitstop_frames -= 1
 		return false
@@ -656,7 +864,7 @@ func step_shared_physics(delta: float, cam_override_target := Vector3.INF) -> bo
 	_update_hotbar_visuals()
 
 	if input_locked or inv_open or PrologueState.is_transitioning:
-		bird.position = player.position + Vector3(0.0, 1.45 + sin(Time.get_ticks_msec() * 0.006) * 0.05, 0.0)
+		bird.position = player.position + Vector3(0.0, 1.48 + sin(Time.get_ticks_msec() * 0.007) * 0.07, 0.0)
 		return true
 
 	var h := float(Input.is_physical_key_pressed(KEY_D) or Input.is_physical_key_pressed(KEY_RIGHT)) - float(Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT))
@@ -682,7 +890,9 @@ func step_shared_physics(delta: float, cam_override_target := Vector3.INF) -> bo
 		move_body(player, dir, 5.2 * spd_mult)
 		update_wolf_follow(delta)
 
-	var bird_target := (wolf.position + Vector3(0, 1.56, 0.85)) if PrologueState.mounted else (player.position + Vector3(0, 1.45, 0))
+	var t_bird := Time.get_ticks_msec() * 0.007
+	var bird_hover := Vector3(sin(t_bird * 0.6) * 0.16, 1.48 + absf(sin(t_bird)) * 0.10, cos(t_bird * 0.6) * 0.12)
+	var bird_target := (wolf.position + Vector3(0, 1.60 + absf(sin(t_bird)) * 0.06, 0.85)) if PrologueState.mounted else (player.position + bird_hover)
 	bird.position = bird.position.lerp(bird_target, clampf(delta * 10.0, 0.0, 1.0))
 
 	var target := cam_override_target if cam_override_target != Vector3.INF else feet()
