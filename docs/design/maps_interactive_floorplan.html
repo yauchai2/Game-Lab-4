@@ -142,6 +142,43 @@
 <script>
 const MAPS = [
   {
+    id: "world", name: "🗺 0. 第一幕世界總圖（全 6 區整合）", isWorld: true,
+    bounds: { minX: -100, maxX: 100, minZ: -64, maxZ: 64 },
+    bg: "#2a73a3", land: "#e9d8b4", borderStyle: "海峽、峽谷河道與第一幕全境連通拓撲",
+    desc: "第一幕完整世界結構整合：串聯全 6 大可玩區域與第二幕啟航路線。拖曳區域卡片可重排地理佈局，雙擊任一區域（或點側欄按鈕）即可跳入該區詳細平面圖。",
+    regions: [
+      { x: -64, z: 6, rx: 28, rz: 30, color: "rgba(94,142,102,0.52)", label: "西境：月夜森林與雲丘海岸" },
+      { x: -16, z: 2, rx: 24, rz: 34, color: "rgba(218,162,88,0.56)", label: "中境：秋色古道高原" },
+      { x: 24, z: -26, rx: 28, rz: 20, color: "rgba(68,148,92,0.56)", label: "北境：翡翠天梯古林山脈" },
+      { x: 24, z: 26, rx: 28, rz: 20, color: "rgba(172,146,112,0.58)", label: "南境：舊軍鐘樓要塞高地" },
+      { x: 64, z: 2, rx: 24, rz: 34, color: "rgba(126,184,116,0.55)", label: "東境：沉霧燈塔港灣" },
+      { x: 88, z: -38, rx: 14, rz: 14, color: "rgba(242,174,132,0.58)", label: "遠東：第二幕珊瑚群島" },
+    ],
+    paths: [],
+    streams: [
+      [[-39, -54], [-35, -18], [-32, 16], [-36, 54]],
+      [[46, -54], [48, -14], [46, 20], [50, 54]]
+    ],
+    worldEdges: [
+      { from: "w_clearing", to: "w_town", label: "東木橋", style: "road" },
+      { from: "w_town", to: "w_road", label: "主城東門", style: "road" },
+      { from: "w_road", to: "w_forest", label: "翡翠高地天梯", style: "road" },
+      { from: "w_forest", to: "w_clocktower", label: "古林東階", style: "road" },
+      { from: "w_road", to: "w_clocktower", label: "南線舊軍捷徑（規劃）", style: "alt" },
+      { from: "w_clocktower", to: "w_harbor", label: "海崖港門", style: "road" },
+      { from: "w_harbor", to: "w_act2", label: "⛵ 遠航號啟航", style: "sea" }
+    ],
+    pois: [
+      { id: "w_clearing", targetMapId: "clearing", x: -74, z: 20, kind: "npc", accent: "#4c7a96", name: "1. 營火林緣", sub: "68×50m｜序幕起點・迷路小兵", detail: "月夜森林營火起點、開局 10 秒蓋章教學、湖畔垂釣解鎖分裂印章與西北青苔洞巨像。" },
+      { id: "w_town", targetMapId: "town", x: -52, z: -12, kind: "checkpoint", accent: "#34b8b0", name: "2. 雲丘停戰營地（主城）", sub: "86×62m｜傳送石陣・清泉・工坊", detail: "第一幕環形中心主城：青金傳送石陣 [U]、生命清泉、停戰書記官、紅篷商人、造裝工坊與波波回收。" },
+      { id: "w_road", targetMapId: "road", x: -16, z: 2, kind: "rare", accent: "#e09a3e", name: "3. 雲海古道與高地", sub: "150×96m｜Boss 稻草人・2 傳奇怪", detail: "5 大連通子區域、3 座檢查點、長拱石橋 Boss《稻草人哨長》與 2 隻深處隱藏傳奇怪。" },
+      { id: "w_forest", targetMapId: "forest", x: 24, z: -26, kind: "exit", accent: "#4da866", name: "4. 翡翠天梯古林", sub: "160×104m｜Boss 翡翠樹王・2 傳奇怪", detail: "5 大密林子區域、古林傳送石陣、3 座檢查點、Boss《翡翠樹王》（退休開果茶亭）與 2 隻隱藏傳奇怪。" },
+      { id: "w_clocktower", targetMapId: "clocktower", x: 24, z: 26, kind: "unique", accent: "#8c72b8", name: "5. 舊軍鐘樓哨所", sub: "164×106m｜Boss 鐵鐘騎士・2 傳奇怪", detail: "黃銅巨齒輪要塞、5 大子區域、3 座檢查點、Boss《重裝鐵鐘騎士》（退休開咖啡座）與 2 隻隱藏傳奇怪。" },
+      { id: "w_harbor", targetMapId: "harbor", x: 64, z: 6, kind: "boss", accent: "#d9534f", name: "6. 沉霧燈塔港・終章", sub: "170×110m｜Boss 迷霧大提督・2 傳奇怪", detail: "第一幕終章海港：百年紅白大燈塔散霧點燈、終章 Boss《迷霧大提督》（退休開海鮮燒烤攤）與《遠航號》。" },
+      { id: "w_act2", targetMapId: null, x: 82, z: -38, kind: "exit", accent: "#38a3d1", name: "⛵ 第二幕：珊瑚群島", sub: "下一幕遠航目的地（籌備中）", detail: "完成第一幕終章燈塔點燈後，於東岸碼頭搭乘《遠航號》啟航前往的熱帶珊瑚群島章節。" }
+    ]
+  },
+  {
     id: "clearing", name: "1. 營火林緣 (68m×50m)", bounds: { minX: -36, maxX: 36, minZ: -27, maxZ: 27 },
     bg: "#263c52", land: "#335066", borderStyle: "松林巨石與木柵邊界",
     desc: "序幕起點：月夜森林營火、開局 10 秒迷路小兵蓋退休章、湖畔釣魚碼頭、西北青苔洞與巨像。",
@@ -318,14 +355,24 @@ const MAPS = [
   }
 ];
 
-let curIdx = 2; // Default to CloudhillRoad
+let curIdx = 0; // Default to Act 1 World Map Overview
 let selectedPoi = null;
 let draggingPoi = null;
-const customPins = { clearing: [], town: [], road: [], forest: [], clocktower: [], harbor: [] };
+const customPins = { world: [], clearing: [], town: [], road: [], forest: [], clocktower: [], harbor: [] };
 const canvas = document.getElementById("mapCanvas");
 const ctx = canvas.getContext("2d");
 
 function curMap() { return MAPS[curIdx]; }
+
+function jumpToMapById(mapId) {
+  const idx = MAPS.findIndex(item => item.id === mapId);
+  if (idx >= 0) {
+    curIdx = idx;
+    selectedPoi = null;
+    updateUI();
+    showToast(`已切換至：${MAPS[idx].name}`);
+  }
+}
 
 function worldToCanvas(x, z, m = curMap()) {
   const pad = 42;
@@ -349,6 +396,63 @@ function poiColor(k) {
   return { checkpoint: "#34b8b0", exit: "#98e882", rare: "#f5c03b", unique: "#ff7b3b", boss: "#c92a2a", npc: "#5b9cf0", mob: "#e86b6b" }[k] || "#666";
 }
 
+function drawCompass(cx, cy) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.fillStyle = "rgba(251, 244, 224, 0.9)";
+  ctx.strokeStyle = "#8c6230";
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(0, 0, 26, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = "#c84b31";
+  ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(5, 0); ctx.lineTo(-5, 0); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = "#273244";
+  ctx.beginPath(); ctx.moveTo(0, 20); ctx.lineTo(5, 0); ctx.lineTo(-5, 0); ctx.closePath(); ctx.fill();
+  ctx.font = "bold 11px -apple-system, sans-serif"; ctx.textAlign = "center"; ctx.fillStyle = "#273244";
+  ctx.fillText("N", 0, -29);
+  ctx.restore();
+}
+
+function drawWorldEdge(edge, m) {
+  const a = m.pois.find(p => p.id === edge.from);
+  const b = m.pois.find(p => p.id === edge.to);
+  if (!a || !b) return;
+  const pa = worldToCanvas(a.x, a.z, m);
+  const pb = worldToCanvas(b.x, b.z, m);
+  const mx = (pa.cx + pb.cx) / 2;
+  const my = (pa.cy + pb.cy) / 2;
+  ctx.save();
+  ctx.beginPath();
+  if (edge.style === "sea") {
+    ctx.strokeStyle = "#a8f0ff";
+    ctx.lineWidth = 4;
+    ctx.setLineDash([10, 8]);
+  } else if (edge.style === "alt") {
+    ctx.strokeStyle = "rgba(92, 61, 40, 0.55)";
+    ctx.lineWidth = 3;
+    ctx.setLineDash([6, 6]);
+  } else {
+    ctx.strokeStyle = "#5c3d28";
+    ctx.lineWidth = 5;
+    ctx.setLineDash([14, 7]);
+  }
+  ctx.moveTo(pa.cx, pa.cy);
+  ctx.lineTo(pb.cx, pb.cy);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  if (document.getElementById("lyrLabels").checked && edge.label) {
+    ctx.font = "bold 11px -apple-system, PingFang TC, sans-serif";
+    const tw = ctx.measureText(edge.label).width + 12;
+    ctx.fillStyle = edge.style === "sea" ? "rgba(24, 72, 108, 0.88)" : "rgba(255, 250, 236, 0.92)";
+    ctx.beginPath(); ctx.roundRect(mx - tw / 2, my - 10, tw, 20, 6); ctx.fill();
+    ctx.strokeStyle = edge.style === "sea" ? "#8ae5ff" : "#c89646";
+    ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = edge.style === "sea" ? "#ffffff" : "#4a3219";
+    ctx.textAlign = "center";
+    ctx.fillText(edge.label, mx, my + 4);
+  }
+  ctx.restore();
+}
+
 function draw() {
   const m = curMap();
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -357,10 +461,31 @@ function draw() {
 
   const tl = worldToCanvas(m.bounds.minX + 3, m.bounds.minZ + 3, m);
   const br = worldToCanvas(m.bounds.maxX - 3, m.bounds.maxZ - 3, m);
-  ctx.fillStyle = m.land;
-  ctx.beginPath();
-  ctx.roundRect(tl.cx, tl.cy, br.cx - tl.cx, br.cy - tl.cy, 22);
-  ctx.fill();
+  if (m.isWorld) {
+    // Subtle ocean wave stripes
+    ctx.strokeStyle = "rgba(255,255,255,0.09)";
+    ctx.lineWidth = 2;
+    for (let wy = 40; wy < canvas.height; wy += 44) {
+      ctx.beginPath();
+      for (let wx = 0; wx < canvas.width; wx += 40) {
+        ctx.moveTo(wx, wy); ctx.quadraticCurveTo(wx + 10, wy - 5, wx + 20, wy);
+      }
+      ctx.stroke();
+    }
+    // Stylized Act 1 Mainland Continent
+    const c1 = worldToCanvas(-90, -48, m);
+    const c2 = worldToCanvas(76, 52, m);
+    ctx.fillStyle = m.land;
+    ctx.beginPath();
+    ctx.roundRect(c1.cx, c1.cy, c2.cx - c1.cx, c2.cy - c1.cy, 64);
+    ctx.fill();
+    ctx.strokeStyle = "#c8a876"; ctx.lineWidth = 4; ctx.stroke();
+  } else {
+    ctx.fillStyle = m.land;
+    ctx.beginPath();
+    ctx.roundRect(tl.cx, tl.cy, br.cx - tl.cx, br.cy - tl.cy, 22);
+    ctx.fill();
+  }
 
   if (document.getElementById("lyrSub").checked) {
     for (const r of m.regions) {
@@ -372,7 +497,7 @@ function draw() {
       ctx.ellipse(p.cx, p.cy, sx, sz, 0, 0, Math.PI * 2);
       ctx.fill();
       if (document.getElementById("lyrLabels").checked) {
-        ctx.fillStyle = "rgba(30,38,52,0.78)";
+        ctx.fillStyle = "rgba(30,38,52,0.82)";
         ctx.font = "bold 13px -apple-system, PingFang TC, sans-serif";
         ctx.textAlign = "center";
         ctx.fillText(r.label, p.cx, p.cy - sz + 18);
@@ -383,12 +508,13 @@ function draw() {
   if (document.getElementById("lyrGrid").checked) {
     ctx.strokeStyle = "rgba(255,255,255,0.16)";
     ctx.lineWidth = 1;
-    for (let x = Math.ceil(m.bounds.minX / 10) * 10; x <= m.bounds.maxX; x += 10) {
+    const step = m.isWorld ? 20 : 10;
+    for (let x = Math.ceil(m.bounds.minX / step) * step; x <= m.bounds.maxX; x += step) {
       const p0 = worldToCanvas(x, m.bounds.minZ, m);
       const p1 = worldToCanvas(x, m.bounds.maxZ, m);
       ctx.beginPath(); ctx.moveTo(p0.cx, p0.cy); ctx.lineTo(p1.cx, p1.cy); ctx.stroke();
     }
-    for (let z = Math.ceil(m.bounds.minZ / 10) * 10; z <= m.bounds.maxZ; z += 10) {
+    for (let z = Math.ceil(m.bounds.minZ / step) * step; z <= m.bounds.maxZ; z += step) {
       const p0 = worldToCanvas(m.bounds.minX, z, m);
       const p1 = worldToCanvas(m.bounds.maxX, z, m);
       ctx.beginPath(); ctx.moveTo(p0.cx, p0.cy); ctx.lineTo(p1.cx, p1.cy); ctx.stroke();
@@ -398,7 +524,8 @@ function draw() {
   if (document.getElementById("lyrPath").checked) {
     ctx.lineCap = "round"; ctx.lineJoin = "round";
     for (const s of m.streams) {
-      ctx.strokeStyle = "#4bc5e8"; ctx.lineWidth = 16;
+      ctx.strokeStyle = m.isWorld ? "rgba(75, 185, 224, 0.72)" : "#4bc5e8";
+      ctx.lineWidth = m.isWorld ? 12 : 16;
       ctx.beginPath();
       s.forEach((pt, idx) => { const p = worldToCanvas(pt[0], pt[1], m); idx ? ctx.lineTo(p.cx, p.cy) : ctx.moveTo(p.cx, p.cy); });
       ctx.stroke();
@@ -409,9 +536,12 @@ function draw() {
       path.forEach((pt, idx) => { const p = worldToCanvas(pt[0], pt[1], m); idx ? ctx.lineTo(p.cx, p.cy) : ctx.moveTo(p.cx, p.cy); });
       ctx.stroke();
     }
+    if (m.isWorld && m.worldEdges) {
+      for (const edge of m.worldEdges) drawWorldEdge(edge, m);
+    }
   }
 
-  if (document.getElementById("lyrBorder").checked) {
+  if (document.getElementById("lyrBorder").checked && !m.isWorld) {
     ctx.strokeStyle = "#5c3d28"; ctx.lineWidth = 5; ctx.setLineDash([12, 6]);
     ctx.strokeRect(tl.cx, tl.cy, br.cx - tl.cx, br.cy - tl.cy);
     ctx.setLineDash([]);
@@ -420,24 +550,51 @@ function draw() {
   if (document.getElementById("lyrMobs").checked) {
     for (const poi of m.pois) {
       const p = worldToCanvas(poi.x, poi.z, m);
-      const rad = (poi.kind === "boss" || poi.kind === "unique") ? 13 : (poi.kind === "rare" ? 10 : 8.5);
-      if (selectedPoi === poi) {
-        ctx.fillStyle = "rgba(255,235,120,0.45)";
-        ctx.beginPath(); ctx.arc(p.cx, p.cy, rad + 8, 0, Math.PI * 2); ctx.fill();
-      }
-      ctx.fillStyle = poiColor(poi.kind);
-      ctx.beginPath(); ctx.arc(p.cx, p.cy, rad, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = "#1d2534"; ctx.lineWidth = 2; ctx.stroke();
-      if (document.getElementById("lyrLabels").checked) {
-        ctx.font = "bold 11.5px -apple-system, PingFang TC, sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillStyle = "rgba(255,252,240,0.9)";
-        ctx.fillText(poi.name, p.cx + 1, p.cy - rad - 5);
+      if (m.isWorld) {
+        const cw = 186, ch = 54;
+        const x0 = p.cx - cw / 2, y0 = p.cy - ch / 2;
+        ctx.save();
+        if (selectedPoi === poi) {
+          ctx.fillStyle = "rgba(255, 232, 120, 0.55)";
+          ctx.beginPath(); ctx.roundRect(x0 - 6, y0 - 6, cw + 12, ch + 12, 14); ctx.fill();
+        }
+        ctx.shadowColor = "rgba(20, 28, 42, 0.28)"; ctx.shadowBlur = 10; ctx.shadowOffsetY = 4;
+        ctx.fillStyle = "#fffcf2";
+        ctx.beginPath(); ctx.roundRect(x0, y0, cw, ch, 10); ctx.fill();
+        ctx.shadowColor = "transparent";
+        ctx.strokeStyle = poi.accent || poiColor(poi.kind); ctx.lineWidth = 3; ctx.stroke();
+        ctx.fillStyle = poi.accent || poiColor(poi.kind);
+        ctx.beginPath(); ctx.roundRect(x0, y0, 9, ch, [10, 0, 0, 10]); ctx.fill();
+        ctx.textAlign = "left";
         ctx.fillStyle = "#1d2534";
-        ctx.fillText(poi.name, p.cx, p.cy - rad - 6);
+        ctx.font = "bold 12.5px -apple-system, PingFang TC, sans-serif";
+        ctx.fillText(poi.name, x0 + 16, y0 + 22);
+        ctx.fillStyle = "#566275";
+        ctx.font = "10.5px -apple-system, PingFang TC, sans-serif";
+        ctx.fillText(poi.sub || "", x0 + 16, y0 + 40);
+        ctx.restore();
+      } else {
+        const rad = (poi.kind === "boss" || poi.kind === "unique") ? 13 : (poi.kind === "rare" ? 10 : 8.5);
+        if (selectedPoi === poi) {
+          ctx.fillStyle = "rgba(255,235,120,0.45)";
+          ctx.beginPath(); ctx.arc(p.cx, p.cy, rad + 8, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.fillStyle = poiColor(poi.kind);
+        ctx.beginPath(); ctx.arc(p.cx, p.cy, rad, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = "#1d2534"; ctx.lineWidth = 2; ctx.stroke();
+        if (document.getElementById("lyrLabels").checked) {
+          ctx.font = "bold 11.5px -apple-system, PingFang TC, sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillStyle = "rgba(255,252,240,0.9)";
+          ctx.fillText(poi.name, p.cx + 1, p.cy - rad - 5);
+          ctx.fillStyle = "#1d2534";
+          ctx.fillText(poi.name, p.cx, p.cy - rad - 6);
+        }
       }
     }
   }
+
+  if (m.isWorld) drawCompass(76, 78);
 
   // Custom user design pins
   for (const pin of customPins[m.id]) {
@@ -468,9 +625,21 @@ function updateUI() {
   renderTabs();
   const m = curMap();
   document.getElementById("mapSummary").innerHTML = `<b>${m.name}</b><br/>${m.desc}<br/><span style="color:#78481d">邊界樣式：${m.borderStyle}</span>`;
-  document.getElementById("selectedInfo").innerHTML = selectedPoi
-    ? `<b>${selectedPoi.name}</b><br/>類型：${selectedPoi.kind}<br/>Godot 座標：<code>Vector3(${selectedPoi.x.toFixed(1)}, 0.0, ${selectedPoi.z.toFixed(1)})</code><br/><span style="color:#626d7f">可直接拖曳此圖示微調位置！</span>`
-    : "點擊或拖曳地圖上任何圖示，即可檢視精確 Godot 座標（Vector3）並調整擺位。";
+  const selEl = document.getElementById("selectedInfo");
+  if (selectedPoi) {
+    if (m.isWorld) {
+      selEl.innerHTML = `<b>${selectedPoi.name}</b><br/><span style="color:#78481d">${selectedPoi.sub || ""}</span><br/>${selectedPoi.detail || ""}<br/>世界總圖座標：<code>(${selectedPoi.x.toFixed(1)}, ${selectedPoi.z.toFixed(1)})</code>` +
+        (selectedPoi.targetMapId ? `<div style="margin-top:8px"><button class="action teal" id="btnJumpZone" style="width:100%">🔍 進入此區詳細平面圖</button></div>` : `<div style="margin-top:6px;color:#626d7f">（第二幕籌備中，暫無單區細圖）</div>`);
+      const jumpBtn = document.getElementById("btnJumpZone");
+      if (jumpBtn) jumpBtn.onclick = () => jumpToMapById(selectedPoi.targetMapId);
+    } else {
+      selEl.innerHTML = `<b>${selectedPoi.name}</b><br/>類型：${selectedPoi.kind}<br/>Godot 座標：<code>Vector3(${selectedPoi.x.toFixed(1)}, 0.0, ${selectedPoi.z.toFixed(1)})</code><br/><span style="color:#626d7f">可直接拖曳此圖示微調位置！</span>`;
+    }
+  } else {
+    selEl.innerHTML = m.isWorld
+      ? "點擊任一區域卡片可檢視摘要與連通關係，<b>雙擊卡片</b>可直接進入該區詳細平面圖；拖曳卡片可調整世界拓撲佈局。"
+      : "點擊或拖曳地圖上任何圖示，即可檢視精確 Godot 座標（Vector3）並調整擺位。";
+  }
   const pl = document.getElementById("pinList");
   const pins = customPins[m.id];
   if (!pins.length) {
@@ -500,14 +669,24 @@ function getCanvasPt(evt) {
   return { cx: (evt.clientX - rect.left) * (canvas.width / rect.width), cy: (evt.clientY - rect.top) * (canvas.height / rect.height) };
 }
 
+function hitTestPoi(cx, cy, m) {
+  for (const poi of m.pois) {
+    const p = worldToCanvas(poi.x, poi.z, m);
+    if (m.isWorld) {
+      if (Math.abs(p.cx - cx) <= 95 && Math.abs(p.cy - cy) <= 29) return poi;
+    } else {
+      if (Math.hypot(p.cx - cx, p.cy - cy) < 16) return poi;
+    }
+  }
+  return null;
+}
+
 canvas.addEventListener("mousedown", (evt) => {
   const { cx, cy } = getCanvasPt(evt);
   const m = curMap();
-  for (const poi of m.pois) {
-    const p = worldToCanvas(poi.x, poi.z, m);
-    if (Math.hypot(p.cx - cx, p.cy - cy) < 16) {
-      selectedPoi = poi; draggingPoi = poi; updateUI(); return;
-    }
+  const hit = hitTestPoi(cx, cy, m);
+  if (hit) {
+    selectedPoi = hit; draggingPoi = hit; updateUI(); return;
   }
   const w = canvasToWorld(cx, cy, m);
   const note = prompt(`在座標 (${w.x}, ${w.z}) 新增設計備註（例如：新增傳奇怪／加一條小橋）：`);
@@ -517,10 +696,21 @@ canvas.addEventListener("mousedown", (evt) => {
   }
 });
 
+canvas.addEventListener("dblclick", (evt) => {
+  const m = curMap();
+  if (!m.isWorld) return;
+  const { cx, cy } = getCanvasPt(evt);
+  const hit = hitTestPoi(cx, cy, m);
+  if (hit && hit.targetMapId) jumpToMapById(hit.targetMapId);
+});
+
 canvas.addEventListener("mousemove", (evt) => {
   const { cx, cy } = getCanvasPt(evt);
-  const w = canvasToWorld(cx, cy);
-  document.getElementById("coordHud").textContent = `游標座標：Vector3(${w.x.toFixed(1)}, 0.0, ${w.z.toFixed(1)}) ｜ 拖曳節點可微調，點擊空白可加設計備註`;
+  const m = curMap();
+  const w = canvasToWorld(cx, cy, m);
+  document.getElementById("coordHud").textContent = m.isWorld
+    ? `世界總圖座標：(${w.x.toFixed(1)}, ${w.z.toFixed(1)}) ｜ 拖曳區域卡片可重排拓撲，雙擊卡片直接進入該區平面圖`
+    : `游標座標：Vector3(${w.x.toFixed(1)}, 0.0, ${w.z.toFixed(1)}) ｜ 拖曳節點可微調，點擊空白可加設計備註`;
   if (draggingPoi) {
     draggingPoi.x = w.x; draggingPoi.z = w.z; updateUI();
   }
@@ -531,7 +721,13 @@ document.querySelectorAll(".layers input").forEach(cb => cb.addEventListener("ch
 
 document.getElementById("btnCopySpec").onclick = () => {
   const m = curMap();
-  const lines = [
+  const lines = m.isWorld ? [
+    `### 第一幕世界總圖拓撲與區域結構整合：${m.name}`,
+    `- 區域節點與相對座標：`,
+    ...m.pois.map(p => `  - ${p.name} (${p.sub}): (${p.x.toFixed(1)}, ${p.z.toFixed(1)})`),
+    `- 區域連通路線：`,
+    ...m.worldEdges.map(e => `  - ${e.from} ↔ ${e.to} [${e.style}]: ${e.label}`),
+  ] : [
     `### 地圖設計調整規格：${m.name}`,
     `- 邊界阻擋樣式：${m.borderStyle}`,
     `- 主要地標與怪物座標：`,
@@ -539,7 +735,7 @@ document.getElementById("btnCopySpec").onclick = () => {
   ];
   if (customPins[m.id].length) {
     lines.push(`- 新增設計備註：`);
-    customPins[m.id].forEach(pin => lines.push(`  - 📌 ${pin.note} @ Vector3(${pin.x.toFixed(1)}, 0.0, ${pin.z.toFixed(1)})`));
+    customPins[m.id].forEach(pin => lines.push(`  - 📌 ${pin.note} @ (${pin.x.toFixed(1)}, ${pin.z.toFixed(1)})`));
   }
   navigator.clipboard.writeText(lines.join("\n"));
   showToast("已複製設計修改規格！可直接貼回給 Gemini 套用至 Godot");
@@ -548,7 +744,9 @@ document.getElementById("btnCopySpec").onclick = () => {
 document.getElementById("btnCopyPrompt").onclick = () => {
   const m = curMap();
   const regStr = m.regions.map(r => r.label).join(", ");
-  const promptText = `Top-down 2.5D perspective fixed oblique RPG level concept map of "${m.name}" for "After the Ceasefire", painted in @amelicart matte gouache dry-brush art style with @shoejaat miniature diorama charm. Layout features interconnected zones: ${regStr}. Natural edge borders: ${m.borderStyle}. Clear readable dirt trails, sparkling water streams, cozy glowing waypoints, golden elite glades, and deep hidden boss arena. Warm sunlight, soft lavender-purple shadows, minimalist clean composition, no UI clutter.`;
+  const promptText = m.isWorld
+    ? `Illustrated fantasy RPG Act 1 World Map for "After the Ceasefire", painted in @amelicart matte gouache dry-brush art style with @shoejaat miniature diorama landmarks on warm parchment ocean. Shows 6 interconnected regions linked by hand-drawn dashed ink travel roads: Moonlit Campfire Clearing, Circular Cloudhill Ceasefire Encampment Hub Town, Autumn Cloudhill Road Stone Arch Bridge, Emerald Forest Canopy Stairs, Brass Clocktower Fortress Outpost, and Eastern Misty Lighthouse Harbor with a red-and-white grand lighthouse and sailing ship bound for Coral Archipelago. Vintage compass rose, sparkling rivers, soft lavender-purple shadows, cozy storybook warmth, clean uncluttered composition, no text labels.`
+    : `Top-down 2.5D perspective fixed oblique RPG level concept map of "${m.name}" for "After the Ceasefire", painted in @amelicart matte gouache dry-brush art style with @shoejaat miniature diorama charm. Layout features interconnected zones: ${regStr}. Natural edge borders: ${m.borderStyle}. Clear readable dirt trails, sparkling water streams, cozy glowing waypoints, golden elite glades, and deep hidden boss arena. Warm sunlight, soft lavender-purple shadows, minimalist clean composition, no UI clutter.`;
   navigator.clipboard.writeText(promptText);
   showToast("已複製 AI 生圖 Prompt！可直接貼到生圖工具使用");
 };
