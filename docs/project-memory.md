@@ -27,11 +27,13 @@
   3. [水粉植栽與全域風場指南](art/水粉植栽與全域風場指南.md)（Blender 4.x 腳本、Godot 4.6 微風草卡／葉卡與 Alpha Mask 指令庫）
   4. [畫風分析與資產製作手冊](art/畫風分析與資產製作手冊.md) · [style-spec.json](art/style-spec.json) · [遊戲風格參考圖索引](art/遊戲風格參考圖索引.md)
 
-## 現行可玩灰盒原型與下一階段重構
+## 現行可玩灰盒原型：PoE 2 式三獨立分區地圖（F5 直接啟動）
 
-- **現行 F5 主入口：** [PrologueCloudhill.tscn](../game/prologue/PrologueCloudhill.tscn)（目前為連續單場景四區灰盒，已實作夜轉晨、`-50¢` 購劍、枯木撞碎、窄縫開石門、稻草人哨長 60 FPS 整數幀 Hitstop 首戰、蓋章退休變茶攤與《彈簧試驗鞍座》彈飛下劈）。
-- **下一步重構目標：** 依最新決議將單場景灰盒拆分為三張 PoE 2 式獨立 `.tscn` 場景（`CampfireClearing.tscn`、`CloudhillTown.tscn`、`CloudhillRoad.tscn`），加入自然傳送點、0.4 秒淡出轉場與小鎮完整 NPC（老鐵儲物箱、波波史萊姆、信使鳥驛站）。
-- 既有舊版技術灰盒 [game/harbor/Harbor.tscn](../game/harbor/Harbor.tscn) 仍保留，可按 F6 單獨執行。
+- **主入口與跨圖狀態：** `game/project.godot` 已註冊 `PrologueState` Autoload（[PrologueState.gd](../game/prologue/PrologueState.gd)）與共用 2.5D 正交斜俯基底類別（[PrologueBase.gd](../game/prologue/PrologueBase.gd)），按 F5 直接啟動：
+  1. **地圖一：林間營火空地**（[CampfireClearing.tscn](../game/prologue/CampfireClearing.tscn)）— 純深藍夜林、青苔骷髏洞、倒影夜溪、實機標題畫面、東側林徑自然傳送點。
+  2. **地圖二：雲丘小鎮 Hub**（[CloudhillTown.tscn](../game/prologue/CloudhillTown.tscn)）— `36m × 24m` 多人尺度廣場、骨盔哥布林 `-50¢` 開放式清倉行、可進入藍門簾酒館大廳入口、中央信使鳥驛站（Waypoint）、南側雙飲水木槽＋雙試刀木樁＋儲物箱（Stash）＋清潔史萊姆波波（移速 +15% Buff）＋東側出發拱門傳送點。
+  3. **地圖三：雲海古道與石橋**（[CloudhillRoad.tscn](../game/prologue/CloudhillRoad.tscn)）— 枯木路障 `Q` 撞碎、北側 1.4m 窄縫拉桿／南側 3.6m 巨狼雙扇木門、稻草人哨長首戰（60 FPS 整數幀 Hitstop、破防、胖黃鳥蓋「正式退休」紅章、橋頭即時展開茶攤）、《彈簧試驗鞍座》開箱試跳、雲海瞭望台拉遠鏡頭與驛站快傳回鎮、東側第一章青苔石階。
+- 驗證狀態：已完成 GDScript 4.6 嚴格型別與跨場景切換靜態檢查；實機 F5 試玩手感待創作總監於 Godot 4.6.3 驗收。舊港城灰盒 [game/harbor/Harbor.tscn](../game/harbor/Harbor.tscn) 仍保留可供 F6 對照。
 
 ## 可跨區沿用之既有 3D 資產庫
 

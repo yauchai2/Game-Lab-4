@@ -1,12 +1,14 @@
 config_version=5
 [application]
-config/name="補簽遠行 · 頭五分鐘灰盒原型"
-run/main_scene="res://prologue/PrologueCloudhill.tscn"
+config/name="補簽遠行 · 頭五分鐘分區灰盒原型"
+run/main_scene="res://prologue/CampfireClearing.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
+[autoload]
+PrologueState="*res://prologue/PrologueState.gd"
 [display]
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
 [rendering]
 renderer/rendering_method="gl_compatibility"
-environment/defaults/default_clear_color=Color(0.08, 0.11, 0.20, 1)
+environment/defaults/default_clear_color=Color(0.07, 0.11, 0.20, 1)

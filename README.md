@@ -16,17 +16,17 @@
 - **`game/`：** Godot 4.6.3 遊戲專案本體。
 - **`美術參考/`：** 原始參考圖片與既有 3D／Tripo 資產庫（[資產交接清單](美術參考/西岸港城/README.md)）。
 
-## 本機試玩（現行頭五分鐘灰盒原型）
+## 本機試玩（最新 PoE 2 式三分區灰盒原型）
 
-用 **Godot 4.6.3** 開啟 [game/project.godot](game/project.godot)，按 **F5** 即可啟動頭五分鐘序章灰盒 [game/prologue/PrologueCloudhill.tscn](game/prologue/PrologueCloudhill.tscn)（舊港城技術灰盒 [game/harbor/Harbor.tscn](game/harbor/Harbor.tscn) 仍保留，可按 F6 單獨執行）。
+用 **Godot 4.6.3** 開啟 [game/project.godot](game/project.godot)，按 **F5** 即可從**地圖一：林間營火空地** [CampfireClearing.tscn](game/prologue/CampfireClearing.tscn) 出發，經自然傳送點依序進入**地圖二：雲丘小鎮 Hub** [CloudhillTown.tscn](game/prologue/CloudhillTown.tscn) 與**地圖三：雲海古道與石橋** [CloudhillRoad.tscn](game/prologue/CloudhillRoad.tscn)（舊港城技術灰盒 [game/harbor/Harbor.tscn](game/harbor/Harbor.tscn) 仍保留，可按 F6 單獨執行）。
 
-| 按鍵 | 頭五分鐘灰盒操作 |
+| 按鍵 | 頭五分鐘三分區灰盒操作 |
 | --- | --- |
 | WASD 或方向鍵 | 移動（標題畫面按任意鍵／點擊開始） |
-| E | 互動（哥布林購劍／開閘拉桿／蓋退休章／開寶箱／懸賞板） |
-| F | 上下騎（裝備《彈簧試驗鞍座》後下騎可彈飛高空暴擊下劈） |
+| E | 互動與自然傳送（進出三張地圖／購劍／拍史萊姆／開閘拉桿／蓋退休章／開寶箱／驛站快傳） |
+| F | 上下騎（裝備《彈簧試驗鞍座》後下騎可彈飛高空 200% 暴擊下劈） |
 | Q | 騎乘撞碎枯木路障／首領紅光蓄力時指揮巨狼破防（Stagger） |
-| 滑鼠左鍵 / J / R | 揮劍攻擊 / 重新開始 |
+| 滑鼠左鍵 / J / R | 揮劍攻擊（可砍小鎮試刀木樁與首領）／重置整段序章 |
 
 ## AI 代理與協作者
 
