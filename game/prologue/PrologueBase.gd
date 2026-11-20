@@ -79,6 +79,8 @@ var sway_items: Array[Dictionary] = []
 var float_motes: Array[Dictionary] = []
 var living_npcs: Array[Dictionary] = []
 var bouncing_coins: Array[Dictionary] = []
+var water_ripples: Array[Dictionary] = []
+var cloud_puffs: Array[Dictionary] = []
 var _walk_phase := 0.0
 var _wolf_phase := 0.0
 
@@ -303,6 +305,105 @@ func spawn_ambient_motes(center: Vector3, span: Vector3, count: int, col: Color,
 		)
 		var mote := sphere(self, base_p, Vector3.ONE * size, col, true)
 		float_motes.append({"node": mote, "base": base_p, "phase": randf_range(0.0, TAU), "speed": randf_range(0.9, 1.9), "amp": randf_range(0.25, 0.55)})
+
+# --- @shoejaat (Little Joy) Style Nature, Water, Cliff & Light Builders ---
+func curved_stream(points: Array[Vector3], width: float, water_col := Color("#3496e8"), foam_col := Color("#d8f6ff"), y_level := -0.18) -> void:
+	if points.size() < 2:
+		return
+	for i in range(points.size() - 1):
+		var a := points[i]
+		var b := points[i + 1]
+		var dist := a.distance_to(b)
+		var steps := maxi(4, int(ceil(dist / (width * 0.35))))
+		for s in range(steps + 1):
+			var t := float(s) / float(steps)
+			var p := a.lerp(b, t)
+			var r := width * (0.52 + sin(float(i * 5 + s * 3)) * 0.08)
+			var rim := cylinder(self, Vector3(p.x, y_level - 0.03, p.z), r * 1.18, r * 1.22, 0.04, foam_col, true)
+			rim.scale.z = 0.88
+			var wat := cylinder(self, Vector3(p.x, y_level, p.z), r, r * 1.04, 0.05, water_col, true)
+			wat.scale.z = 0.86
+			if s % 3 == 0:
+				var rip := cylinder(self, Vector3(p.x, y_level + 0.035, p.z), r * 0.38, r * 0.38, 0.012, foam_col, true)
+				water_ripples.append({"node": rip, "phase": float(i * 7 + s) * 0.65})
+
+func waterfall_cascade(pos: Vector3, width := 2.0, height := 3.2, rot_deg := 0.0, water_col := Color("#52b8ff"), foam_col := Color("#eefbff")) -> Node3D:
+	var root := Node3D.new()
+	root.position = pos
+	root.rotation_degrees.y = rot_deg
+	add_child(root)
+	boulder_cluster(pos + Vector3(-width * 0.72, 0.0, -0.3), 1.15, STONE, true, true, 18.0)
+	boulder_cluster(pos + Vector3(width * 0.72, 0.0, -0.3), 1.15, STONE_LIGHT, true, true, -24.0)
+	for ri in range(3):
+		var ox := (-0.32 + float(ri) * 0.32) * width
+		var rib := box(root, Vector3(ox, height * 0.45, 0.0), Vector3(width * 0.32, height, 0.24), water_col if ri != 1 else foam_col, false, true)
+		rib.rotation_degrees.x = 12.0
+		sway_items.append({"node": rib, "base_rot": rib.rotation, "amp": 0.03, "speed": 4.2, "phase": float(ri)})
+	var splash := cylinder(root, Vector3(0, 0.06, 0.65), width * 0.62, width * 0.72, 0.14, foam_col, true)
+	water_ripples.append({"node": splash, "phase": pos.x})
+	return root
+
+func wooden_footbridge(pos: Vector3, length := 3.6, width := 1.8, rot_deg := 0.0, arch_h := 0.38) -> Node3D:
+	var root := Node3D.new()
+	root.position = pos
+	root.rotation_degrees.y = rot_deg
+	add_child(root)
+	var planks := 7
+	for i in range(planks):
+		var t := (float(i) / float(planks - 1)) - 0.5
+		var px := t * length
+		var py := cos(t * PI) * arch_h + 0.16
+		var pl := box(root, Vector3(px, py, 0.0), Vector3(length / float(planks) * 0.86, 0.14, width), TIMBER_LIGHT if i % 2 == 0 else BOARDWALK)
+		pl.rotation_degrees.z = -sin(t * PI) * 14.0
+	for sx in [-length * 0.44, 0.0, length * 0.44]:
+		var py_p := cos((sx / length) * PI) * arch_h + 0.55
+		for sz in [-width * 0.48, width * 0.48]:
+			cylinder(root, Vector3(sx, py_p, sz), 0.08, 0.10, 0.95, TIMBER)
+	for sz in [-width * 0.48, width * 0.48]:
+		box(root, Vector3(0, arch_h + 0.82, sz), Vector3(length * 0.92, 0.09, 0.09), TIMBER_LIGHT)
+	return root
+
+func cliff_outcrop(pos: Vector3, rx := 2.6, ry := 2.2, rz := 2.4, rock_col := STONE_LIGHT, top_col := MEADOW_GREEN, rot_deg := 0.0) -> Node3D:
+	var root := Node3D.new()
+	root.position = pos
+	root.rotation_degrees.y = rot_deg
+	add_child(root)
+	cylinder(root, Vector3(0, ry * 0.5, 0), rx * 0.92, rx, ry, rock_col)
+	sphere(root, Vector3(rx * 0.45, ry * 0.42, rz * 0.35), Vector3(rx * 0.85, ry * 0.92, rz * 0.85), rock_col.darkened(0.08))
+	organic_mound(root, Vector3(0, ry + 0.08, 0), rx * 0.98, rz * 0.98, 0.36, top_col, 8.0)
+	var body := StaticBody3D.new()
+	root.add_child(body)
+	var sh := CylinderShape3D.new()
+	sh.radius = maxf(rx, rz) * 0.88
+	sh.height = ry
+	add_shape(body, sh, Vector3(0, ry * 0.5, 0))
+	return root
+
+func sunbeam_shaft(pos: Vector3, width := 2.8, length := 18.0, tint := Color(1.0, 0.94, 0.68, 0.11)) -> void:
+	var beam := MeshInstance3D.new()
+	var m := BoxMesh.new()
+	m.size = Vector3(width, length, 0.25)
+	beam.mesh = m
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = tint
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	beam.material_override = mat
+	beam.position = pos + Vector3(0, length * 0.35, 0)
+	beam.rotation_degrees = Vector3(18.0, -18.0, 28.0)
+	add_child(beam)
+
+func fluffy_cloud(pos: Vector3, scl := 1.0, drift_amp := 1.6, col := CLOUD_WHITE) -> Node3D:
+	var root := Node3D.new()
+	root.position = pos
+	root.scale = Vector3.ONE * scl
+	add_child(root)
+	sphere(root, Vector3(0.0, 0.0, 0.0), Vector3(3.4, 1.7, 2.6), col, true)
+	sphere(root, Vector3(-1.3, -0.2, 0.3), Vector3(2.2, 1.3, 2.0), col, true)
+	sphere(root, Vector3(1.4, -0.15, -0.2), Vector3(2.4, 1.35, 2.1), col, true)
+	cloud_puffs.append({"node": root, "base": pos, "amp": drift_amp, "phase": pos.x * 0.3 + pos.z * 0.2})
+	return root
 
 func register_living_npc(node: Node3D, base_y := 0.0, bob_amp := 0.06, speed := 3.2) -> void:
 	living_npcs.append({"node": node, "base_y": base_y, "amp": bob_amp, "speed": speed, "phase": randf_range(0.0, TAU)})
@@ -909,6 +1010,16 @@ func _animate_living_world(delta: float) -> void:
 		if is_instance_valid(npc["node"]):
 			var nn: Node3D = npc["node"]
 			nn.position.y = float(npc["base_y"]) + absf(sin(t * float(npc["speed"]) + float(npc["phase"]))) * float(npc["amp"])
+	for r in water_ripples:
+		if is_instance_valid(r["node"]):
+			var rn: Node3D = r["node"]
+			var s := 0.85 + absf(sin(t * 1.9 + float(r["phase"]))) * 0.45
+			rn.scale = Vector3(s, 1.0, s)
+	for cp in cloud_puffs:
+		if is_instance_valid(cp["node"]):
+			var cn: Node3D = cp["node"]
+			var bp: Vector3 = cp["base"]
+			cn.position.x = bp.x + sin(t * 0.28 + float(cp["phase"])) * float(cp["amp"])
 
 	# Magnetic bouncing coins physics (super satisfying ARPG pickup!)
 	for i in range(bouncing_coins.size() - 1, -1, -1):

@@ -1,9 +1,9 @@
 extends "res://prologue/PrologueBase.gd"
 
 const CAMPFIRE_POS := Vector3(0.0, 0.0, 0.0)
-const LOG_JOURNAL_POS := Vector3(2.1, 0.0, -0.4)
-const SKULL_CAVE_POS := Vector3(-4.6, 0.0, -2.0)
-const EXIT_TO_TOWN := Vector3(9.4, 0.0, -0.6)
+const LOG_JOURNAL_POS := Vector3(2.2, 0.0, -0.5)
+const SKULL_CAVE_POS := Vector3(-7.6, 0.0, -4.4)
+const EXIT_TO_TOWN := Vector3(16.5, 0.0, -1.2)
 
 var campfire_flame: MeshInstance3D
 var campfire_smoke: MeshInstance3D
@@ -24,9 +24,9 @@ var camp_loot_item: Dictionary = {}
 func _ready() -> void:
 	can_attack = true
 	_build_map()
-	var spawn := Vector3(7.4, 0.0, -0.6) if PrologueState.spawn_tag == "from_town" else Vector3(0.75, 0.0, 0.45)
+	var spawn := Vector3(14.0, 0.0, -1.2) if PrologueState.spawn_tag == "from_town" else Vector3(0.8, 0.0, 0.5)
 	setup_core_trio(spawn)
-	setup_camera_and_lighting(13.8, Color("#0f182c"), Color("#3e5d94"), 0.62, Color("#6e94d4"), 0.40)
+	setup_camera_and_lighting(15.2, Color("#0e172a"), Color("#3e5d94"), 0.64, Color("#6e94d4"), 0.42)
 	setup_hud()
 
 	if not PrologueState.has_started:
@@ -36,33 +36,52 @@ func _ready() -> void:
 	_update_ui()
 
 func _build_map() -> void:
-	# Organic layered crescent lakeside glade (pure @amelicart painting, minimal text clutter!)
-	organic_mound(self, Vector3(-0.5, -0.52, -0.4), 12.2, 7.6, 1.04, NIGHT_GRASS, -6.0)
-	organic_mound(self, Vector3(6.8, -0.50, -0.7), 6.2, 4.4, 1.0, NIGHT_GRASS_LIGHT, 12.0)
-	organic_mound(self, Vector3(-5.2, -0.48, -2.2), 5.6, 4.2, 1.0, NIGHT_GRASS_LIGHT, -18.0)
+	# Expanded 38m x 24m Forest Camp Diorama (Little Joy x @amelicart)
+	organic_mound(self, Vector3(-1.0, -0.54, -0.8), 18.5, 11.8, 1.08, NIGHT_GRASS, -5.0)
+	organic_mound(self, Vector3(11.8, -0.50, -1.2), 9.2, 7.2, 1.0, NIGHT_GRASS_LIGHT, 14.0)
+	organic_mound(self, Vector3(-9.5, -0.48, -3.5), 8.8, 6.8, 1.0, NIGHT_GRASS_LIGHT, -16.0)
+	organic_mound(self, Vector3(6.5, -0.49, 6.2), 7.8, 5.4, 1.0, NIGHT_GRASS, 10.0)
 
-	organic_mound(self, Vector3(0.1, 0.008, -0.05), 4.4, 3.8, 0.03, Color("#c98f55"), 10.0)
-	organic_mound(self, Vector3(0.0, 0.016, 0.0), 2.7, 2.4, 0.025, Color("#db9e5d"), -14.0)
+	# Warm campfire clearing & picnic rug
+	organic_mound(self, Vector3(0.1, 0.008, -0.05), 4.8, 4.1, 0.03, Color("#c98f55"), 10.0)
+	organic_mound(self, Vector3(0.0, 0.016, 0.0), 2.9, 2.5, 0.025, Color("#db9e5d"), -14.0)
 	var rug := box(self, Vector3(1.55, 0.025, 0.65), Vector3(1.55, 0.03, 1.05), Color("#c95a4b"))
 	rug.rotation_degrees.y = -24.0
 	var rug_trim := box(self, Vector3(1.55, 0.028, 0.65), Vector3(1.25, 0.03, 0.78), Color("#f5d69b"))
 	rug_trim.rotation_degrees.y = -24.0
 
+	# Winding trail crossing wooden footbridge over the forest stream to Town!
 	curved_path([
 		Vector3(2.2, 0.0, -0.2),
-		Vector3(4.5, 0.0, 0.55),
-		Vector3(7.0, 0.0, -0.25),
-		Vector3(9.8, 0.0, -0.65)
-	], 2.1, TRAIL, TRAIL_STONE)
+		Vector3(5.6, 0.0, 0.6),
+		Vector3(9.4, 0.0, -0.4),
+		Vector3(13.2, 0.0, -1.0),
+		EXIT_TO_TOWN
+	], 2.2, TRAIL, TRAIL_STONE)
+	curved_path([Vector3(-2.5, 0.0, -1.4), Vector3(-5.2, 0.0, -3.0), SKULL_CAVE_POS], 1.7, TRAIL_STONE)
 
-	organic_mound(self, Vector3(0.0, -0.32, 6.2), 14.5, 4.2, 0.45, Color("#212046"), 4.0, true)
-	organic_mound(self, Vector3(-0.1, -0.09, 5.1), 1.3, 2.2, 0.02, Color("#de783a"), -5.0, true)
-	organic_mound(self, Vector3(0.15, -0.08, 6.4), 0.85, 1.1, 0.02, Color("#f29d4b"), 8.0, true)
+	# Winding turquoise forest stream with white ripple rings + waterfall + wooden footbridge!
+	curved_stream([
+		Vector3(-15.5, 0.0, 4.2),
+		Vector3(-9.5, 0.0, 6.8),
+		Vector3(-2.0, 0.0, 8.0),
+		Vector3(5.5, 0.0, 6.4),
+		Vector3(9.2, 0.0, 1.2),
+		Vector3(11.4, 0.0, -6.5)
+	], 3.1, Color("#296bb0"), Color("#b8ecff"), -0.14)
+	waterfall_cascade(Vector3(-12.5, 0.0, 4.6), 2.4, 3.6, 35.0, Color("#4ea4f5"), Color("#dcf6ff"))
+	wooden_footbridge(Vector3(9.0, 0.0, -0.2), 4.2, 2.2, 12.0, 0.44)
+	wooden_footbridge(Vector3(3.2, 0.0, 7.1), 3.6, 1.9, 95.0, 0.36)
 
-	invisible_boundary_wall(Vector3(-10.8, 0.8, 0.0), Vector3(0.8, 1.8, 14.0))
-	invisible_boundary_wall(Vector3(11.4, 0.8, 0.0), Vector3(0.8, 1.8, 14.0))
-	invisible_boundary_wall(Vector3(0.0, 0.8, -6.2), Vector3(23.0, 1.8, 0.8))
-	invisible_boundary_wall(Vector3(0.0, 0.8, 4.2), Vector3(23.0, 1.8, 0.8))
+	# Cliff outcrops & dense perimeter pine/rounded tree grove
+	cliff_outcrop(Vector3(-14.5, 0.0, 3.2), 2.8, 2.4, 2.6, STONE, NIGHT_GRASS_LIGHT, 20.0)
+	cliff_outcrop(Vector3(-13.8, 0.0, -7.2), 3.2, 2.6, 2.8, STONE_LIGHT, NIGHT_GRASS, -15.0)
+	cliff_outcrop(Vector3(14.5, 0.0, -6.8), 2.9, 2.2, 2.4, STONE, NIGHT_GRASS_LIGHT, 25.0)
+
+	invisible_boundary_wall(Vector3(-18.2, 0.8, 0.0), Vector3(0.8, 1.8, 24.0))
+	invisible_boundary_wall(Vector3(18.6, 0.8, 0.0), Vector3(0.8, 1.8, 24.0))
+	invisible_boundary_wall(Vector3(0.0, 0.8, -10.8), Vector3(38.0, 1.8, 0.8))
+	invisible_boundary_wall(Vector3(0.0, 0.8, 10.6), Vector3(38.0, 1.8, 0.8))
 
 	for i in range(9):
 		var ang := i * TAU / 9.0 + 0.15
@@ -77,8 +96,8 @@ func _build_map() -> void:
 	sphere(self, CAMPFIRE_POS + Vector3(0, 0.92, 0), Vector3(0.42, 0.34, 0.42), Color("#3b4454"))
 	var light := OmniLight3D.new()
 	light.light_color = Color("#ffa047")
-	light.light_energy = 5.2
-	light.omni_range = 12.5
+	light.light_energy = 5.4
+	light.omni_range = 14.0
 	light.position = CAMPFIRE_POS + Vector3(0, 1.35, 0)
 	add_child(light)
 
@@ -87,10 +106,11 @@ func _build_map() -> void:
 	var journal := box(self, LOG_JOURNAL_POS + Vector3(-0.05, 0.56, -0.05), Vector3(0.46, 0.12, 0.34), Color("#e67ca8"))
 	journal.rotation_degrees.y = -18.0
 	lantern_post(Vector3(-2.1, 0.0, 1.4), 2.3, FIRE_ORANGE, 22.0)
+	lantern_post(Vector3(12.8, 0.0, -2.5), 2.4, FIRE_ORANGE, -15.0)
 
-	# Mossy Ancient Skull Cavern (clean visual landmark, no cluttered long text!)
+	# Mossy Ancient Skull Cavern nestled into NW cliff glade
 	var skull := Node3D.new()
-	skull.position = Vector3(-5.0, 0.0, -3.5)
+	skull.position = SKULL_CAVE_POS + Vector3(-0.6, 0.0, -1.6)
 	skull.rotation_degrees.y = 26.0
 	add_child(skull)
 	sphere(skull, Vector3(0, 1.85, 0), Vector3(3.5, 2.9, 2.7), STONE_LIGHT)
@@ -105,9 +125,9 @@ func _build_map() -> void:
 	if PrologueState.boss_retired:
 		cylinder(self, LOG_JOURNAL_POS + Vector3(-0.45, 0.25, 0.65), 0.2, 0.24, 0.35, Color("#6ec25a"))
 
-	# 10-Second Visual Hook: Lost Overtime Grunt harassing the campfire!
+	# 10-Second Visual Hook: Lost Overtime Grunt right beside campfire!
 	lost_grunt = Node3D.new()
-	lost_grunt.position = Vector3(3.6, 0.0, 0.8) if not PrologueState.campfire_dish.is_empty() else Vector3(3.6, 0.0, 0.8)
+	lost_grunt.position = Vector3(3.6, 0.0, 0.8)
 	add_child(lost_grunt)
 	cylinder(lost_grunt, Vector3(0, 0.55, 0), 0.34, 0.42, 0.95, Color("#76879c"))
 	sphere(lost_grunt, Vector3(0, 1.28, 0), Vector3(0.56, 0.54, 0.56), Color("#a6b6c9"))
@@ -127,31 +147,40 @@ func _build_map() -> void:
 		grunt_bubble.modulate = Color("#b8ffd0")
 
 	for bp in [
-		[Vector3(-8.4, 0, -2.5), 1.3, 18.0], [Vector3(-8.8, 0, 1.8), 1.1, -24.0],
-		[Vector3(-2.4, 0, -5.2), 1.2, 35.0], [Vector3(4.2, 0, -4.6), 1.0, -15.0],
-		[Vector3(6.8, 0, 3.2), 1.05, 42.0]
+		[Vector3(-12.5, 0, -2.5), 1.3, 18.0], [Vector3(-10.8, 0, 1.8), 1.1, -24.0],
+		[Vector3(-2.4, 0, -7.2), 1.2, 35.0], [Vector3(4.6, 0, -6.4), 1.1, -15.0],
+		[Vector3(13.8, 0, 4.2), 1.2, 42.0]
 	]:
 		boulder_cluster(bp[0], float(bp[1]), STONE, true, true, float(bp[2]))
 
 	for tp in [
-		[Vector3(-9.6, 0, -4.6), 1.35, PINE_DARK], [Vector3(-1.4, 0, -5.6), 1.2, PINE_DARK],
-		[Vector3(2.8, 0, -5.0), 1.15, PINE_DARK], [Vector3(6.6, 0, -4.5), 1.25, PINE_TEAL],
-		[Vector3(-9.4, 0, 3.1), 1.15, PINE_DARK], [Vector3(8.4, 0, 2.9), 1.2, PINE_DARK]
+		[Vector3(-15.8, 0, -5.2), 1.4, PINE_DARK], [Vector3(-11.4, 0, -8.5), 1.3, PINE_DARK],
+		[Vector3(-4.2, 0, -8.8), 1.25, PINE_TEAL], [Vector3(2.2, 0, -7.8), 1.2, PINE_DARK],
+		[Vector3(7.6, 0, -7.4), 1.35, PINE_TEAL], [Vector3(15.2, 0, -5.8), 1.25, PINE_DARK],
+		[Vector3(-15.2, 0, 8.5), 1.3, PINE_DARK], [Vector3(-6.2, 0, 9.2), 1.2, PINE_TEAL],
+		[Vector3(6.8, 0, 8.8), 1.3, PINE_DARK], [Vector3(15.6, 0, 6.2), 1.25, PINE_TEAL]
 	]:
 		pine_tree(tp[0], float(tp[1]), tp[2])
-	cozy_tree(Vector3(-6.2, 0, 2.7), 0.85, Color("#2b4d5e"), 7.0)
-	cozy_tree(Vector3(4.8, 0, 3.0), 0.78, Color("#355c6e"), -6.0)
+	for cp in [
+		[Vector3(-6.2, 0, 3.1), 0.9, Color("#2b4d5e"), 7.0],
+		[Vector3(4.8, 0, 3.2), 0.85, Color("#355c6e"), -6.0],
+		[Vector3(12.2, 0, 2.8), 0.95, Color("#2f596b"), 5.0]
+	]:
+		cozy_tree(cp[0], float(cp[1]), cp[2], float(cp[3]))
 
-	flower_patch(Vector3(-3.0, 0, 2.2), 7, [Color("#77b8e8"), Color("#f2d085"), Color("#e88ba7")], 1.8)
-	flower_patch(Vector3(4.2, 0, -2.2), 6, [Color("#8ad6f5"), Color("#f7d97e")], 1.6)
-	flower_patch(Vector3(7.2, 0, 1.5), 6, [Color("#f5c65b"), Color("#e88ba7")], 1.5)
+	flower_patch(Vector3(-3.0, 0, 2.2), 8, [Color("#77b8e8"), Color("#f2d085"), Color("#e88ba7")], 2.0)
+	flower_patch(Vector3(4.2, 0, -3.2), 7, [Color("#8ad6f5"), Color("#f7d97e")], 1.8)
+	flower_patch(Vector3(12.8, 0, 0.8), 7, [Color("#f5c65b"), Color("#e88ba7")], 1.8)
 
-	for mx in [-7.6, -1.2, 2.4]:
-		sphere(self, Vector3(mx, 2.8, -7.8), Vector3(2.6, 5.2, 2.2), MIST_CYAN, true)
-	sphere(self, Vector3(12.2, 2.1, -0.6), Vector3(3.0, 4.4, 3.2), Color("#ffd299"), true)
+	# Soft diagonal moonlight/aurora sunbeams & glowing mist
+	sunbeam_shaft(Vector3(-3.5, 0.0, -2.5), 2.8, 18.0, Color(0.45, 0.88, 1.0, 0.08))
+	sunbeam_shaft(Vector3(6.0, 0.0, -1.0), 3.2, 18.0, Color(1.0, 0.84, 0.55, 0.08))
+	for mx in [-11.0, -2.0, 5.5]:
+		sphere(self, Vector3(mx, 3.0, -11.5), Vector3(3.2, 5.8, 2.4), MIST_CYAN, true)
+	sphere(self, Vector3(19.5, 2.4, -1.2), Vector3(3.6, 5.2, 3.8), Color("#ffd299"), true)
 
-	spawn_ambient_motes(Vector3(0.5, 1.5, -0.5), Vector3(16.0, 2.6, 8.0), 18, Color("#ffe38a"), 0.09)
-	transition_signpost(EXIT_TO_TOWN, "→ 雲丘小鎮", GOLD, -18.0)
+	spawn_ambient_motes(Vector3(1.0, 1.6, -0.5), Vector3(28.0, 3.0, 14.0), 26, Color("#ffe38a"), 0.09)
+	transition_signpost(EXIT_TO_TOWN, "→ 雲丘市集", GOLD, -18.0)
 
 func _build_title_overlay() -> void:
 	title_overlay = Control.new()
@@ -224,7 +253,6 @@ func _retire_camp_grunt() -> void:
 	grunt_hp = 0
 	var g_pos := lost_grunt.position
 	play_giant_retirement_stamp(g_pos)
-	# Drop first glowing Blue Loot Beam right in front of the player!
 	camp_loot_item = PrologueState.make_item("迷路兵的備用短劍", "weapon", "magic", 1)
 	camp_loot_node = Node3D.new()
 	camp_loot_node.position = g_pos + Vector3(0.6, 0.0, 0.5)
@@ -276,8 +304,8 @@ func on_interact() -> void:
 		show_player_emote("✨", 1.2)
 		show_subtitle("拾取 [藍] 迷路兵的備用短劍！（按 [I] 穿戴或造裝）", 3.2)
 		return
-	if near(EXIT_TO_TOWN, 2.6):
-		PrologueState.transition_to("res://prologue/CloudhillTown.tscn", "from_campfire", "雲丘小鎮")
+	if near(EXIT_TO_TOWN, 2.8):
+		PrologueState.transition_to("res://prologue/CloudhillTown.tscn", "from_campfire", "雲丘市集")
 	elif near(CAMPFIRE_POS, 2.1):
 		PrologueState.player_hp = 5
 		PrologueState.campfire_dish = "烤魚"
@@ -286,7 +314,7 @@ func on_interact() -> void:
 	elif near(LOG_JOURNAL_POS, 2.0):
 		show_player_emote("✨", 1.2)
 		show_subtitle("繪本旅記：已勸退 1 名迷路小兵" + ("、稻草人哨長" if PrologueState.boss_retired else ""), 3.2)
-	elif near(SKULL_CAVE_POS, 2.6):
+	elif near(SKULL_CAVE_POS, 2.8):
 		if not PrologueState.boss_retired:
 			show_player_emote("?", 1.4)
 			show_subtitle("骷髏洞內傳來「呼嚕……」（退休亡靈午睡中）", 3.0)
@@ -301,7 +329,7 @@ func on_interact() -> void:
 			show_subtitle("骷髏洞字條：「勸退四大 Boss 後再來找我！」", 3.0)
 
 func _update_ui() -> void:
-	var goal := "左鍵/J 或 Q 勸退迷路加班兵！" if not grunt_retired else "撿起藍光柱，沿林徑往東去雲丘小鎮"
+	var goal := "左鍵/J 或 Q 勸退迷路加班兵！" if not grunt_retired else "撿起藍光柱，過木橋往東去雲丘市集"
 	set_zone_objective("湖畔營火窩", goal)
 	update_status_line()
 	if not PrologueState.has_started:
@@ -309,13 +337,13 @@ func _update_ui() -> void:
 		return
 	if camp_loot_node and is_instance_valid(camp_loot_node) and near(camp_loot_node.position, 2.3):
 		set_prompt("[ E ] 拾取藍光柱裝備")
-	elif near(EXIT_TO_TOWN, 2.6):
-		set_prompt("[ E ] 前往：雲丘小鎮")
+	elif near(EXIT_TO_TOWN, 2.8):
+		set_prompt("[ E ] 前往：雲丘市集")
 	elif near(CAMPFIRE_POS, 2.1):
 		set_prompt("[ E ] 烤魚水壺（滿血 +1攻）")
 	elif near(LOG_JOURNAL_POS, 2.0):
 		set_prompt("[ E ] 翻閱繪本旅記")
-	elif near(SKULL_CAVE_POS, 2.6):
+	elif near(SKULL_CAVE_POS, 2.8):
 		set_prompt("[ E ] 查看骷髏洞")
 	elif not PrologueState.mounted and near(wolf.position, 2.7):
 		set_prompt("[ F ] 騎上巨狼")

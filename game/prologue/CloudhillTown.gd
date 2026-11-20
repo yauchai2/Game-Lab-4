@@ -1,16 +1,16 @@
 extends "res://prologue/PrologueBase.gd"
 
-const WEST_EXIT := Vector3(-15.5, 0.0, 1.4)
-const EAST_EXIT := Vector3(15.6, 0.0, 1.0)
-const SHOP_POS := Vector3(-7.4, 0.0, -5.8)
-const SHOP_INTERACT := Vector3(-6.8, 0.0, -2.8)
-const TAVERN_POS := Vector3(6.2, 0.0, -6.8)
-const TAVERN_DOOR := Vector3(5.4, 0.0, -3.5)
+const WEST_EXIT := Vector3(-23.0, 0.0, 1.5)
+const EAST_EXIT := Vector3(23.2, 0.0, 1.2)
+const SHOP_POS := Vector3(-8.4, 0.0, -6.5)
+const SHOP_INTERACT := Vector3(-7.6, 0.0, -3.2)
+const TAVERN_POS := Vector3(7.2, 0.0, -7.8)
+const TAVERN_DOOR := Vector3(6.2, 0.0, -4.0)
 const WAYPOINT_POS := Vector3(-0.2, 0.0, 0.4)
-const STASH_POS := Vector3(9.4, 0.0, 6.2)
-const SLIME_HOME := Vector3(-3.0, 0.0, 4.6)
-const DUMMY_1_POS := Vector3(2.8, 0.0, 7.2)
-const DUMMY_2_POS := Vector3(5.6, 0.0, 6.8)
+const STASH_POS := Vector3(11.4, 0.0, 7.6)
+const SLIME_HOME := Vector3(-3.4, 0.0, 5.2)
+const DUMMY_1_POS := Vector3(3.2, 0.0, 8.6)
+const DUMMY_2_POS := Vector3(6.4, 0.0, 8.2)
 
 var goblin_bubble: Label3D
 var goblin_talk_timer := 0.0
@@ -24,13 +24,13 @@ var town_travelers: Array[Dictionary] = []
 func _ready() -> void:
 	can_attack = true
 	_build_town()
-	var spawn := Vector3(-12.8, 0.0, 1.5)
+	var spawn := Vector3(-19.5, 0.0, 1.5)
 	if PrologueState.spawn_tag == "from_road":
-		spawn = Vector3(12.8, 0.0, 1.0)
+		spawn = Vector3(19.5, 0.0, 1.2)
 	elif PrologueState.spawn_tag == "from_waypoint":
-		spawn = Vector3(-0.2, 0.0, 2.8)
+		spawn = Vector3(-0.2, 0.0, 3.0)
 	setup_core_trio(spawn)
-	setup_camera_and_lighting(19.0, Color("#73e4f5"), Color("#eef3fc"), 0.88, Color("#ffe4ba"), 1.15)
+	setup_camera_and_lighting(20.5, Color("#73e4f5"), Color("#eef3fc"), 0.88, Color("#ffe4ba"), 1.15)
 	setup_hud()
 
 	if not PrologueState.has_sword:
@@ -40,30 +40,48 @@ func _ready() -> void:
 	_update_ui()
 
 func _build_town() -> void:
-	organic_mound(self, Vector3(0.0, -0.52, 0.5), 18.8, 12.6, 1.04, MEADOW_GREEN, -4.0)
-	organic_mound(self, Vector3(-9.5, -0.49, 2.2), 9.6, 8.2, 1.0, MEADOW_LIGHT, 14.0)
-	organic_mound(self, Vector3(8.8, -0.49, -1.5), 10.4, 8.8, 1.0, MEADOW_LIGHT, -16.0)
-	organic_mound(self, Vector3(2.2, -0.50, 6.2), 9.5, 6.4, 1.0, Color("#7fb050"), 8.0)
+	# Expanded 52m x 34m Cloudhill Village Diorama (Little Joy x @amelicart)
+	organic_mound(self, Vector3(0.0, -0.54, 0.5), 26.5, 17.5, 1.08, MEADOW_GREEN, -4.0)
+	organic_mound(self, Vector3(-14.5, -0.50, 2.2), 13.5, 11.2, 1.0, MEADOW_LIGHT, 14.0)
+	organic_mound(self, Vector3(13.8, -0.50, -1.8), 14.2, 11.8, 1.0, MEADOW_LIGHT, -16.0)
+	organic_mound(self, Vector3(3.2, -0.51, 8.8), 13.5, 8.8, 1.0, Color("#7fb050"), 8.0)
 
-	organic_mound(self, Vector3(0.0, 0.01, 0.4), 6.8, 5.4, 0.03, Color("#f5d9a1"), -8.0)
-	organic_mound(self, Vector3(0.2, 0.018, 0.5), 4.6, 3.8, 0.025, Color("#ebd098"), 18.0)
+	organic_mound(self, Vector3(0.0, 0.01, 0.4), 7.6, 6.2, 0.03, Color("#f5d9a1"), -8.0)
+	organic_mound(self, Vector3(0.2, 0.018, 0.5), 5.0, 4.2, 0.025, Color("#ebd098"), 18.0)
 
-	curved_path([WEST_EXIT, Vector3(-10.5, 0, 2.2), Vector3(-5.2, 0, 1.4), Vector3(-1.5, 0, 0.6)], 2.4, TRAIL, TRAIL_STONE)
-	curved_path([Vector3(1.8, 0, 0.5), Vector3(6.8, 0, 1.8), Vector3(11.5, 0, 1.3), EAST_EXIT], 2.4, TRAIL, TRAIL_STONE)
-	curved_path([Vector3(-2.5, 0, -0.5), Vector3(-5.0, 0, -1.8), SHOP_INTERACT], 2.1, TRAIL, TRAIL_STONE)
-	curved_path([Vector3(2.0, 0, -0.8), Vector3(4.0, 0, -2.1), TAVERN_DOOR], 2.1, TRAIL, TRAIL_STONE)
-	curved_path([Vector3(0.2, 0, 2.6), Vector3(-1.4, 0, 3.9), SLIME_HOME], 1.8, TRAIL, TRAIL_STONE)
-	curved_path([Vector3(2.0, 0, 2.8), Vector3(4.8, 0, 5.2), Vector3(8.2, 0, 5.8)], 1.8, TRAIL, TRAIL_STONE)
+	# Winding creek encircling the southern & eastern hillside with wooden bridges & waterfall
+	curved_stream([
+		Vector3(-22.0, 0.0, 9.5),
+		Vector3(-12.5, 0.0, 11.8),
+		Vector3(0.0, 0.0, 12.6),
+		Vector3(14.0, 0.0, 9.8),
+		Vector3(18.5, 0.0, 2.2),
+		Vector3(19.5, 0.0, -8.5)
+	], 3.2, Color("#3496e8"), Color("#e0f8ff"), -0.15)
+	waterfall_cascade(Vector3(-19.5, 0.0, 9.2), 2.6, 3.8, 42.0, Color("#52b8ff"), Color("#eefbff"))
+	wooden_footbridge(Vector3(18.5, 0.0, 1.2), 4.4, 2.4, 4.0, 0.44)
+	wooden_footbridge(Vector3(-1.5, 0.0, 12.4), 3.8, 2.0, 92.0, 0.36)
 
-	invisible_boundary_wall(Vector3(0.0, 0.8, -11.4), Vector3(35.0, 1.8, 0.8))
-	invisible_boundary_wall(Vector3(0.0, 0.8, 11.4), Vector3(35.0, 1.8, 0.8))
-	invisible_boundary_wall(Vector3(-17.4, 0.8, 0.0), Vector3(0.8, 1.8, 23.0))
-	invisible_boundary_wall(Vector3(17.4, 0.8, 0.0), Vector3(0.8, 1.8, 23.0))
+	curved_path([WEST_EXIT, Vector3(-16.5, 0, 2.4), Vector3(-9.5, 0, 1.8), Vector3(-2.0, 0, 0.6)], 2.6, TRAIL, TRAIL_STONE)
+	curved_path([Vector3(2.2, 0, 0.5), Vector3(9.5, 0, 2.2), Vector3(16.5, 0, 1.5), EAST_EXIT], 2.6, TRAIL, TRAIL_STONE)
+	curved_path([Vector3(-2.8, 0, -0.6), Vector3(-5.6, 0, -2.0), SHOP_INTERACT], 2.2, TRAIL, TRAIL_STONE)
+	curved_path([Vector3(2.4, 0, -0.9), Vector3(4.6, 0, -2.4), TAVERN_DOOR], 2.2, TRAIL, TRAIL_STONE)
+	curved_path([Vector3(0.2, 0, 2.8), Vector3(-1.8, 0, 4.2), SLIME_HOME], 1.9, TRAIL, TRAIL_STONE)
+	curved_path([Vector3(2.4, 0, 3.2), Vector3(5.8, 0, 6.2), Vector3(9.8, 0, 7.2)], 1.9, TRAIL, TRAIL_STONE)
 
+	invisible_boundary_wall(Vector3(0.0, 0.8, -15.8), Vector3(52.0, 1.8, 0.8))
+	invisible_boundary_wall(Vector3(0.0, 0.8, 15.8), Vector3(52.0, 1.8, 0.8))
+	invisible_boundary_wall(Vector3(-25.4, 0.8, 0.0), Vector3(0.8, 1.8, 32.0))
+	invisible_boundary_wall(Vector3(25.4, 0.8, 0.0), Vector3(0.8, 1.8, 32.0))
+
+	# Cliff outcrops & hillside cottages
+	cliff_outcrop(Vector3(-20.5, 0.0, -9.8), 3.6, 2.8, 3.2, STONE_LIGHT, MEADOW_GREEN, 16.0)
+	cliff_outcrop(Vector3(20.8, 0.0, -9.5), 3.4, 2.6, 3.0, STONE, MEADOW_LIGHT, -22.0)
 	for h in [
-		[Vector3(-12.8, 0.0, -9.8), 18.0],
-		[Vector3(-1.4, 0.0, -10.8), -12.0],
-		[Vector3(13.2, 0.0, -8.8), -26.0]
+		[Vector3(-15.8, 0.0, -11.5), 18.0],
+		[Vector3(-1.8, 0.0, -12.6), -12.0],
+		[Vector3(16.2, 0.0, -10.8), -26.0],
+		[Vector3(-18.5, 0.0, -5.2), 34.0]
 	]:
 		var cot := Node3D.new()
 		cot.position = h[0]
@@ -72,15 +90,15 @@ func _build_town() -> void:
 		box(cot, Vector3(0, 2.0, 0), Vector3(3.2, 4.0, 2.8), WHITE_WALL, true)
 		var roof := cylinder(cot, Vector3(0, 4.5, 0), 0.25, 2.5, 1.6, CORAL_ROOF)
 		roof.scale.z = 0.88
-	for c in [
-		[Vector3(20.5, -0.6, -6.5), Vector3(6.2, 3.0, 5.4)],
-		[Vector3(22.2, -0.8, 1.8), Vector3(5.8, 2.8, 5.2)],
-		[Vector3(20.0, -0.7, 8.8), Vector3(6.0, 3.0, 5.0)],
-		[Vector3(11.5, -0.9, 13.8), Vector3(5.8, 2.5, 4.6)]
-	]:
-		sphere(self, c[0], c[1], CLOUD_WHITE, true)
 
-	# 1. Angled Bone-Helmet Goblin Clearance Stall (minimalist iconic sign!)
+	# Volumetric drifting clouds & diagonal sunbeams
+	fluffy_cloud(Vector3(26.0, 4.2, -9.0), 1.35, 2.2, CLOUD_WHITE)
+	fluffy_cloud(Vector3(28.0, 3.8, 4.5), 1.25, 1.8, CLOUD_WHITE)
+	fluffy_cloud(Vector3(-24.0, 4.5, -10.0), 1.2, 1.9, CLOUD_WHITE)
+	sunbeam_shaft(Vector3(-6.0, 0.0, -2.0), 3.4, 20.0, Color(1.0, 0.94, 0.68, 0.10))
+	sunbeam_shaft(Vector3(8.5, 0.0, 1.0), 3.6, 20.0, Color(1.0, 0.94, 0.68, 0.10))
+
+	# 1. Angled Bone-Helmet Goblin Clearance Stall
 	var shop_root := Node3D.new()
 	shop_root.position = SHOP_POS
 	shop_root.rotation_degrees.y = 20.0
@@ -139,8 +157,8 @@ func _build_town() -> void:
 	patron_bubble = label_at(pig, Vector3(-0.3, 2.05, 0), "豚骨麵真香♪", Color("#ffe4b5"), 26)
 	marker(TAVERN_DOOR, Color("#69c5ed"), 0.64)
 
-	bunting_line(SHOP_POS + Vector3(2.8, 3.6, 1.5), WAYPOINT_POS + Vector3(0, 2.8, 0), 0.75, [CORAL_ROOF, GOLD, BUNTING_BLUE, WHITE_WALL], 7)
-	bunting_line(WAYPOINT_POS + Vector3(0, 2.8, 0), TAVERN_POS + Vector3(-2.6, 3.8, 2.2), 0.75, [GOLD, BUNTING_BLUE, CORAL_ROOF, WHITE_WALL], 7)
+	bunting_line(SHOP_POS + Vector3(2.8, 3.6, 1.5), WAYPOINT_POS + Vector3(0, 2.8, 0), 0.85, [CORAL_ROOF, GOLD, BUNTING_BLUE, WHITE_WALL], 8)
+	bunting_line(WAYPOINT_POS + Vector3(0, 2.8, 0), TAVERN_POS + Vector3(-2.6, 3.8, 2.2), 0.85, [GOLD, BUNTING_BLUE, CORAL_ROOF, WHITE_WALL], 8)
 
 	# 3. Central Waypoint Perch
 	var wp := Node3D.new()
@@ -156,10 +174,10 @@ func _build_town() -> void:
 		sphere(wp, Vector3(bx, 0.82, 0.72), Vector3(0.66, 0.48, 0.66), Color("#a67ee8"))
 	marker(WAYPOINT_POS + Vector3(0, 0, 1.5), GOLD, 0.65)
 
-	# 4. Organic Curved Beast Drinking Cove
-	organic_mound(self, Vector3(-8.8, 0.04, 6.8), 3.6, 2.5, 0.12, Color("#62c4ed"), -22.0, true)
-	boulder_cluster(Vector3(-11.4, 0, 6.2), 1.15, STONE_LIGHT, true, true, 16.0)
-	boulder_cluster(Vector3(-6.4, 0, 8.2), 0.85, STONE, true, true, -30.0)
+	# 4. Extended Beast Drinking Cove (Southwest)
+	organic_mound(self, Vector3(-11.5, 0.04, 6.8), 4.2, 2.8, 0.12, Color("#62c4ed"), -22.0, true)
+	boulder_cluster(Vector3(-14.6, 0, 6.2), 1.25, STONE_LIGHT, true, true, 16.0)
+	boulder_cluster(Vector3(-8.4, 0, 8.2), 0.95, STONE, true, true, -30.0)
 
 	# 5. Training Dummies & Stash Chest
 	for idx in range(2):
@@ -191,19 +209,20 @@ func _build_town() -> void:
 	slime_bubble = label_at(slime_node, Vector3(0, 1.32, 0), "波波 ♻️", Color("#b8ffff"), 26)
 
 	for tp in [
-		[Vector3(-14.6, 0, -5.2), 1.15, PINE_DARK],
-		[Vector3(-15.2, 0, 5.4), 1.1, PINE_TEAL],
-		[Vector3(-12.6, 0, 9.0), 1.05, MEADOW_GREEN],
-		[Vector3(12.8, 0, 7.6), 1.1, MEADOW_LIGHT],
-		[Vector3(14.0, 0, -4.4), 1.05, Color("#d88662")]
+		[Vector3(-21.2, 0, -4.8), 1.25, PINE_DARK],
+		[Vector3(-21.8, 0, 5.2), 1.2, PINE_TEAL],
+		[Vector3(-16.5, 0, 12.2), 1.15, MEADOW_GREEN],
+		[Vector3(14.8, 0, 12.0), 1.2, MEADOW_LIGHT],
+		[Vector3(21.4, 0, -5.0), 1.15, Color("#d88662")],
+		[Vector3(21.2, 0, 6.2), 1.2, PINE_TEAL]
 	]:
 		cozy_tree(tp[0], float(tp[1]), tp[2], randf_range(-6.0, 6.0), true)
-	lantern_post(Vector3(-9.5, 0, 0.0), 2.5, FIRE_ORANGE, -15.0)
-	lantern_post(Vector3(11.4, 0, 3.2), 2.5, FIRE_ORANGE, 24.0)
-	flower_patch(Vector3(-4.8, 0, 6.2), 8, [Color("#ff9eb5"), Color("#ffe066"), Color("#87c8ff")], 2.1)
-	flower_patch(Vector3(7.6, 0, 2.8), 7, [Color("#ffd966"), Color("#f28c7e"), WHITE_WALL], 1.8)
-	flower_patch(Vector3(-11.2, 0, -1.8), 6, [Color("#ffe066"), Color("#a67ee8")], 1.6)
-	spawn_ambient_motes(Vector3(0.0, 2.0, 0.0), Vector3(28.0, 3.2, 16.0), 20, Color("#fff8d6"), 0.09)
+	lantern_post(Vector3(-14.5, 0, 0.5), 2.5, FIRE_ORANGE, -15.0)
+	lantern_post(Vector3(14.4, 0, 3.2), 2.5, FIRE_ORANGE, 24.0)
+	flower_patch(Vector3(-5.8, 0, 7.2), 9, [Color("#ff9eb5"), Color("#ffe066"), Color("#87c8ff")], 2.3)
+	flower_patch(Vector3(9.6, 0, 3.4), 8, [Color("#ffd966"), Color("#f28c7e"), WHITE_WALL], 2.0)
+	flower_patch(Vector3(-14.2, 0, -1.8), 7, [Color("#ffe066"), Color("#a67ee8")], 1.8)
+	spawn_ambient_motes(Vector3(0.0, 2.0, 0.0), Vector3(42.0, 3.4, 22.0), 28, Color("#fff8d6"), 0.09)
 
 	transition_signpost(WEST_EXIT, "← 營火", Color("#b8f5ff"), 14.0)
 	var arch := Node3D.new()
@@ -220,15 +239,15 @@ func _build_town() -> void:
 	_spawn_town_travelers()
 
 func _spawn_town_travelers() -> void:
-	var t1 := build_fellow_rider(Vector3(-4.5, 0, 2.2), Color("#e8735a"), Color("#7a5440"), Vector3(1.45, 1.15, 1.75), "蜜熊")
-	t1["waypoints"] = [Vector3(-4.5, 0, 2.2), Vector3(1.8, 0, 2.8), Vector3(5.2, 0, -1.5), Vector3(-1.5, 0, -1.2)]
+	var t1 := build_fellow_rider(Vector3(-5.5, 0, 2.2), Color("#e8735a"), Color("#7a5440"), Vector3(1.45, 1.15, 1.75), "蜜熊")
+	t1["waypoints"] = [Vector3(-5.5, 0, 2.2), Vector3(2.2, 0, 3.2), Vector3(7.2, 0, -1.8), Vector3(-2.0, 0, -1.4)]
 	t1["wp_idx"] = 0
 	t1["lines"] = ["波波把我的白裝全吃光了✨", "有人要一起打哨長嗎？", "五折短劍真香！"]
 	t1["chat_t"] = 2.0
 	town_travelers.append(t1)
 
-	var t2 := build_fellow_rider(Vector3(7.5, 0, 3.2), Color("#6ec29a"), Color("#e3dccf"), Vector3(1.05, 1.05, 1.65), "白鹿")
-	t2["waypoints"] = [Vector3(7.5, 0, 3.2), Vector3(11.0, 0, 1.4), Vector3(3.5, 0, 0.2), Vector3(6.2, 0, 4.5)]
+	var t2 := build_fellow_rider(Vector3(9.5, 0, 3.5), Color("#6ec29a"), Color("#e3dccf"), Vector3(1.05, 1.05, 1.65), "白鹿")
+	t2["waypoints"] = [Vector3(9.5, 0, 3.5), Vector3(14.5, 0, 1.6), Vector3(4.5, 0, 0.2), Vector3(7.2, 0, 5.5)]
 	t2["wp_idx"] = 0
 	t2["lines"] = ["剛在古道噴出黃裝長劍！", "酒館豚骨麵超補血♪", "按 C 可以隨時拉我助拳！"]
 	t2["chat_t"] = 3.8
@@ -245,7 +264,7 @@ func _physics_process(delta: float) -> void:
 		if diff.length() < 0.5:
 			tr["wp_idx"] = (idx + 1) % wps.size()
 		else:
-			n.position += diff.normalized() * 2.4 * delta
+			n.position += diff.normalized() * 2.5 * delta
 			n.rotation.y = atan2(diff.x, diff.z)
 			n.position.y = absf(sin(t * 7.5 + float(idx))) * 0.10
 		tr["chat_t"] = float(tr["chat_t"]) - delta
@@ -347,7 +366,7 @@ func _goblin_say(words: String, duration := 4.5) -> void:
 	goblin_talk_timer = duration
 
 func _update_ui() -> void:
-	var step := "向哥布林買五折短劍" if not PrologueState.has_sword else "按 [I] 造裝，或從東門出發刷怪"
+	var step := "向哥布林買五折短劍" if not PrologueState.has_sword else "按 [I] 造裝，或過東木橋出發刷怪"
 	if PrologueState.boss_retired:
 		step = "找波波吞白裝，或經驛站重刷古道"
 	set_zone_objective("雲丘市集", step)

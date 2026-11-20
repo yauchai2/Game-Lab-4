@@ -3,20 +3,20 @@ extends "res://prologue/PrologueBase.gd"
 enum BossState { IDLE, WINDUP, STAGGERED, KNEELED, RETIRED }
 
 const MAX_BOSS_HP := 10
-const WEST_EXIT := Vector3(-16.2, 0.0, 0.2)
-const TIMBER_POS := Vector3(-10.0, 0.0, 0.0)
-const WALL_X := -2.5
-const NARROW_SLIT_Z := -3.5
-const GATE_Z := 1.4
-const LEVER_POS := Vector3(-0.8, 0.0, -3.5)
-const BRIDGE_START_X := 3.0
-const BOSS_HOME := Vector3(10.0, 0.0, 0.0)
-const TEA_STALL_POS := Vector3(5.4, 0.0, -3.4)
-const VISTA_POS := Vector3(21.5, 0.0, 0.0)
-const BOUNTY_POS := Vector3(20.0, 0.0, -3.4)
-const WAYPOINT_POS := Vector3(20.8, 0.0, 2.4)
-const HIGH_LEDGE_POS := Vector3(19.5, 1.3, 4.6)
-const CHAPTER_1_EXIT := Vector3(24.8, 0.0, 0.4)
+const WEST_EXIT := Vector3(-25.5, 0.0, 0.4)
+const TIMBER_POS := Vector3(-14.5, 0.0, 0.0)
+const WALL_X := -4.5
+const NARROW_SLIT_Z := -4.2
+const GATE_Z := 1.6
+const LEVER_POS := Vector3(-2.6, 0.0, -4.2)
+const BRIDGE_START_X := 2.0
+const BOSS_HOME := Vector3(11.5, 0.0, 0.0)
+const TEA_STALL_POS := Vector3(6.4, 0.0, -3.5)
+const VISTA_POS := Vector3(28.0, 0.0, 0.0)
+const BOUNTY_POS := Vector3(26.2, 0.0, -4.2)
+const WAYPOINT_POS := Vector3(27.0, 0.0, 2.8)
+const HIGH_LEDGE_POS := Vector3(25.5, 1.3, 6.2)
+const CHAPTER_1_EXIT := Vector3(33.2, 0.0, 0.5)
 
 var boss_state := BossState.IDLE
 var boss_hp := MAX_BOSS_HP
@@ -42,7 +42,6 @@ var boss_bubble: Label3D
 var boss_cue: Label3D
 var attack_ring: MeshInstance3D
 var distant_riders: Array[Node3D] = []
-var drifting_clouds: Array[Dictionary] = []
 
 var mobs: Array[Dictionary] = []
 var loot_drops: Array[Dictionary] = []
@@ -57,12 +56,12 @@ func _ready() -> void:
 	_spawn_poe_mobs()
 	_spawn_public_travelers()
 
-	var spawn := Vector3(-14.2, 0.0, 0.2)
+	var spawn := Vector3(-23.0, 0.0, 0.4)
 	if PrologueState.spawn_tag == "from_waypoint":
 		spawn = WAYPOINT_POS + Vector3(-1.5, 0.0, -0.5)
 		vista_zoomed = true
 	setup_core_trio(spawn)
-	setup_camera_and_lighting(23.5 if vista_zoomed else 15.6, Color("#f2c3e0"), Color("#ffe2c2"), 0.88, Color("#ffe0b2"), 1.15)
+	setup_camera_and_lighting(24.0 if vista_zoomed else 16.5, Color("#f2c3e0"), Color("#ffe2c2"), 0.88, Color("#ffe0b2"), 1.15)
 	setup_hud()
 	_apply_persisted_state()
 
@@ -91,72 +90,96 @@ func on_map_input(event: InputEvent) -> bool:
 	return false
 
 func _build_road_map() -> void:
-	organic_mound(self, Vector3(-10.5, -0.52, 0.2), 9.5, 7.2, 1.04, DAY_GRASS, -8.0)
-	organic_mound(self, Vector3(-3.2, -0.50, -0.4), 7.6, 6.8, 1.0, DAY_GRASS_WARM, 14.0)
-	organic_mound(self, Vector3(2.2, -0.50, 0.2), 4.2, 5.2, 1.0, DAY_GRASS, -12.0)
+	# Expanded 68m x 28m Autumn Highland + Waterfall Canyon + Long Stone Bridge + Crescent Vista!
+	organic_mound(self, Vector3(-16.5, -0.54, 0.4), 13.8, 10.6, 1.08, DAY_GRASS, -8.0)
+	organic_mound(self, Vector3(-6.2, -0.50, -0.5), 9.6, 9.2, 1.0, DAY_GRASS_WARM, 14.0)
+	organic_mound(self, Vector3(0.8, -0.50, 0.2), 5.2, 7.2, 1.0, DAY_GRASS, -12.0)
 
-	for bi in range(8):
-		var bx := 3.8 + float(bi) * 1.9
-		var arch_y := sin(float(bi) / 7.0 * PI) * 0.14
-		var seg := box(self, Vector3(bx, -0.45 + arch_y, 0.0), Vector3(2.15, 0.92, 8.8), STONE_LIGHT if bi % 2 == 0 else Color("#c4c0d2"))
-		seg.rotation_degrees.y = sin(float(bi) * 1.4) * 1.8
-		for bz in [-4.3, 4.3]:
+	# Canyon Stream & Waterfall flowing beneath the Long Arched Stone Bridge!
+	curved_stream([
+		Vector3(7.5, -0.6, -12.5),
+		Vector3(9.5, -0.6, -3.5),
+		Vector3(11.5, -0.6, 5.5),
+		Vector3(14.5, -0.6, 13.5)
+	], 4.2, Color("#3496e8"), Color("#e0f8ff"), -1.05)
+	waterfall_cascade(Vector3(7.4, -0.9, -9.8), 3.0, 4.4, 15.0, Color("#52b8ff"), Color("#eefbff"))
+
+	# Long Arched Cobblestone Bridge (X: 2.2 to 20.4)
+	for bi in range(10):
+		var bx := 3.0 + float(bi) * 1.92
+		var arch_y := sin(float(bi) / 9.0 * PI) * 0.16
+		var seg := box(self, Vector3(bx, -0.45 + arch_y, 0.0), Vector3(2.15, 0.92, 9.2), STONE_LIGHT if bi % 2 == 0 else Color("#c4c0d2"))
+		seg.rotation_degrees.y = sin(float(bi) * 1.4) * 1.6
+		for bz in [-4.5, 4.5]:
 			var post := cylinder(self, Vector3(bx, 0.35 + arch_y, bz), 0.36, 0.44, 0.95, STONE)
 			post.rotation_degrees.z = sin(float(bi) + bz) * 4.0
-	invisible_boundary_wall(Vector3(10.5, 0.8, -4.5), Vector3(14.5, 1.6, 0.6))
-	invisible_boundary_wall(Vector3(10.5, 0.8, 4.5), Vector3(14.5, 1.6, 0.6))
-	lantern_post(Vector3(4.5, 0.0, -3.9), 2.4, FIRE_ORANGE, 12.0)
-	lantern_post(Vector3(15.5, 0.0, 3.8), 2.4, FIRE_ORANGE, -165.0)
+	invisible_boundary_wall(Vector3(11.5, 0.8, -4.7), Vector3(18.5, 1.6, 0.6))
+	invisible_boundary_wall(Vector3(11.5, 0.8, 4.7), Vector3(18.5, 1.6, 0.6))
+	lantern_post(Vector3(3.8, 0.0, -4.1), 2.4, FIRE_ORANGE, 12.0)
+	lantern_post(Vector3(18.8, 0.0, 4.0), 2.4, FIRE_ORANGE, -165.0)
 
-	organic_mound(self, Vector3(21.4, -0.52, 0.2), 6.8, 6.8, 1.04, DAY_GRASS_WARM, 16.0)
-	organic_mound(self, Vector3(24.2, -0.50, 0.4), 4.0, 4.2, 1.0, Color("#84b868"), -10.0)
+	# Expanded Crescent Vista Cliff Meadow (East)
+	organic_mound(self, Vector3(28.0, -0.52, 0.2), 9.2, 9.6, 1.04, DAY_GRASS_WARM, 16.0)
+	organic_mound(self, Vector3(32.5, -0.50, 0.5), 5.6, 6.0, 1.0, Color("#84b868"), -10.0)
 
+	# Winding S-curve trail across the expanded autumn highland
 	curved_path([
-		WEST_EXIT, Vector3(-12.2, 0.0, 1.1), Vector3(-7.6, 0.0, -0.5),
-		Vector3(-3.8, 0.0, 1.1), Vector3(3.2, 0.0, 0.2)
-	], 2.2, TRAIL, TRAIL_STONE)
-	curved_path([Vector3(-5.2, 0.0, -1.6), Vector3(-3.8, 0.0, -3.5), LEVER_POS], 1.4, GOLD, TRAIL_STONE)
-	curved_path([Vector3(17.5, 0.0, 0.0), Vector3(21.0, 0.0, -0.5), CHAPTER_1_EXIT], 2.1, TRAIL, TRAIL_STONE)
+		WEST_EXIT, Vector3(-20.2, 0.0, 1.6), Vector3(-16.2, 0.0, -0.4),
+		Vector3(-11.2, 0.0, 1.4), Vector3(-6.2, 0.0, -0.8), Vector3(2.4, 0.0, 0.2)
+	], 2.4, TRAIL, TRAIL_STONE)
+	curved_path([Vector3(-8.2, 0.0, -2.0), Vector3(-5.8, 0.0, -4.2), LEVER_POS], 1.5, GOLD, TRAIL_STONE)
+	curved_path([Vector3(21.0, 0.0, 0.0), Vector3(26.5, 0.0, -0.6), CHAPTER_1_EXIT], 2.3, TRAIL, TRAIL_STONE)
 
-	invisible_boundary_wall(Vector3(-17.8, 0.8, 0.0), Vector3(0.8, 1.8, 13.5))
-	invisible_boundary_wall(Vector3(26.4, 0.8, 0.0), Vector3(0.8, 1.8, 13.5))
-	for z in [-6.4, 6.4]:
-		invisible_boundary_wall(Vector3(-7.0, 0.8, z), Vector3(21.5, 1.8, 0.8))
-		invisible_boundary_wall(Vector3(21.5, 0.8, z), Vector3(10.0, 1.8, 0.8))
+	invisible_boundary_wall(Vector3(-27.8, 0.8, 0.0), Vector3(0.8, 1.8, 24.0))
+	invisible_boundary_wall(Vector3(36.2, 0.8, 0.0), Vector3(0.8, 1.8, 24.0))
+	for z in [-9.6, 9.6]:
+		invisible_boundary_wall(Vector3(-12.5, 0.8, z), Vector3(30.0, 1.8, 0.8))
+		invisible_boundary_wall(Vector3(28.5, 0.8, z), Vector3(15.0, 1.8, 0.8))
 
+	# Cliff outcrops, dense autumn trees, flowers & diagonal sunbeams
+	cliff_outcrop(Vector3(-23.5, 0.0, -7.8), 3.4, 2.8, 2.8, STONE_LIGHT, DAY_GRASS, 15.0)
+	cliff_outcrop(Vector3(-10.5, 0.0, 8.6), 3.2, 2.5, 2.8, STONE, DAY_GRASS_WARM, -22.0)
+	cliff_outcrop(Vector3(29.8, 0.0, -8.2), 3.4, 2.8, 2.8, STONE_LIGHT, DAY_GRASS, -18.0)
 	for tp in [
-		[Vector3(-15.5, 0, -5.0), 1.2, PINE_ORANGE], [Vector3(-12.0, 0, -5.2), 1.15, Color("#4a6b8a")],
-		[Vector3(-15.0, 0, 4.8), 1.1, PINE_ORANGE], [Vector3(-11.4, 0, 5.3), 1.25, Color("#d96b38")],
-		[Vector3(-6.8, 0, 5.4), 1.15, Color("#4a6b8a")]
+		[Vector3(-23.8, 0, -5.0), 1.3, PINE_ORANGE], [Vector3(-19.5, 0, -8.2), 1.25, Color("#4a6b8a")],
+		[Vector3(-22.5, 0, 7.6), 1.2, PINE_ORANGE], [Vector3(-16.2, 0, 8.2), 1.3, Color("#d96b38")],
+		[Vector3(-8.8, 0, -8.0), 1.2, Color("#4a6b8a")], [Vector3(24.5, 0, -8.4), 1.25, PINE_ORANGE],
+		[Vector3(31.5, 0, 7.2), 1.2, PINE_TEAL]
 	]:
 		cozy_tree(tp[0], float(tp[1]), tp[2], randf_range(-7.0, 7.0))
-	flower_patch(Vector3(-13.2, 0, -2.5), 7, [Color("#7c8ce0"), Color("#fff2b2"), Color("#f2796b")], 1.8)
-	flower_patch(Vector3(-7.8, 0, 3.6), 6, [Color("#ff9eb5"), Color("#ffe066")], 1.7)
-	flower_patch(Vector3(21.8, 0, -2.2), 8, [Color("#7cb8ff"), Color("#fff0a6"), Color("#f28ca8")], 2.0)
+	flower_patch(Vector3(-19.2, 0, -3.5), 8, [Color("#7c8ce0"), Color("#fff2b2"), Color("#f2796b")], 2.2)
+	flower_patch(Vector3(-10.8, 0, 5.2), 8, [Color("#ff9eb5"), Color("#ffe066")], 2.1)
+	flower_patch(Vector3(27.8, 0, -2.5), 9, [Color("#7cb8ff"), Color("#fff0a6"), Color("#f28ca8")], 2.3)
 
+	sunbeam_shaft(Vector3(-17.0, 0.0, -1.0), 3.4, 20.0, Color(1.0, 0.90, 0.65, 0.11))
+	sunbeam_shaft(Vector3(-7.0, 0.0, 1.0), 3.2, 20.0, Color(1.0, 0.90, 0.65, 0.10))
+	sunbeam_shaft(Vector3(12.0, 0.0, 0.0), 3.6, 20.0, Color(1.0, 0.90, 0.65, 0.11))
+
+	# Organic fallen mossy log barricade
 	timber_barricade = Node3D.new()
 	timber_barricade.position = TIMBER_POS
 	add_child(timber_barricade)
-	var log_a := cylinder(timber_barricade, Vector3(0, 0.72, 0), 0.56, 0.68, 11.4, TIMBER)
+	var log_a := cylinder(timber_barricade, Vector3(0, 0.72, 0), 0.56, 0.68, 17.5, TIMBER)
 	log_a.rotation_degrees = Vector3(90, 0, 5)
-	var log_b := cylinder(timber_barricade, Vector3(-0.42, 1.28, -0.8), 0.34, 0.42, 6.2, TIMBER_LIGHT)
+	var log_b := cylinder(timber_barricade, Vector3(-0.42, 1.28, -0.8), 0.34, 0.42, 8.2, TIMBER_LIGHT)
 	log_b.rotation_degrees = Vector3(84, 14, -8)
 	sphere(timber_barricade, Vector3(0.1, 1.25, 1.8), Vector3(1.1, 0.55, 1.4), Color("#4e7c48"))
 	var bar_body := StaticBody3D.new()
 	timber_barricade.add_child(bar_body)
 	var bar_sh := BoxShape3D.new()
-	bar_sh.size = Vector3(1.1, 1.7, 11.8)
+	bar_sh.size = Vector3(1.1, 1.7, 18.0)
 	add_shape(bar_body, bar_sh, Vector3(0, 0.85, 0))
 	label_at(timber_barricade, Vector3(0, 2.45, 0), "[ Q ] 撞碎", FIRE_ORANGE, 30)
 
-	for span: Vector2 in [Vector2(-6.4, -4.2), Vector2(-2.8, -0.4), Vector2(3.2, 6.4)]:
+	# Organic mossy ruin archway wall at WALL_X (-4.5)
+	for span: Vector2 in [Vector2(-9.6, -5.0), Vector2(-3.4, -0.2), Vector2(3.4, 9.6)]:
 		var mid_z: float = (span.x + span.y) * 0.5
 		var len_z: float = span.y - span.x
 		invisible_boundary_wall(Vector3(WALL_X, 1.35, mid_z), Vector3(0.9, 2.7, len_z))
-		boulder_cluster(Vector3(WALL_X, 0.0, mid_z), 1.15, STONE, true, false, mid_z * 12.0)
-		sphere(self, Vector3(WALL_X, 1.7, mid_z), Vector3(1.1, 1.8, len_z * 0.9), STONE_LIGHT)
-		sphere(self, Vector3(WALL_X, 2.5, mid_z), Vector3(1.0, 0.55, len_z * 0.75), Color("#4e7c48"))
-	sphere(self, Vector3(WALL_X, 1.95, NARROW_SLIT_Z), Vector3(1.05, 0.45, 1.65), STONE_LIGHT)
+		boulder_cluster(Vector3(WALL_X, 0.0, mid_z), 1.25, STONE, true, false, mid_z * 12.0)
+		sphere(self, Vector3(WALL_X, 1.7, mid_z), Vector3(1.2, 1.9, len_z * 0.9), STONE_LIGHT)
+		sphere(self, Vector3(WALL_X, 2.5, mid_z), Vector3(1.05, 0.55, len_z * 0.75), Color("#4e7c48"))
+	sphere(self, Vector3(WALL_X, 1.95, NARROW_SLIT_Z), Vector3(1.05, 0.45, 1.75), STONE_LIGHT)
 	sphere(self, Vector3(WALL_X, 2.85, GATE_Z), Vector3(1.1, 0.55, 3.8), STONE_LIGHT)
 	stone_gate = box(self, Vector3(WALL_X, 1.25, GATE_Z), Vector3(0.45, 2.45, 3.5), TIMBER, true)
 
@@ -167,13 +190,13 @@ func _build_road_map() -> void:
 
 	fog_bridge = Node3D.new()
 	add_child(fog_bridge)
-	for fp in [Vector3(5.5, 2.0, -2.4), Vector3(8.5, 2.4, 0.0), Vector3(11.5, 2.2, 2.4), Vector3(13.5, 2.0, -1.2)]:
-		sphere(fog_bridge, fp, Vector3(5.4, 4.2, 5.2), CLOUD_WHITE, true)
+	for fp in [Vector3(5.5, 2.0, -2.4), Vector3(9.5, 2.4, 0.0), Vector3(13.5, 2.2, 2.4), Vector3(16.5, 2.0, -1.2)]:
+		sphere(fog_bridge, fp, Vector3(5.8, 4.4, 5.4), CLOUD_WHITE, true)
 
 	fog_vista = Node3D.new()
 	add_child(fog_vista)
-	for vp in [Vector3(20.0, 2.6, -2.5), Vector3(22.5, 2.8, 1.5), Vector3(24.0, 2.5, -0.5)]:
-		sphere(fog_vista, vp, Vector3(5.8, 4.6, 5.5), Color("#f5d9ef"), true)
+	for vp in [Vector3(26.0, 2.6, -2.5), Vector3(29.5, 2.8, 1.5), Vector3(32.0, 2.5, -0.5)]:
+		sphere(fog_vista, vp, Vector3(6.4, 4.8, 5.8), Color("#f5d9ef"), true)
 
 	tea_stall = Node3D.new()
 	tea_stall.position = TEA_STALL_POS
@@ -224,36 +247,36 @@ func _build_road_map() -> void:
 	marker(CHAPTER_1_EXIT + Vector3(-0.6, 0, 0), Color("#49c674"), 0.75)
 	label_at(self, CHAPTER_1_EXIT + Vector3(-0.2, 2.35, 0), "→ 翡翠古林", Color("#b8ffd0"), 30)
 
-	for ci in range(5):
-		var c_pos := Vector3(7.0 + float(ci) * 5.2, -1.7, -9.8 if ci % 2 == 0 else 9.2)
-		var cl := sphere(self, c_pos, Vector3(6.8, 2.3, 5.0), CLOUD_WHITE, true)
-		drifting_clouds.append({"node": cl, "base": c_pos, "phase": float(ci) * 1.3})
-	sphere(self, Vector3(34, 4.5, -13), Vector3(13.0, 22.0, 11.0), PINK_PEAK, true)
-	sphere(self, Vector3(41, 6.0, -2), Vector3(14.0, 26.0, 12.0), PURPLE_PEAK, true)
-	sphere(self, Vector3(37, 2.5, 9), Vector3(11.0, 16.0, 10.0), Color("#c29ae0"), true)
+	# Volumetric drifting clouds + distant @amelicart peaks
+	for ci in range(6):
+		var c_pos := Vector3(5.0 + float(ci) * 6.2, -1.6 if ci % 2 == 0 else 4.2, -11.5 if ci % 2 == 0 else 10.5)
+		fluffy_cloud(c_pos, 1.35, 2.2, CLOUD_WHITE)
+	sphere(self, Vector3(44, 4.5, -14), Vector3(14.0, 24.0, 12.0), PINK_PEAK, true)
+	sphere(self, Vector3(52, 6.0, -2), Vector3(15.0, 28.0, 13.0), PURPLE_PEAK, true)
+	sphere(self, Vector3(48, 2.5, 10), Vector3(12.0, 18.0, 11.0), Color("#c29ae0"), true)
 	for i in range(2):
 		var rider := Node3D.new()
-		rider.position = Vector3(28.0 + i * 3.5, 0.4, -7.2 + i * 2.0)
+		rider.position = Vector3(36.0 + i * 3.5, 0.4, -7.2 + i * 2.0)
 		add_child(rider)
 		sphere(rider, Vector3(0, 0.65, 0), Vector3(1.6, 0.9, 0.95), Color("#464d5c") if i == 0 else Color("#8a6852"), true)
 		sphere(rider, Vector3(0, 1.45, 0), Vector3(0.5, 0.55, 0.5), Color("#58b9ff"), true)
 		distant_riders.append(rider)
 
-	spawn_ambient_motes(Vector3(4.0, 1.8, 0.0), Vector3(34.0, 3.0, 10.0), 22, Color("#fff5dc"), 0.10)
+	spawn_ambient_motes(Vector3(4.0, 2.0, 0.0), Vector3(52.0, 3.4, 18.0), 30, Color("#fff5dc"), 0.10)
 
 func _spawn_public_travelers() -> void:
-	lantern_post(Vector3(3.4, 0.0, 3.3), 2.2, Color("#69c5ed"), -20.0)
-	label_at(self, Vector3(3.4, 2.95, 3.3), "[ C ] 拉隊友", Color("#a8e6ff"), 26)
+	lantern_post(Vector3(3.8, 0.0, 3.6), 2.2, Color("#69c5ed"), -20.0)
+	label_at(self, Vector3(3.8, 2.95, 3.6), "[ C ] 拉隊友", Color("#a8e6ff"), 26)
 
-	var p1 := build_fellow_rider(Vector3(-12.6, 0, -2.6), Color("#58b9ff"), Color("#464b59"), Vector3(1.15, 0.90, 1.75), "阿狼")
-	p1["waypoints"] = [Vector3(-12.6, 0, -2.6), Vector3(-11.8, 0, 1.8), Vector3(-14.0, 0, 2.2)]
+	var p1 := build_fellow_rider(Vector3(-19.5, 0, -2.8), Color("#58b9ff"), Color("#464b59"), Vector3(1.15, 0.90, 1.75), "阿狼")
+	p1["waypoints"] = [Vector3(-19.5, 0, -2.8), Vector3(-17.8, 0, 2.8), Vector3(-21.0, 0, 3.2)]
 	p1["wp_idx"] = 0
 	p1["chat_t"] = 1.6
 	p1["lines"] = ["共享光柱，一起刷！✨", "我幫你摸這隻！", "按 C 一起打哨長！"]
 	public_travelers.append(p1)
 
-	var p2 := build_fellow_rider(Vector3(-7.4, 0, -3.0), Color("#f28c5a"), Color("#7a5440"), Vector3(1.42, 1.12, 1.72), "蜜熊")
-	p2["waypoints"] = [Vector3(-7.4, 0, -3.0), Vector3(-5.8, 0, 1.4), Vector3(-7.6, 0, 3.2)]
+	var p2 := build_fellow_rider(Vector3(-10.4, 0, -3.8), Color("#f28c5a"), Color("#7a5440"), Vector3(1.42, 1.12, 1.72), "蜜熊")
+	p2["waypoints"] = [Vector3(-10.4, 0, -3.8), Vector3(-8.2, 0, 1.8), Vector3(-10.8, 0, 4.2)]
 	p2["wp_idx"] = 0
 	p2["chat_t"] = 2.8
 	p2["lines"] = ["金色班長在這！", "噴金光柱了！✨", "重甲熊坦住！🛡️"]
@@ -313,9 +336,10 @@ func _update_fellow_travelers(delta: float) -> void:
 
 func _spawn_poe_mobs() -> void:
 	var spawns := [
-		{"pos": Vector3(-12.2, 0.0, 2.6), "name": "發條巡邏兵", "hp": 3, "rare": false},
-		{"pos": Vector3(-6.4, 0.0, -2.2), "name": "發條巡邏兵", "hp": 3, "rare": false},
-		{"pos": Vector3(-5.8, 0.0, 2.4), "name": "★ 加班班長", "hp": 7, "rare": true},
+		{"pos": Vector3(-18.5, 0.0, 2.8), "name": "發條巡邏兵", "hp": 3, "rare": false},
+		{"pos": Vector3(-11.2, 0.0, -3.5), "name": "發條巡邏兵", "hp": 3, "rare": false},
+		{"pos": Vector3(-8.2, 0.0, 2.8), "name": "★ 加班班長", "hp": 7, "rare": true},
+		{"pos": Vector3(-17.8, 0.0, -4.2), "name": "發條巡邏兵", "hp": 3, "rare": false},
 	]
 	for sp in spawns:
 		var node := Node3D.new()
@@ -414,13 +438,9 @@ func _physics_process(delta: float) -> void:
 		boss_talk_timer -= delta
 		if boss_talk_timer <= 0.0:
 			boss_bubble.text = ""
-	for cl in drifting_clouds:
-		var cn: Node3D = cl["node"]
-		var bp: Vector3 = cl["base"]
-		cn.position.x = bp.x + sin(t * 0.35 + float(cl["phase"])) * 1.4
 	for i in range(distant_riders.size()):
 		var r := distant_riders[i]
-		r.position.x = 26.0 + fmod(t * 1.8 * (1.0 + i * 0.25) + i * 5.0, 14.0)
+		r.position.x = 34.0 + fmod(t * 1.8 * (1.0 + i * 0.25) + i * 5.0, 14.0)
 
 	var cam_override := (VISTA_POS + Vector3(3.5, 0.0, -1.2)) if vista_zoomed else Vector3.INF
 	if not step_shared_physics(delta, cam_override):
@@ -430,11 +450,11 @@ func _physics_process(delta: float) -> void:
 		_start_boss_encounter()
 	if boss_active:
 		_update_boss(delta)
-	if PrologueState.boss_retired and not vista_zoomed and feet().x > 18.0:
+	if PrologueState.boss_retired and not vista_zoomed and feet().x > 24.0:
 		vista_zoomed = true
 		PrologueState.waypoint_road_unlocked = true
 		_clear_fog(fog_vista)
-		create_tween().tween_property(camera, "size", 23.5, 2.0)
+		create_tween().tween_property(camera, "size", 24.0, 2.0)
 		show_player_emote("✨", 2.5)
 	_update_ui()
 
@@ -469,7 +489,7 @@ func on_wolf_action() -> void:
 		return
 	wolf_charge_cooldown = wolf_charge_max
 	wolf_charge_timer = 0.55
-	if not PrologueState.timber_broken and PrologueState.mounted and flat(wolf.position - TIMBER_POS).length() < 4.8:
+	if not PrologueState.timber_broken and PrologueState.mounted and flat(wolf.position - TIMBER_POS).length() < 5.2:
 		PrologueState.timber_broken = true
 		spawn_wood_burst(TIMBER_POS, TIMBER_LIGHT, 10)
 		if is_instance_valid(timber_barricade):
@@ -486,7 +506,7 @@ func on_wolf_action() -> void:
 
 func on_air_slam_land() -> void:
 	_damage_nearby_mobs(PrologueState.get_total_atk() * 2, true)
-	if high_chest.visible and flat(player.position - HIGH_LEDGE_POS).length() < 3.4:
+	if high_chest.visible and flat(player.position - HIGH_LEDGE_POS).length() < 3.6:
 		_claim_high_chest()
 
 func _claim_high_chest() -> void:
@@ -501,7 +521,7 @@ func _claim_high_chest() -> void:
 func on_interact() -> void:
 	for i in range(loot_drops.size()):
 		var d: Dictionary = loot_drops[i]
-		if near(d["pos"], 2.2):
+		if near(d["pos"], 2.3):
 			PrologueState.add_item_to_inventory(d["item"])
 			(d["node"] as Node3D).queue_free()
 			loot_drops.remove_at(i)
@@ -656,7 +676,6 @@ func _retire_boss() -> void:
 		(coop_ally["bubble"] as Label3D).text = "恭喜勸退！+30¢ 🎉"
 	show_player_emote("✨", 2.0)
 	_boss_say("停戰百年了？！那我加班給誰看啊！", 4.5)
-	# Hilarious helmet launch skyward + squash-and-stretch tea stall pop-in!
 	var helm_tw := create_tween().set_parallel(true)
 	helm_tw.tween_property(boss_helmet, "position:y", 6.5, 0.55).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	helm_tw.tween_property(boss_helmet, "rotation_degrees:z", 540.0, 0.55)
@@ -707,7 +726,7 @@ func _update_ui() -> void:
 		update_boss_bar(false, "", 0, MAX_BOSS_HP)
 
 	for d in loot_drops:
-		if near(d["pos"], 2.2):
+		if near(d["pos"], 2.3):
 			set_prompt("[ E ] 拾取：" + PrologueState.format_item_title(d["item"]))
 			return
 
