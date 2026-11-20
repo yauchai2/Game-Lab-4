@@ -52,11 +52,17 @@ var _bgm_synth_player: AudioStreamPlayer
 var _bgm_synth_gen: AudioStreamGenerator
 var current_bgm_zone := ""
 var bgm_muted := false
+var bgm_volume := 0.75
+var sfx_volume := 0.85
+var prefer_playful_bgm := true
+var screen_shake_enabled := true
 var _bgm_using_file := false
 var _bgm_note_timer := 0.0
 var _bgm_step_idx := 0
 var _bgm_phase := 0.0
+var _bgm_bass_phase := 0.0
 var _bgm_cur_freq := 261.63
+var _bgm_bass_freq := 130.81
 var _bgm_note_env := 0.0
 
 const AFFIX_POOL := [
@@ -117,45 +123,63 @@ func _ready() -> void:
 	add_child(_bgm_synth_player)
 	_bgm_synth_player.play()
 
+func _apply_audio_volumes() -> void:
+	var bgm_db := -80.0 if (bgm_muted or bgm_volume <= 0.01) else linear_to_db(bgm_volume * 0.35)
+	var synth_db := -80.0 if (bgm_muted or bgm_volume <= 0.01) else linear_to_db(bgm_volume * 0.25)
+	var sfx_db := -80.0 if sfx_volume <= 0.01 else linear_to_db(sfx_volume * 0.55)
+	if _bgm_player:
+		_bgm_player.volume_db = bgm_db
+	if _bgm_synth_player:
+		_bgm_synth_player.volume_db = synth_db
+	if _sfx_player:
+		_sfx_player.volume_db = sfx_db
+
+func set_bgm_volume(v: float) -> void:
+	bgm_volume = clampf(v, 0.0, 1.0)
+	_apply_audio_volumes()
+
+func set_sfx_volume(v: float) -> void:
+	sfx_volume = clampf(v, 0.0, 1.0)
+	_apply_audio_volumes()
+
+func set_playful_bgm(enabled: bool) -> void:
+	prefer_playful_bgm = enabled
+	var z := current_bgm_zone
+	current_bgm_zone = ""
+	if not z.is_empty():
+		play_bgm(z)
+
 func play_bgm(zone: String) -> void:
 	if zone == current_bgm_zone:
 		return
 	current_bgm_zone = zone
 	_bgm_step_idx = 0
 	var stream: AudioStream = null
-	for ext in [".mp3", ".ogg", ".wav"]:
-		var p := "res://assets/audio/bgm/%s%s" % [zone, ext]
-		if ResourceLoader.exists(p):
-			stream = ResourceLoader.load(p) as AudioStream
-			if stream:
-				break
+	if not prefer_playful_bgm:
+		for ext in [".mp3", ".ogg", ".wav"]:
+			var p := "res://assets/audio/bgm/%s%s" % [zone, ext]
+			if ResourceLoader.exists(p):
+				stream = ResourceLoader.load(p) as AudioStream
+				if stream:
+					break
 	if stream:
 		_bgm_using_file = true
 		if stream is AudioStreamMP3:
 			(stream as AudioStreamMP3).loop = true
 		elif stream is AudioStreamOggVorbis:
 			(stream as AudioStreamOggVorbis).loop = true
-		var tw := create_tween()
-		if _bgm_player.playing:
-			tw.tween_property(_bgm_player, "volume_db", -36.0, 0.35)
-		tw.tween_callback(func() -> void:
-			_bgm_player.stream = stream
-			_bgm_player.volume_db = -80.0 if bgm_muted else -36.0
-			_bgm_player.play()
-		)
-		if not bgm_muted:
-			tw.tween_property(_bgm_player, "volume_db", -12.0, 0.55)
+		_bgm_player.stream = stream
+		_bgm_player.play()
+		_apply_audio_volumes()
 	else:
 		_bgm_using_file = false
 		if _bgm_player.playing:
 			_bgm_player.stop()
+		_apply_audio_volumes()
 
 func toggle_bgm_mute() -> bool:
 	bgm_muted = not bgm_muted
-	if _bgm_player:
-		_bgm_player.volume_db = -80.0 if bgm_muted else -12.0
-	if _bgm_synth_player:
-		_bgm_synth_player.volume_db = -80.0 if bgm_muted else -18.0
+	_apply_audio_volumes()
 	return bgm_muted
 
 func _process(delta: float) -> void:
@@ -166,115 +190,135 @@ func _process(delta: float) -> void:
 	var pb := _bgm_synth_player.get_stream_playback() as AudioStreamGeneratorPlayback
 	if pb == null:
 		return
-	var notes: Array[float] = [261.63, 293.66, 329.63, 392.00, 440.00, 392.00, 329.63, 293.66]
-	var step_dur := 0.62
+	var notes: Array[float] = [392.00, 440.00, 523.25, 440.00, 392.00, 329.63, 293.66, 329.63, 392.00, 523.25, 587.33, 523.25]
+	var bass: Array[float] = [196.00, 146.83, 130.81, 146.83]
+	var step_dur := 0.34
 	match current_bgm_zone:
 		"town":
-			notes = [329.63, 392.00, 440.00, 523.25, 440.00, 392.00, 329.63, 293.66]
-			step_dur = 0.42
-		"road":
-			notes = [293.66, 349.23, 440.00, 523.25, 440.00, 349.23, 329.63, 293.66]
-			step_dur = 0.48
-		"boss":
-			notes = [220.00, 261.63, 329.63, 293.66, 220.00, 329.63, 392.00, 329.63]
+			notes = [523.25, 659.25, 587.33, 523.25, 440.00, 523.25, 587.33, 659.25, 783.99, 659.25, 587.33, 440.00]
+			bass = [261.63, 196.00, 220.00, 196.00]
 			step_dur = 0.28
+		"road":
+			notes = [392.00, 440.00, 493.88, 587.33, 523.25, 493.88, 440.00, 392.00, 329.63, 392.00, 440.00, 587.33]
+			bass = [196.00, 196.00, 164.81, 146.83]
+			step_dur = 0.25
+		"boss":
+			notes = [329.63, 329.63, 392.00, 329.63, 440.00, 392.00, 349.23, 329.63, 293.66, 329.63, 392.00, 493.88]
+			bass = [164.81, 196.00, 146.83, 164.81]
+			step_dur = 0.19
 	_bgm_note_timer -= delta
 	if _bgm_note_timer <= 0.0:
 		_bgm_note_timer = step_dur
 		_bgm_cur_freq = notes[_bgm_step_idx % notes.size()]
+		_bgm_bass_freq = bass[(_bgm_step_idx / 2) % bass.size()]
 		_bgm_step_idx += 1
 		_bgm_note_env = 1.0
 	var avail := pb.get_frames_available()
 	var sr := 22050.0
 	for _i in range(mini(avail, 512)):
 		_bgm_phase += TAU * _bgm_cur_freq / sr
-		_bgm_note_env = maxf(0.0, _bgm_note_env - 1.6 / sr)
-		var s := (sin(_bgm_phase) * 0.7 + sin(_bgm_phase * 2.0) * 0.2) * _bgm_note_env * 0.14
+		_bgm_bass_phase += TAU * _bgm_bass_freq / sr
+		_bgm_note_env = maxf(0.0, _bgm_note_env - 2.6 / sr)
+		var marimba := (sin(_bgm_phase) * 0.72 + sin(_bgm_phase * 3.0) * 0.16) * _bgm_note_env
+		var pluck_bass := sin(_bgm_bass_phase) * maxf(0.18, _bgm_note_env * 0.65)
+		var s := (marimba * 0.14 + pluck_bass * 0.08)
 		pb.push_frame(Vector2(s, s))
 
 func play_sfx(kind: String) -> void:
-	if not _sfx_player or not _sfx_player.playing:
+	if not _sfx_player or not _sfx_player.playing or sfx_volume <= 0.01:
 		return
 	var pb := _sfx_player.get_stream_playback() as AudioStreamGeneratorPlayback
 	if pb == null:
 		return
 	var sr := 22050.0
-	var frames := 0
+	var avail := pb.get_frames_available()
+	if avail <= 64:
+		return
+	var frames := int(sr * 0.14)
+	var phase := 0.0
+	var phase2 := 0.0
+	match kind:
+		"stamp":
+			frames = mini(avail, int(sr * 0.28))
+			for i in range(frames):
+				var t := float(i) / float(frames)
+				var thud_f := lerpf(155.0, 48.0, minf(1.0, t * 3.0))
+				var boing_f := 320.0 + sin(t * 28.0) * 95.0 + t * 240.0
+				phase += TAU * thud_f / sr
+				phase2 += TAU * boing_f / sr
+				var s := sin(phase) * maxf(0.0, 1.0 - t * 3.2) * 0.42 + sin(phase2) * (1.0 - t) * 0.22
+				pb.push_frame(Vector2(s, s))
+			return
+		"slingshot":
+			frames = mini(avail, int(sr * 0.16))
+			for i in range(frames):
+				var t := float(i) / float(frames)
+				var f := 220.0 + t * 620.0 + sin(t * 40.0) * 65.0
+				phase += TAU * f / sr
+				var s := sin(phase) * (1.0 - t) * 0.28
+				pb.push_frame(Vector2(s, s))
+			return
+		"coin":
+			frames = mini(avail, int(sr * 0.16))
+			for i in range(frames):
+				var t := float(i) / float(frames)
+				var f := 987.77 if t < 0.35 else 1318.51
+				phase += TAU * f / sr
+				var s := (sin(phase) * 0.8 + sin(phase * 2.0) * 0.2) * (1.0 - t) * 0.24
+				pb.push_frame(Vector2(s, s))
+			return
+		"craft", "checkpoint":
+			frames = mini(avail, int(sr * 0.24))
+			var arp := [523.25, 659.25, 783.99, 1046.50]
+			for i in range(frames):
+				var t := float(i) / float(frames)
+				var f: float = arp[mini(3, int(t * 4.0))]
+				phase += TAU * f / sr
+				var s := sin(phase) * (1.0 - t * 0.85) * 0.24
+				pb.push_frame(Vector2(s, s))
+			return
+		"heal":
+			frames = mini(avail, int(sr * 0.22))
+			for i in range(frames):
+				var t := float(i) / float(frames)
+				var f := 380.0 + sin(t * 22.0) * 110.0 + t * 340.0
+				phase += TAU * f / sr
+				var s := sin(phase) * (1.0 - t) * 0.26
+				pb.push_frame(Vector2(s, s))
+			return
+		"wolf":
+			frames = mini(avail, int(sr * 0.16))
+			for i in range(frames):
+				var t := float(i) / float(frames)
+				var f := lerpf(290.0, 125.0, t)
+				phase += TAU * f / sr
+				var s := (sin(phase) * 0.7 + randf_range(-1.0, 1.0) * 0.3) * (1.0 - t) * 0.32
+				pb.push_frame(Vector2(s, s))
+			return
 	var f0 := 440.0
 	var f1 := 440.0
-	var amp := 0.22
+	var amp := 0.24
 	var noise_mix := 0.0
 	match kind:
 		"slash":
-			frames = int(sr * 0.09)
-			f0 = 520.0
-			f1 = 190.0
-			noise_mix = 0.35
-		"slingshot":
-			frames = int(sr * 0.11)
-			f0 = 310.0
-			f1 = 760.0
-			amp = 0.25
+			frames = int(sr * 0.09); f0 = 560.0; f1 = 210.0; noise_mix = 0.35
 		"hit":
-			frames = int(sr * 0.08)
-			f0 = 210.0
-			f1 = 75.0
-			amp = 0.32
-			noise_mix = 0.25
-		"coin":
-			frames = int(sr * 0.14)
-			f0 = 880.0
-			f1 = 1320.0
-			amp = 0.20
-		"stamp":
-			frames = int(sr * 0.22)
-			f0 = 160.0
-			f1 = 52.0
-			amp = 0.42
-			noise_mix = 0.30
-		"craft":
-			frames = int(sr * 0.18)
-			f0 = 523.25
-			f1 = 1046.5
-			amp = 0.24
-		"heal":
-			frames = int(sr * 0.20)
-			f0 = 440.0
-			f1 = 659.25
-			amp = 0.22
+			frames = int(sr * 0.08); f0 = 230.0; f1 = 80.0; amp = 0.32; noise_mix = 0.25
 		"wood":
-			frames = int(sr * 0.14)
-			f0 = 180.0
-			f1 = 65.0
-			amp = 0.36
-			noise_mix = 0.55
+			frames = int(sr * 0.14); f0 = 190.0; f1 = 68.0; amp = 0.36; noise_mix = 0.55
 		"dodge":
-			frames = int(sr * 0.10)
-			f0 = 360.0
-			f1 = 150.0
-			amp = 0.22
-			noise_mix = 0.45
+			frames = int(sr * 0.10); f0 = 420.0; f1 = 170.0; amp = 0.22; noise_mix = 0.45
 		"whirl":
-			frames = int(sr * 0.18)
-			f0 = 260.0
-			f1 = 680.0
-			amp = 0.30
-			noise_mix = 0.35
+			frames = int(sr * 0.18); f0 = 280.0; f1 = 760.0; amp = 0.30; noise_mix = 0.32
 		_:
 			return
-	var avail := pb.get_frames_available()
 	var count := mini(frames, avail)
-	if count <= 0:
-		return
-	var phase := 0.0
 	for i in range(count):
 		var t := float(i) / float(count)
-		var freq := lerpf(f0, f1, t)
-		phase += TAU * freq / sr
+		phase += TAU * lerpf(f0, f1, t) / sr
 		var env := (1.0 - t) * (1.0 - t)
 		var sig := sin(phase) * (1.0 - noise_mix) + randf_range(-1.0, 1.0) * noise_mix
-		var s := sig * env * amp
-		pb.push_frame(Vector2(s, s))
+		pb.push_frame(Vector2(sig * env * amp, sig * env * amp))
 
 func reset_all() -> void:
 	has_started = false

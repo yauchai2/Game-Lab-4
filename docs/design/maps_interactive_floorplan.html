@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>《補簽遠行》全地圖互動平面圖工作室（PoE 2 架構設計＆AI 生圖參考）</title>
+<style>
+  :root {
+    --bg: #f6efe0;
+    --panel: #fbf6ea;
+    --ink: #273244;
+    --muted: #626d7f;
+    --gold: #c89646;
+    --teal: #34a8a2;
+    --coral: #d96b59;
+    --border: #d8c7a8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, "PingFang TC", "Noto Sans TC", sans-serif;
+    background: var(--bg); color: var(--ink); display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+  }
+  header {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 10px 18px; background: #263144; color: #fbf2df; border-bottom: 3px solid var(--gold);
+  }
+  header h1 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: 0.5px; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tab {
+    border: 1px solid #536480; background: #324059; color: #e8eef7; padding: 6px 12px;
+    border-radius: 8px; cursor: pointer; font-size: 13px; transition: 0.15s;
+  }
+  .tab.active { background: var(--gold); color: #1c2432; border-color: #f5d284; font-weight: 700; }
+  .main { display: flex; flex: 1; min-height: 0; }
+  .canvas-wrap {
+    flex: 1; position: relative; display: flex; align-items: center; justify-content: center;
+    background: #e6dbc5; padding: 14px; overflow: hidden;
+  }
+  canvas {
+    background: #f4ebd9; border: 2px solid var(--gold); border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(30, 35, 50, 0.14); max-width: 100%; max-height: 100%; cursor: crosshair;
+  }
+  .coord-hud {
+    position: absolute; left: 26px; bottom: 24px; background: rgba(34, 44, 62, 0.88);
+    color: #fff3d6; padding: 6px 12px; border-radius: 8px; font-size: 12px; pointer-events: none;
+    border: 1px solid var(--gold);
+  }
+  .sidebar {
+    width: 340px; background: var(--panel); border-left: 2px solid var(--border);
+    padding: 14px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+  }
+  .card {
+    background: #fffdf7; border: 1px solid var(--border); border-radius: 10px; padding: 11px 12px;
+  }
+  .card h3 { margin: 0 0 8px 0; font-size: 13.5px; color: #78481d; border-bottom: 1px dashed var(--border); padding-bottom: 5px; }
+  .layers { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 12.5px; }
+  .layers label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .btn-row { display: flex; flex-direction: column; gap: 7px; }
+  button.action {
+    border: none; border-radius: 8px; padding: 8px 11px; font-size: 12.5px; font-weight: 600;
+    cursor: pointer; background: #2d3c54; color: #fff7e6; transition: 0.15s; text-align: left;
+  }
+  button.action:hover { background: #3c4f6e; }
+  button.action.gold { background: var(--gold); color: #1c2432; }
+  button.action.teal { background: var(--teal); color: #fff; }
+  button.action.coral { background: var(--coral); color: #fff; }
+  .info-box { font-size: 12.5px; line-height: 1.55; color: #364154; }
+  .pin-list { display: flex; flex-direction: column; gap: 5px; max-height: 130px; overflow-y: auto; font-size: 12px; }
+  .pin-item {
+    display: flex; justify-content: space-between; align-items: center; gap: 6px;
+    background: #f5ecd7; padding: 4px 8px; border-radius: 6px;
+  }
+  .pin-item button { border: none; background: transparent; color: #b83a2d; cursor: pointer; font-weight: 700; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; font-size: 11.5px; color: var(--muted); }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+  .toast {
+    position: fixed; top: 64px; right: 24px; background: #263144; color: #ffe7a3;
+    padding: 9px 14px; border-radius: 8px; border: 1px solid var(--gold); font-size: 13px;
+    opacity: 0; transition: 0.2s; pointer-events: none; z-index: 99;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🗺 《補簽遠行》互動平面圖設計工作室</h1>
+  <div class="tabs" id="tabs"></div>
+</header>
+<div class="main">
+  <div class="canvas-wrap">
+    <canvas id="mapCanvas" width="1120" height="720"></canvas>
+    <div class="coord-hud" id="coordHud">游標座標：X=0.0, Z=0.0 ｜ 拖曳節點可微調位置，點擊空白處可新增設計備註</div>
+  </div>
+  <aside class="sidebar">
+    <div class="card">
+      <h3>🧭 當前地圖摘要</h3>
+      <div class="info-box" id="mapSummary"></div>
+    </div>
+    <div class="card">
+      <h3>🔍 選取項目／座標檢視</h3>
+      <div class="info-box" id="selectedInfo">點擊或拖曳地圖上任何圖示，即可檢視精確 Godot 座標（Vector3）並調整擺位。</div>
+    </div>
+    <div class="card">
+      <h3>👁 圖層顯示開關</h3>
+      <div class="layers">
+        <label><input type="checkbox" id="lyrGrid" checked /> 座標網格 (10m)</label>
+        <label><input type="checkbox" id="lyrSub" checked /> 子區域色塊</label>
+        <label><input type="checkbox" id="lyrPath" checked /> 道路與溪流</label>
+        <label><input type="checkbox" id="lyrBorder" checked /> 實體邊界阻擋</label>
+        <label><input type="checkbox" id="lyrMobs" checked /> 怪物與傳奇怪</label>
+        <label><input type="checkbox" id="lyrLabels" checked /> 中文名稱標註</label>
+      </div>
+    </div>
+    <div class="card">
+      <h3>📌 自訂設計修改標記（點擊地圖新增）</h3>
+      <div class="pin-list" id="pinList"><span style="color:#8a94a6">尚無自訂標記，直接點擊平面圖空白處即可加上「這裡想加寶箱／改地形」備註。</span></div>
+    </div>
+    <div class="card">
+      <h3>⚡ 協作與 AI 生圖工具</h3>
+      <div class="btn-row">
+        <button class="action gold" id="btnCopySpec">📋 複製給 Gemini 的修改設計指令</button>
+        <button class="action teal" id="btnCopyPrompt">🎨 複製 AI 生圖 Prompt（@amelicart 水粉平面圖）</button>
+        <button class="action coral" id="btnExportPng">🖼 匯出高解析 PNG 平面圖（可供 AI 圖生圖參考）</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>🎨 圖例</h3>
+      <div class="legend">
+        <span><i class="dot" style="background:#34b8b0"></i>傳送石陣 / 檢查點</span>
+        <span><i class="dot" style="background:#98e882"></i>出入口</span>
+        <span><i class="dot" style="background:#e86b6b"></i>普通小怪</span>
+        <span><i class="dot" style="background:#f5c03b"></i>金色精英</span>
+        <span><i class="dot" style="background:#ff7b3b"></i>隱藏傳奇怪</span>
+        <span><i class="dot" style="background:#c92a2a"></i>區域 Boss</span>
+        <span><i class="dot" style="background:#5b9cf0"></i>NPC / 設施</span>
+      </div>
+    </div>
+  </aside>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const MAPS = [
+  {
+    id: "clearing", name: "1. 營火林緣 (68m×50m)", bounds: { minX: -36, maxX: 36, minZ: -27, maxZ: 27 },
+    bg: "#263c52", land: "#335066", borderStyle: "松林巨石與木柵邊界",
+    desc: "序幕起點：月夜森林營火、開局 10 秒迷路小兵蓋退休章、湖畔釣魚碼頭、西北青苔洞與巨像。",
+    regions: [
+      { x: 0, z: 0, rx: 14, rz: 10, color: "rgba(70,115,128,0.45)", label: "中央營火空地" },
+      { x: -20, z: -14, rx: 10, rz: 8, color: "rgba(56,92,98,0.5)", label: "西北青苔洞窟" },
+      { x: 18, z: 12, rx: 11, rz: 8, color: "rgba(44,122,168,0.48)", label: "東南湖畔釣魚碼頭" },
+    ],
+    paths: [[[-4, 0], [8, 1], [22, 0.5], [27, 0.5]], [[-4, 0], [-14, -8], [-20, -14]], [[4, 2], [14, 10], [20, 12]]],
+    streams: [[[10, 22], [18, 14], [28, 12]]],
+    pois: [
+      { id: "spawn", x: -4, z: 1.5, kind: "npc", name: "營火起點＆巨狼" },
+      { id: "stray", x: 3.5, z: -0.5, kind: "rare", name: "迷路加班小兵（開局 10 秒蓋章）" },
+      { id: "pier", x: 19.5, z: 12.5, kind: "npc", name: "湖畔垂釣木棧道（解鎖分裂印章）" },
+      { id: "cave", x: -20.5, z: -14.5, kind: "npc", name: "西北青苔洞＆退休小巨像" },
+      { id: "exit_e", x: 27.5, z: 0.5, kind: "exit", name: "東木橋 → 雲丘停戰營地" },
+    ]
+  },
+  {
+    id: "town", name: "2. 雲丘停戰營地・主城 (86m×62m)", bounds: { minX: -45, maxX: 45, minZ: -33, maxZ: 33 },
+    bg: "#2b93d6", land: "#87b658", borderStyle: "海崖木欄、花叢與礁岩邊界",
+    desc: "PoE 2 Clearfell Encampment 風格環形主城：中央青金傳送石陣，環繞生命清泉、停戰書記官、紅篷商人、造裝工坊、波波回收與沙洲秘寶。",
+    regions: [
+      { x: 0, z: 0, rx: 11, rz: 9, color: "rgba(244,218,162,0.75)", label: "中央傳送廣場" },
+      { x: -27, z: 15, rx: 8, rz: 7, color: "rgba(242,213,148,0.7)", label: "西南燈塔小島" },
+      { x: -11, z: 22.8, rx: 9, rz: 5.5, color: "rgba(242,213,148,0.72)", label: "南岸秘寶沙洲" },
+      { x: 0, z: -17, rx: 18, rz: 7, color: "rgba(161,201,107,0.65)", label: "北境石拱門散步道" },
+    ],
+    paths: [[[-23, 1.5], [-10, 1.8], [0, 0.4], [10, 2.2], [23.2, 1.2]], [[0, 0.4], [-7.6, -3.2]], [[0, 0.4], [6.2, -4.0]], [[-13.5, 8.2], [-24, 14.5]]],
+    streams: [[[-22, 9.5], [-12.5, 11.8], [0, 12.6], [14, 9.8], [18.5, 2.2], [19.5, -8.5]]],
+    pois: [
+      { id: "wp", x: -0.2, z: 0.4, kind: "checkpoint", name: "✦ 中央傳送石陣 [U 世界圖]" },
+      { id: "well", x: -4.8, z: -0.6, kind: "checkpoint", name: "💧 生命清泉（滿血＋滿水壺）" },
+      { id: "scribe", x: 4.6, z: 0.2, kind: "npc", name: "！停戰書記官（主支線任務）" },
+      { id: "shop", x: -7.6, z: -3.2, kind: "npc", name: "紅篷軍需商人（五折短劍＆彈弓）" },
+      { id: "tavern", x: 6.2, z: -4.0, kind: "npc", name: "退休魔物大酒館" },
+      { id: "slime", x: -3.4, z: 5.2, kind: "npc", name: "回收史萊姆波波" },
+      { id: "stash", x: 11.4, z: 7.6, kind: "npc", name: "簡約造裝工坊＆儲物箱 [I]" },
+      { id: "scope", x: -24.0, z: 14.5, kind: "npc", name: "燈塔全景望遠鏡" },
+      { id: "sandchest", x: -11.0, z: 22.8, kind: "rare", name: "沙洲秘寶箱（雙薪印章）" },
+      { id: "exit_w", x: -23.0, z: 1.5, kind: "exit", name: "← 返回營火林緣" },
+      { id: "exit_e", x: 23.2, z: 1.2, kind: "exit", name: "→ 前往雲海古道" },
+    ]
+  },
+  {
+    id: "road", name: "3. 雲海古道與高地 (150m×96m)", bounds: { minX: -64, maxX: 84, minZ: -48, maxZ: 48 },
+    bg: "#c7a8d8", land: "#d9984e", borderStyle: "高地矮石牆、巨岩與木欄邊界",
+    desc: "第一張 PoE 2 超大型探索荒野：5 大連通子區域、3 座野外檢查點、19 隻分級怪物、2 隻深處隱藏傳奇怪、長拱石橋 Boss《稻草人哨長》。",
+    regions: [
+      { x: -42, z: -28, rx: 16, rz: 14, color: "rgba(232,168,86,0.6)", label: "1. 西北舊軍遺址" },
+      { x: -12, z: -34, rx: 16, rz: 13, color: "rgba(201,138,66,0.65)", label: "2. 北境秋風車高嶺" },
+      { x: -40, z: 29, rx: 18, rz: 15, color: "rgba(255,112,156,0.36)", label: "3. 西南無盡粉花海" },
+      { x: -12, z: 32, rx: 15, rz: 13, color: "rgba(130,178,94,0.5)", label: "4. 南境瀑布溪谷" },
+      { x: 60, z: 0, rx: 20, rz: 28, color: "rgba(115,178,98,0.55)", label: "5. 東境翡翠高地" },
+    ],
+    paths: [
+      [[-25.5, 0.4], [-14.5, 0], [-4.5, 0], [2.4, 0], [21, 0], [33.2, 0.5]],
+      [[-20.2, -2.5], [-30, -19.5], [-44, -29]], [[-34, -22.5], [-23, -29.5], [-7.5, -35.5]],
+      [[-18.2, 3.5], [-31, 22.5], [-43, 31]], [[-31, 22.5], [-11.5, 32.5]],
+      [[33.2, 0.5], [45.5, 0.8], [63.5, -20.5]], [[45.5, 0.8], [64, 21]]
+    ],
+    streams: [[[7.5, -45], [9.5, -3.5], [11.5, 5.5], [14.5, 45]]],
+    pois: [
+      { id: "exit_w", x: -25.5, z: 0.4, kind: "exit", name: "← 雲丘停戰營地" },
+      { id: "timber", x: -14.5, z: 0.0, kind: "npc", name: "倒塌巨木路障（巨狼 Q 撞碎）" },
+      { id: "rare_main", x: -8.2, z: 2.8, kind: "rare", name: "★ 加班班長" },
+      { id: "boss", x: 11.5, z: 0.0, kind: "boss", name: "💀 區域 Boss：稻草人哨長（長拱石橋）" },
+      { id: "cp1", x: -34.0, z: -22.5, kind: "checkpoint", name: "◆ 檢查點：西北舊軍遺址" },
+      { id: "rare_nw", x: -44.0, z: -30.0, kind: "rare", name: "★ 舊軍砲兵長" },
+      { id: "uniq1", x: -7.5, z: -35.5, kind: "unique", name: "❖ 隱藏傳奇怪 #1：失控百年發條巨像 (HP 20)" },
+      { id: "cp2", x: -31.0, z: 22.5, kind: "checkpoint", name: "◆ 檢查點：西南粉花海" },
+      { id: "rare_sw", x: -42.5, z: 30.5, kind: "rare", name: "★ 粉花海園丁長" },
+      { id: "rare_s", x: -10.5, z: 33.5, kind: "rare", name: "★ 溪谷巡邏隊長" },
+      { id: "cp3", x: 48.0, z: -6.5, kind: "checkpoint", name: "◆ 檢查點：東境翡翠高地" },
+      { id: "uniq2", x: 63.5, z: -20.5, kind: "unique", name: "❖ 隱藏傳奇怪 #2：翡翠樹影守望者 (HP 22)" },
+      { id: "exit_e", x: 33.2, z: 0.5, kind: "exit", name: "→ 前往翡翠天梯古林" },
+    ]
+  },
+  {
+    id: "forest", name: "4. 翡翠天梯古林 (160m×104m)", bounds: { minX: -74, maxX: 86, minZ: -52, maxZ: 52 },
+    bg: "#2d7564", land: "#589e58", borderStyle: "翡翠松林、青苔巨岩與古林木柵邊界",
+    desc: "第一章第二座超大型密林：5 大連通子區域、古林傳送石陣、3 座檢查點、3 隻金色精英、2 隻隱藏傳奇怪、東境圓形聖壇 Boss《翡翠樹王》。",
+    regions: [
+      { x: -52, z: 0, rx: 18, rz: 15, color: "rgba(106,179,96,0.6)", label: "1. 西境古林天梯入口" },
+      { x: -16, z: -31, rx: 26, rz: 15, color: "rgba(56,120,70,0.65)", label: "2. 北境青苔巨根迷宮" },
+      { x: -10, z: 30, rx: 26, rz: 15, color: "rgba(64,162,158,0.45)", label: "3. 南境幽靜螢火溪谷" },
+      { x: 10, z: 0, rx: 22, rz: 14, color: "rgba(142,208,104,0.58)", label: "4. 中境日光樹冠台地" },
+      { x: 60, z: 0, rx: 18, rz: 18, color: "rgba(232,212,156,0.68)", label: "5. 東境翡翠樹王聖壇" },
+    ],
+    paths: [
+      [[-66, 0], [-42, 0], [-16, 2], [12, -2], [38, 0], [60, 0], [78, 0]],
+      [[-48, -4], [-36, -18], [-22, -28], [-34, -39]], [[-22, -28], [-4, -30], [12, -16]],
+      [[-48, 4], [-34, 18], [-18, 30], [12.5, 39.5]], [[-18, 30], [4, 22], [22, 10]]
+    ],
+    streams: [[[-38, 24], [-18, 30], [0, 34], [20, 28]]],
+    pois: [
+      { id: "exit_w", x: -66.0, z: 0.0, kind: "exit", name: "← 返回雲海古道" },
+      { id: "wp", x: -56.0, z: -4.0, kind: "checkpoint", name: "✦ 古林傳送石陣 [U 世界圖]" },
+      { id: "cp1", x: -22.0, z: -25.0, kind: "checkpoint", name: "◆ 檢查點：青苔巨根迷宮" },
+      { id: "rare_n", x: -8.0, z: -28.0, kind: "rare", name: "★ 百年樹根隊長" },
+      { id: "uniq1", x: -34.0, z: -39.0, kind: "unique", name: "❖ 隱藏傳奇怪 #1：苔蘚發條園丁 (HP 24)" },
+      { id: "cp2", x: -14.0, z: 25.0, kind: "checkpoint", name: "◆ 檢查點：螢火溪谷" },
+      { id: "rare_s", x: 0.0, z: 28.0, kind: "rare", name: "★ 溪谷翡翠射手" },
+      { id: "uniq2", x: 12.5, z: 39.5, kind: "unique", name: "❖ 隱藏傳奇怪 #2：沉睡琥珀巨偶 (HP 26)" },
+      { id: "rare_c", x: 18.0, z: -1.0, kind: "rare", name: "★ 樹冠巡林長" },
+      { id: "cp3", x: 36.0, z: 0.0, kind: "checkpoint", name: "◆ 檢查點：樹王聖壇前" },
+      { id: "boss", x: 60.0, z: 0.0, kind: "boss", name: "💀 區域 Boss：翡翠樹王（退休後開果茶亭）" },
+      { id: "exit_e", x: 78.0, z: 0.0, kind: "exit", name: "→ 舊軍鐘樓哨所（規劃中）" },
+    ]
+  }
+];
+
+let curIdx = 2; // Default to CloudhillRoad
+let selectedPoi = null;
+let draggingPoi = null;
+const customPins = { clearing: [], town: [], road: [], forest: [] };
+const canvas = document.getElementById("mapCanvas");
+const ctx = canvas.getContext("2d");
+
+function curMap() { return MAPS[curIdx]; }
+
+function worldToCanvas(x, z, m = curMap()) {
+  const pad = 42;
+  const uw = canvas.width - pad * 2;
+  const uh = canvas.height - pad * 2;
+  const nx = (x - m.bounds.minX) / (m.bounds.maxX - m.bounds.minX);
+  const nz = (z - m.bounds.minZ) / (m.bounds.maxZ - m.bounds.minZ);
+  return { cx: pad + nx * uw, cy: pad + nz * uh };
+}
+
+function canvasToWorld(cx, cy, m = curMap()) {
+  const pad = 42;
+  const uw = canvas.width - pad * 2;
+  const uh = canvas.height - pad * 2;
+  const x = m.bounds.minX + ((cx - pad) / uw) * (m.bounds.maxX - m.bounds.minX);
+  const z = m.bounds.minZ + ((cy - pad) / uh) * (m.bounds.maxZ - m.bounds.minZ);
+  return { x: Math.round(x * 10) / 10, z: Math.round(z * 10) / 10 };
+}
+
+function poiColor(k) {
+  return { checkpoint: "#34b8b0", exit: "#98e882", rare: "#f5c03b", unique: "#ff7b3b", boss: "#c92a2a", npc: "#5b9cf0", mob: "#e86b6b" }[k] || "#666";
+}
+
+function draw() {
+  const m = curMap();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = m.bg;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const tl = worldToCanvas(m.bounds.minX + 3, m.bounds.minZ + 3, m);
+  const br = worldToCanvas(m.bounds.maxX - 3, m.bounds.maxZ - 3, m);
+  ctx.fillStyle = m.land;
+  ctx.beginPath();
+  ctx.roundRect(tl.cx, tl.cy, br.cx - tl.cx, br.cy - tl.cy, 22);
+  ctx.fill();
+
+  if (document.getElementById("lyrSub").checked) {
+    for (const r of m.regions) {
+      const p = worldToCanvas(r.x, r.z, m);
+      const sx = (r.rx / (m.bounds.maxX - m.bounds.minX)) * (canvas.width - 84);
+      const sz = (r.rz / (m.bounds.maxZ - m.bounds.minZ)) * (canvas.height - 84);
+      ctx.fillStyle = r.color;
+      ctx.beginPath();
+      ctx.ellipse(p.cx, p.cy, sx, sz, 0, 0, Math.PI * 2);
+      ctx.fill();
+      if (document.getElementById("lyrLabels").checked) {
+        ctx.fillStyle = "rgba(30,38,52,0.78)";
+        ctx.font = "bold 13px -apple-system, PingFang TC, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(r.label, p.cx, p.cy - sz + 18);
+      }
+    }
+  }
+
+  if (document.getElementById("lyrGrid").checked) {
+    ctx.strokeStyle = "rgba(255,255,255,0.16)";
+    ctx.lineWidth = 1;
+    for (let x = Math.ceil(m.bounds.minX / 10) * 10; x <= m.bounds.maxX; x += 10) {
+      const p0 = worldToCanvas(x, m.bounds.minZ, m);
+      const p1 = worldToCanvas(x, m.bounds.maxZ, m);
+      ctx.beginPath(); ctx.moveTo(p0.cx, p0.cy); ctx.lineTo(p1.cx, p1.cy); ctx.stroke();
+    }
+    for (let z = Math.ceil(m.bounds.minZ / 10) * 10; z <= m.bounds.maxZ; z += 10) {
+      const p0 = worldToCanvas(m.bounds.minX, z, m);
+      const p1 = worldToCanvas(m.bounds.maxX, z, m);
+      ctx.beginPath(); ctx.moveTo(p0.cx, p0.cy); ctx.lineTo(p1.cx, p1.cy); ctx.stroke();
+    }
+  }
+
+  if (document.getElementById("lyrPath").checked) {
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    for (const s of m.streams) {
+      ctx.strokeStyle = "#4bc5e8"; ctx.lineWidth = 16;
+      ctx.beginPath();
+      s.forEach((pt, idx) => { const p = worldToCanvas(pt[0], pt[1], m); idx ? ctx.lineTo(p.cx, p.cy) : ctx.moveTo(p.cx, p.cy); });
+      ctx.stroke();
+    }
+    for (const path of m.paths) {
+      ctx.strokeStyle = "rgba(244,218,166,0.88)"; ctx.lineWidth = 9;
+      ctx.beginPath();
+      path.forEach((pt, idx) => { const p = worldToCanvas(pt[0], pt[1], m); idx ? ctx.lineTo(p.cx, p.cy) : ctx.moveTo(p.cx, p.cy); });
+      ctx.stroke();
+    }
+  }
+
+  if (document.getElementById("lyrBorder").checked) {
+    ctx.strokeStyle = "#5c3d28"; ctx.lineWidth = 5; ctx.setLineDash([12, 6]);
+    ctx.strokeRect(tl.cx, tl.cy, br.cx - tl.cx, br.cy - tl.cy);
+    ctx.setLineDash([]);
+  }
+
+  if (document.getElementById("lyrMobs").checked) {
+    for (const poi of m.pois) {
+      const p = worldToCanvas(poi.x, poi.z, m);
+      const rad = (poi.kind === "boss" || poi.kind === "unique") ? 13 : (poi.kind === "rare" ? 10 : 8.5);
+      if (selectedPoi === poi) {
+        ctx.fillStyle = "rgba(255,235,120,0.45)";
+        ctx.beginPath(); ctx.arc(p.cx, p.cy, rad + 8, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = poiColor(poi.kind);
+      ctx.beginPath(); ctx.arc(p.cx, p.cy, rad, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#1d2534"; ctx.lineWidth = 2; ctx.stroke();
+      if (document.getElementById("lyrLabels").checked) {
+        ctx.font = "bold 11.5px -apple-system, PingFang TC, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillStyle = "rgba(255,252,240,0.9)";
+        ctx.fillText(poi.name, p.cx + 1, p.cy - rad - 5);
+        ctx.fillStyle = "#1d2534";
+        ctx.fillText(poi.name, p.cx, p.cy - rad - 6);
+      }
+    }
+  }
+
+  // Custom user design pins
+  for (const pin of customPins[m.id]) {
+    const p = worldToCanvas(pin.x, pin.z, m);
+    ctx.fillStyle = "#e03c72";
+    ctx.beginPath(); ctx.arc(p.cx, p.cy, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.stroke();
+    ctx.font = "bold 12px -apple-system, PingFang TC, sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#fff";
+    ctx.fillText("📌 " + pin.note, p.cx + 12, p.cy + 4);
+  }
+}
+
+function renderTabs() {
+  const el = document.getElementById("tabs");
+  el.innerHTML = "";
+  MAPS.forEach((m, idx) => {
+    const b = document.createElement("button");
+    b.className = "tab" + (idx === curIdx ? " active" : "");
+    b.textContent = m.name;
+    b.onclick = () => { curIdx = idx; selectedPoi = null; updateUI(); };
+    el.appendChild(b);
+  });
+}
+
+function updateUI() {
+  renderTabs();
+  const m = curMap();
+  document.getElementById("mapSummary").innerHTML = `<b>${m.name}</b><br/>${m.desc}<br/><span style="color:#78481d">邊界樣式：${m.borderStyle}</span>`;
+  document.getElementById("selectedInfo").innerHTML = selectedPoi
+    ? `<b>${selectedPoi.name}</b><br/>類型：${selectedPoi.kind}<br/>Godot 座標：<code>Vector3(${selectedPoi.x.toFixed(1)}, 0.0, ${selectedPoi.z.toFixed(1)})</code><br/><span style="color:#626d7f">可直接拖曳此圖示微調位置！</span>`
+    : "點擊或拖曳地圖上任何圖示，即可檢視精確 Godot 座標（Vector3）並調整擺位。";
+  const pl = document.getElementById("pinList");
+  const pins = customPins[m.id];
+  if (!pins.length) {
+    pl.innerHTML = '<span style="color:#8a94a6">尚無自訂標記，直接點擊平面圖空白處即可加上「這裡想加寶箱／改地形」備註。</span>';
+  } else {
+    pl.innerHTML = "";
+    pins.forEach((pin, idx) => {
+      const row = document.createElement("div");
+      row.className = "pin-item";
+      row.innerHTML = `<span>📌 ${pin.note} (${pin.x}, ${pin.z})</span><button title="刪除">✕</button>`;
+      row.querySelector("button").onclick = () => { pins.splice(idx, 1); updateUI(); };
+      pl.appendChild(row);
+    });
+  }
+  draw();
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2600);
+}
+
+function getCanvasPt(evt) {
+  const rect = canvas.getBoundingClientRect();
+  return { cx: (evt.clientX - rect.left) * (canvas.width / rect.width), cy: (evt.clientY - rect.top) * (canvas.height / rect.height) };
+}
+
+canvas.addEventListener("mousedown", (evt) => {
+  const { cx, cy } = getCanvasPt(evt);
+  const m = curMap();
+  for (const poi of m.pois) {
+    const p = worldToCanvas(poi.x, poi.z, m);
+    if (Math.hypot(p.cx - cx, p.cy - cy) < 16) {
+      selectedPoi = poi; draggingPoi = poi; updateUI(); return;
+    }
+  }
+  const w = canvasToWorld(cx, cy, m);
+  const note = prompt(`在座標 (${w.x}, ${w.z}) 新增設計備註（例如：新增傳奇怪／加一條小橋）：`);
+  if (note && note.trim()) {
+    customPins[m.id].push({ x: w.x, z: w.z, note: note.trim() });
+    updateUI();
+  }
+});
+
+canvas.addEventListener("mousemove", (evt) => {
+  const { cx, cy } = getCanvasPt(evt);
+  const w = canvasToWorld(cx, cy);
+  document.getElementById("coordHud").textContent = `游標座標：Vector3(${w.x.toFixed(1)}, 0.0, ${w.z.toFixed(1)}) ｜ 拖曳節點可微調，點擊空白可加設計備註`;
+  if (draggingPoi) {
+    draggingPoi.x = w.x; draggingPoi.z = w.z; updateUI();
+  }
+});
+
+window.addEventListener("mouseup", () => { draggingPoi = null; });
+document.querySelectorAll(".layers input").forEach(cb => cb.addEventListener("change", draw));
+
+document.getElementById("btnCopySpec").onclick = () => {
+  const m = curMap();
+  const lines = [
+    `### 地圖設計調整規格：${m.name}`,
+    `- 邊界阻擋樣式：${m.borderStyle}`,
+    `- 主要地標與怪物座標：`,
+    ...m.pois.map(p => `  - ${p.name} [${p.kind}]: Vector3(${p.x.toFixed(1)}, 0.0, ${p.z.toFixed(1)})`),
+  ];
+  if (customPins[m.id].length) {
+    lines.push(`- 新增設計備註：`);
+    customPins[m.id].forEach(pin => lines.push(`  - 📌 ${pin.note} @ Vector3(${pin.x.toFixed(1)}, 0.0, ${pin.z.toFixed(1)})`));
+  }
+  navigator.clipboard.writeText(lines.join("\n"));
+  showToast("已複製設計修改規格！可直接貼回給 Gemini 套用至 Godot");
+};
+
+document.getElementById("btnCopyPrompt").onclick = () => {
+  const m = curMap();
+  const regStr = m.regions.map(r => r.label).join(", ");
+  const promptText = `Top-down 2.5D perspective fixed oblique RPG level concept map of "${m.name}" for "After the Ceasefire", painted in @amelicart matte gouache dry-brush art style with @shoejaat miniature diorama charm. Layout features interconnected zones: ${regStr}. Natural edge borders: ${m.borderStyle}. Clear readable dirt trails, sparkling water streams, cozy glowing waypoints, golden elite glades, and deep hidden boss arena. Warm sunlight, soft lavender-purple shadows, minimalist clean composition, no UI clutter.`;
+  navigator.clipboard.writeText(promptText);
+  showToast("已複製 AI 生圖 Prompt！可直接貼到生圖工具使用");
+};
+
+document.getElementById("btnExportPng").onclick = () => {
+  const a = document.createElement("a");
+  a.download = `floorplan_${curMap().id}.png`;
+  a.href = canvas.toDataURL("image/png");
+  a.click();
+  showToast("已匯出高解析 PNG 平面圖！");
+};
+
+updateUI();
+</script>
+</body>
+</html>

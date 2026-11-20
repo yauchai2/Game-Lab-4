@@ -49,11 +49,15 @@ const WATER_SEA_SHADER := preload("res://shaders/living_water_sea.gdshader")
 const MIXAMO_RIG_SCRIPT := preload("res://prologue/MixamoCharacterRig.gd")
 const MINIMAP_SCRIPT := preload("res://prologue/MinimapOverlay.gd")
 const WORLD_MAP_SCRIPT := preload("res://prologue/WorldMapOverlay.gd")
+const SKILLS_SCRIPT := preload("res://prologue/SkillsOverlay.gd")
+const SETTINGS_SCRIPT := preload("res://prologue/SettingsOverlay.gd")
 var scene_shadow_tint := Color("#464d7a")
 var scene_world_key := "clearing"
 var mixamo_rig: Node3D
 var minimap_overlay: Control
 var world_map_overlay: Control
+var skills_overlay: Control
+var settings_overlay: Control
 
 # 60 FPS integer frame counter hitstop (never mutates Engine.time_scale)
 var hitstop_frames := 0
@@ -67,7 +71,7 @@ var air_slam_active := false
 var vertical_vel := 0.0
 var dodge_timer := 0.0
 var dodge_cooldown := 0.0
-var dodge_max_cd := 0.75
+var dodge_max_cd := 0.45
 var dodge_dir := Vector3.ZERO
 var invuln_timer := 0.0
 var combo_step := 0
@@ -840,7 +844,7 @@ func play_giant_retirement_stamp(target_pos: Vector3) -> void:
 	tw.tween_property(stamp, "position:y", 6.5, 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tw.tween_callback(stamp.queue_free)
 
-func invisible_boundary_wall(pos: Vector3, size: Vector3, rot_deg := 0.0) -> void:
+func invisible_boundary_wall(pos: Vector3, size: Vector3, rot_deg := 0.0, visual_style := "auto") -> void:
 	var body := StaticBody3D.new()
 	body.position = pos
 	body.rotation_degrees.y = rot_deg
@@ -848,6 +852,36 @@ func invisible_boundary_wall(pos: Vector3, size: Vector3, rot_deg := 0.0) -> voi
 	var sh := BoxShape3D.new()
 	sh.size = size
 	add_shape(body, sh, Vector3.ZERO)
+	# Automatically populate natural physical edge blockers along perimeter walls (zero empty air walls!)
+	var length := maxf(size.x, size.z)
+	if visual_style == "none" or length < 40.0:
+		return
+	var along_x := size.x >= size.z
+	var step := 6.0
+	var count := int(floor(length / step))
+	var start_off := -length * 0.5 + step * 0.5
+	for i in range(count):
+		var off := start_off + float(i) * step
+		var p := pos + (Vector3(off, -pos.y, 0.0) if along_x else Vector3(0.0, -pos.y, off))
+		if scene_world_key == "town":
+			cylinder(self, p + Vector3(0, 0.55, 0), 0.11, 0.14, 1.15, TIMBER)
+			var rail_sz := Vector3(step + 0.2, 0.14, 0.12) if along_x else Vector3(0.12, 0.14, step + 0.2)
+			box(self, p + Vector3(0, 0.88, 0), rail_sz, TIMBER_LIGHT)
+			if i % 3 == 0:
+				boulder_cluster(p, 0.72, STONE_LIGHT, true, false, float(i) * 37.0)
+		elif scene_world_key == "road":
+			var wall_sz := Vector3(step * 0.88, 0.85, 0.65) if along_x else Vector3(0.65, 0.85, step * 0.88)
+			box(self, p + Vector3(0, 0.42, 0), wall_sz, STONE_LIGHT if i % 2 == 0 else STONE)
+			if i % 2 == 0:
+				sphere(self, p + Vector3(0, 0.92, 0), Vector3(1.15, 0.45, 0.95), Color("#5b8c52"))
+		else:
+			if i % 2 == 0:
+				boulder_cluster(p, 0.95, STONE, true, false, float(i) * 29.0)
+			else:
+				cylinder(self, p + Vector3(0, 0.55, 0), 0.12, 0.15, 1.15, TIMBER)
+				var f_sz := Vector3(step + 0.2, 0.15, 0.14) if along_x else Vector3(0.14, 0.15, step + 0.2)
+				box(self, p + Vector3(0, 0.86, 0), f_sz, TIMBER_LIGHT)
+				sphere(self, p + Vector3(0, 0.65, 0), Vector3(1.5, 1.25, 1.5), PINE_TEAL if scene_world_key == "forest" else PINE_DARK)
 
 func label_at(parent: Node3D, pos: Vector3, words: String, color := Color.WHITE, font_size := 34) -> Label3D:
 	var label := Label3D.new()
@@ -1140,9 +1174,13 @@ func setup_hud() -> void:
 	minimap_overlay = MINIMAP_SCRIPT.new()
 	hud_root.add_child(minimap_overlay)
 
-	# PoE 2-style Interactive World Map Overlay (press [U] or interact with Waypoint)
+	# PoE 2-style Interactive World Map, Skills ([G]) & Settings ([Esc]) Overlays
 	world_map_overlay = WORLD_MAP_SCRIPT.new()
 	hud_layer.add_child(world_map_overlay)
+	skills_overlay = SKILLS_SCRIPT.new()
+	hud_layer.add_child(skills_overlay)
+	settings_overlay = SETTINGS_SCRIPT.new()
+	hud_layer.add_child(settings_overlay)
 
 	# 3. Top-Center: Boss HP Bar (only shown during Boss encounter)
 	boss_panel = PanelContainer.new()
@@ -1209,28 +1247,29 @@ func setup_hud() -> void:
 	hotbar.add_theme_constant_override("separation", 7)
 	bottom_stack.add_child(hotbar)
 
-	var atk_pair := _make_hotbar_slot(hotbar, "J / 左鍵", "揮劍", Color("#4da1e8"))
+	var atk_pair := _make_hotbar_slot(hotbar, "LMB", "主攻擊", Color("#4da1e8"))
 	slot_attack = atk_pair[0]
 	slot_attack_cd = atk_pair[1]
 	slot_attack_sub = atk_pair[2]
+	var wlf_pair := _make_hotbar_slot(hotbar, "RMB / Q", "巨狼破防", Color("#d97836"))
+	slot_wolf = wlf_pair[0]
+	slot_wolf_cd = wlf_pair[1]
 	var ddg_pair := _make_hotbar_slot(hotbar, "Space", "翻滾", MIST_CYAN)
 	slot_dodge = ddg_pair[0]
 	slot_dodge_cd = ddg_pair[1]
 	var mnt_pair := _make_hotbar_slot(hotbar, "F", "上鞍", Color("#498e62"))
 	slot_mount = mnt_pair[0]
 	slot_mount_sub = mnt_pair[2]
-	var wlf_pair := _make_hotbar_slot(hotbar, "Q", "巨狼撞", Color("#d97836"))
-	slot_wolf = wlf_pair[0]
-	slot_wolf_cd = wlf_pair[1]
-	var flk_pair := _make_hotbar_slot(hotbar, "1", "水壺 x2", Color("#e0534f"))
+	var flk_pair := _make_hotbar_slot(hotbar, "1", "茶壺 x2", Color("#e0534f"))
 	slot_flask = flk_pair[0]
 	slot_flask_sub = flk_pair[2]
 	var bag_pair := _make_hotbar_slot(hotbar, "I", "造裝", Color("#c99438"))
 	slot_bag = bag_pair[0]
+	_make_hotbar_slot(hotbar, "G", "技能", Color("#a67ee8"))
 	_make_hotbar_slot(hotbar, "U", "世界圖", Color("#4ecdc4"))
-	var coop_pair := _make_hotbar_slot(hotbar, "C", "拉隊友", Color("#58b9ff"))
+	var coop_pair := _make_hotbar_slot(hotbar, "C", "助拳", Color("#58b9ff"))
 	slot_coop = coop_pair[0]
-	var rst_pair := _make_hotbar_slot(hotbar, "R", "重置", Color("#7d8597"))
+	var rst_pair := _make_hotbar_slot(hotbar, "Esc", "設定", Color("#7d8597"))
 	slot_reset = rst_pair[0]
 
 	_build_inventory_modal()
@@ -1436,6 +1475,9 @@ func set_zone_objective(zone_name: String, goal: String) -> void:
 func is_world_map_open() -> bool:
 	return world_map_overlay != null and world_map_overlay.visible
 
+func is_modal_open() -> bool:
+	return inv_open or is_world_map_open() or (skills_overlay != null and skills_overlay.visible) or (settings_overlay != null and settings_overlay.visible)
+
 func open_world_map() -> void:
 	if world_map_overlay:
 		world_map_overlay.open_map(scene_world_key)
@@ -1443,6 +1485,33 @@ func open_world_map() -> void:
 func toggle_world_map() -> void:
 	if world_map_overlay:
 		world_map_overlay.toggle_map(scene_world_key)
+
+func toggle_skills_page() -> void:
+	if skills_overlay:
+		skills_overlay.toggle_page()
+
+func toggle_settings_page() -> void:
+	if settings_overlay:
+		settings_overlay.toggle_page()
+
+func aim_toward_mouse() -> void:
+	if not camera:
+		return
+	var mpos := get_viewport().get_mouse_position()
+	var ray_o := camera.project_ray_origin(mpos)
+	var ray_d := camera.project_ray_normal(mpos)
+	if absf(ray_d.y) < 0.001:
+		return
+	var t := -ray_o.y / ray_d.y
+	if t <= 0.0:
+		return
+	var hit_p := ray_o + ray_d * t
+	var diff := flat(hit_p - feet())
+	if diff.length() > 0.25:
+		var yaw := atan2(diff.x, diff.z)
+		if PrologueState.mounted:
+			wolf.rotation.y = yaw
+		player.rotation.y = yaw
 
 func set_prompt(text_val: String) -> void:
 	prompt_label.text = text_val
@@ -1639,7 +1708,7 @@ func step_shared_physics(delta: float, cam_override_target := Vector3.INF) -> bo
 		if cinematic_timer <= 0.0:
 			exit_cinematic_shot()
 
-	if input_locked or inv_open or is_world_map_open() or PrologueState.is_transitioning:
+	if input_locked or is_modal_open() or PrologueState.is_transitioning:
 		bird.position = player.position + Vector3(0.0, 1.48 + sin(Time.get_ticks_msec() * 0.007) * 0.07, 0.0)
 		position_camera(cam_override_target if cam_override_target != Vector3.INF else feet(), clampf(delta * 4.5, 0.0, 1.0))
 		return true
@@ -1697,7 +1766,7 @@ func step_shared_physics(delta: float, cam_override_target := Vector3.INF) -> bo
 		minimap_overlay.update_state(feet(), wolf.position, get_minimap_markers())
 	var target := cam_override_target if cam_override_target != Vector3.INF else feet()
 	position_camera(target, clampf(delta * 4.8, 0.0, 1.0))
-	if shake_time > 0.0:
+	if shake_time > 0.0 and PrologueState.screen_shake_enabled:
 		camera.position += Vector3(randf_range(-shake_strength, shake_strength), randf_range(-shake_strength * 0.7, shake_strength * 0.7), 0.0)
 	return true
 
@@ -1736,17 +1805,27 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if on_map_input(event):
 		return
-	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_U:
-		toggle_world_map()
-		return
-	if is_world_map_open():
-		if event is InputEventKey and event.pressed and event.physical_keycode == KEY_ESCAPE:
-			world_map_overlay.close_map()
-		return
-	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_I:
-		toggle_inventory()
-		return
-	if input_locked or inv_open:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.physical_keycode == KEY_ESCAPE:
+			if is_world_map_open():
+				world_map_overlay.close_map()
+			elif skills_overlay and skills_overlay.visible:
+				skills_overlay.close_page()
+			elif inv_open:
+				toggle_inventory()
+			else:
+				toggle_settings_page()
+			return
+		if event.physical_keycode == KEY_U:
+			toggle_world_map()
+			return
+		if event.physical_keycode == KEY_G:
+			toggle_skills_page()
+			return
+		if event.physical_keycode == KEY_I:
+			toggle_inventory()
+			return
+	if input_locked or is_modal_open():
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.physical_keycode:
@@ -1754,7 +1833,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_SPACE: perform_dodge()
 			KEY_E: on_interact()
 			KEY_F: toggle_mount()
-			KEY_Q: on_wolf_action()
+			KEY_Q:
+				PrologueState.play_sfx("wolf")
+				on_wolf_action()
 			KEY_J: perform_sword_attack()
 			KEY_C: on_coop_summon()
 			KEY_TAB:
@@ -1763,9 +1844,17 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_M:
 				var muted := PrologueState.toggle_bgm_mute()
 				show_player_emote("🔇" if muted else "🎵", 1.1)
-			KEY_R: PrologueState.reset_all()
-	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		perform_sword_attack()
+			KEY_R:
+				if event.shift_pressed:
+					PrologueState.reset_all()
+	elif event is InputEventMouseButton and event.pressed:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			aim_toward_mouse()
+			perform_sword_attack()
+		elif event.button_index == MOUSE_BUTTON_RIGHT:
+			aim_toward_mouse()
+			PrologueState.play_sfx("wolf")
+			on_wolf_action()
 
 func is_invulnerable() -> bool:
 	return invuln_timer > 0.0 or air_slam_active
