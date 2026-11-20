@@ -6,7 +6,7 @@ extends "res://prologue/PrologueBase.gd"
 
 enum ForestBossState { IDLE, WINDUP, STAGGERED, KNEELED, RETIRED }
 
-const MAX_BOSS_HP := 18
+const MAX_BOSS_HP := 28
 const WEST_EXIT := Vector3(-66.0, 0.0, 0.0)
 const WAYPOINT_POS := Vector3(-56.0, 0.0, -4.0)
 const BOSS_HOME := Vector3(60.0, 0.0, 0.0)
@@ -178,8 +178,10 @@ func _update_checkpoints() -> void:
 			orb.material_override = glow
 			(cp["label"] as Label3D).text = "✦ " + String(cp["title"]) + "（已啟動）"
 			(cp["label"] as Label3D).modulate = GOLD
+			last_checkpoint_pos = cp["pos"]
 			PrologueState.player_hp = 5
 			PrologueState.flask_charges = 3
+			PrologueState.play_sfx("checkpoint")
 			show_player_emote("✦", 1.4)
 			show_subtitle("已啟動古林檢查點：《%s》（體力與茶壺全滿）" % String(cp["title"]), 3.0)
 
@@ -204,25 +206,25 @@ func get_minimap_markers() -> Array[Dictionary]:
 func _spawn_forest_mobs() -> void:
 	var spawns := [
 		# West Entry Packs
-		{"pos": Vector3(-42.0, 0.0, 4.0), "name": "樹精巡邏兵", "hp": 5, "tier": "normal"},
-		{"pos": Vector3(-38.5, 0.0, -4.5), "name": "樹精巡邏兵", "hp": 5, "tier": "normal"},
-		{"pos": Vector3(-28.0, 0.0, 2.5), "name": "樹精巡邏兵", "hp": 5, "tier": "normal"},
+		{"pos": Vector3(-42.0, 0.0, 4.0), "name": "樹精巡邏兵", "hp": 7, "tier": "normal"},
+		{"pos": Vector3(-38.5, 0.0, -4.5), "name": "樹精巡邏兵", "hp": 7, "tier": "normal"},
+		{"pos": Vector3(-28.0, 0.0, 2.5), "name": "樹精巡邏兵", "hp": 7, "tier": "normal"},
 		# North Mossy Root Labyrinth + Rare + Hidden Unique #1
-		{"pos": Vector3(-32.0, 0.0, -22.0), "name": "巨根守衛", "hp": 6, "tier": "normal"},
-		{"pos": Vector3(-16.0, 0.0, -30.0), "name": "巨根守衛", "hp": 6, "tier": "normal"},
-		{"pos": Vector3(-8.0, 0.0, -28.0), "name": "★ 百年樹根隊長", "hp": 11, "tier": "rare"},
-		{"pos": Vector3(-34.0, 0.0, -39.0), "name": "❖【傳奇】苔蘚發條園丁", "hp": 24, "tier": "unique", "uid": "moss_gardener"},
+		{"pos": Vector3(-32.0, 0.0, -22.0), "name": "巨根守衛", "hp": 8, "tier": "normal"},
+		{"pos": Vector3(-16.0, 0.0, -30.0), "name": "巨根守衛", "hp": 8, "tier": "normal"},
+		{"pos": Vector3(-8.0, 0.0, -28.0), "name": "★ 百年樹根隊長", "hp": 16, "tier": "rare"},
+		{"pos": Vector3(-34.0, 0.0, -39.0), "name": "❖【傳奇】苔蘚發條園丁", "hp": 32, "tier": "unique", "uid": "moss_gardener"},
 		# South Firefly Stream Basin + Rare + Hidden Unique #2
-		{"pos": Vector3(-28.0, 0.0, 22.0), "name": "螢火林衛", "hp": 6, "tier": "normal"},
-		{"pos": Vector3(-8.0, 0.0, 32.0), "name": "螢火林衛", "hp": 6, "tier": "normal"},
-		{"pos": Vector3(0.0, 0.0, 28.0), "name": "★ 溪谷翡翠射手", "hp": 11, "tier": "rare"},
-		{"pos": Vector3(12.5, 0.0, 39.5), "name": "❖【傳奇】沉睡琥珀巨偶", "hp": 26, "tier": "unique", "uid": "amber_golem"},
+		{"pos": Vector3(-28.0, 0.0, 22.0), "name": "螢火林衛", "hp": 8, "tier": "normal"},
+		{"pos": Vector3(-8.0, 0.0, 32.0), "name": "螢火林衛", "hp": 8, "tier": "normal"},
+		{"pos": Vector3(0.0, 0.0, 28.0), "name": "★ 溪谷翡翠射手", "hp": 16, "tier": "rare"},
+		{"pos": Vector3(12.5, 0.0, 39.5), "name": "❖【傳奇】沉睡琥珀巨偶", "hp": 36, "tier": "unique", "uid": "amber_golem"},
 		# Central Sunlit Canopy Terrace + Rare
-		{"pos": Vector3(4.0, 0.0, -6.0), "name": "翡翠林衛", "hp": 6, "tier": "normal"},
-		{"pos": Vector3(10.0, 0.0, 6.0), "name": "翡翠林衛", "hp": 6, "tier": "normal"},
-		{"pos": Vector3(18.0, 0.0, -1.0), "name": "★ 樹冠巡林長", "hp": 12, "tier": "rare"},
-		{"pos": Vector3(26.0, 0.0, 5.5), "name": "翡翠林衛", "hp": 6, "tier": "normal"},
-		{"pos": Vector3(28.0, 0.0, -6.5), "name": "翡翠林衛", "hp": 6, "tier": "normal"},
+		{"pos": Vector3(4.0, 0.0, -6.0), "name": "翡翠林衛", "hp": 8, "tier": "normal"},
+		{"pos": Vector3(10.0, 0.0, 6.0), "name": "翡翠林衛", "hp": 8, "tier": "normal"},
+		{"pos": Vector3(18.0, 0.0, -1.0), "name": "★ 樹冠巡林長", "hp": 18, "tier": "rare"},
+		{"pos": Vector3(26.0, 0.0, 5.5), "name": "翡翠林衛", "hp": 8, "tier": "normal"},
+		{"pos": Vector3(28.0, 0.0, -6.5), "name": "翡翠林衛", "hp": 8, "tier": "normal"},
 	]
 	for sp in spawns:
 		var node := Node3D.new()
@@ -251,7 +253,7 @@ func _spawn_forest_mobs() -> void:
 		m_ring.hide()
 		mobs.append({
 			"node": node, "label": lbl, "name": String(sp["name"]), "home": sp["pos"],
-			"ring": m_ring, "state": "idle", "timer": 0.0, "cd": 0.6, "stun": 0.0,
+			"ring": m_ring, "state": "idle", "timer": 0.0, "cd": 0.5, "stun": 0.0, "stun_cd": 0.0, "ranged_cd": 1.8,
 			"hp": int(sp["hp"]), "max_hp": int(sp["hp"]), "rare": is_rare, "tier": tier,
 			"uid": String(sp.get("uid", "")), "alive": true,
 		})
@@ -352,6 +354,8 @@ func _update_mobs_ai(delta: float) -> void:
 		var mn: Node3D = m["node"]
 		var m_ring: MeshInstance3D = m["ring"]
 		m["cd"] = maxf(0.0, float(m["cd"]) - delta)
+		m["stun_cd"] = maxf(0.0, float(m["stun_cd"]) - delta)
+		m["ranged_cd"] = maxf(0.0, float(m["ranged_cd"]) - delta)
 		if float(m["stun"]) > 0.0:
 			m["stun"] = float(m["stun"]) - delta
 			mn.rotation.z = sin(Time.get_ticks_msec() * 0.03) * 0.22
@@ -360,6 +364,7 @@ func _update_mobs_ai(delta: float) -> void:
 		mn.rotation.z = 0.0
 		var to_p := flat(p_pos - mn.position)
 		var dist := to_p.length()
+		var tier := String(m["tier"])
 		if String(m["state"]) == "windup":
 			m["timer"] = float(m["timer"]) - delta
 			m_ring.position = Vector3(mn.position.x, 0.04, mn.position.z)
@@ -367,52 +372,66 @@ func _update_mobs_ai(delta: float) -> void:
 			if float(m["timer"]) <= 0.0:
 				m_ring.hide()
 				m["state"] = "idle"
-				m["cd"] = 1.65
+				m["cd"] = 1.05 if tier == "unique" else (1.2 if tier == "rare" else 1.35)
 				flash_hit(mn)
-				if dist < (2.6 if bool(m["rare"]) else 2.0):
-					take_player_damage(1)
+				var hit_r := 3.4 if tier == "unique" else (2.7 if tier == "rare" else 2.1)
+				if dist < hit_r:
+					take_player_damage(3 if tier == "unique" else (2 if tier == "rare" else 1))
 		else:
 			m_ring.hide()
-			if dist < 9.0 and flat(mn.position - (m["home"] as Vector3)).length() < 11.0:
+			if dist < 11.5 and flat(mn.position - (m["home"] as Vector3)).length() < 13.0:
 				mn.rotation.y = atan2(to_p.x, to_p.z)
-				if dist <= 2.2 and float(m["cd"]) <= 0.0:
+				if (tier == "rare" or tier == "unique") and dist > 4.0 and float(m["ranged_cd"]) <= 0.0:
+					m["ranged_cd"] = 2.6 if tier == "unique" else 3.0
+					var base_yaw := atan2(to_p.x, to_p.z)
+					var spread: Array = [-0.45, -0.22, 0.0, 0.22, 0.45] if tier == "unique" else [-0.28, 0.0, 0.28]
+					for sa: float in spread:
+						var dir := Vector3(sin(base_yaw + sa), 0.0, cos(base_yaw + sa)).normalized()
+						spawn_enemy_projectile(mn.position, dir * 11.5, 2 if tier == "unique" else 1, Color("#ff7b3b") if tier == "unique" else STAMP_RED)
+				if dist <= (2.8 if tier == "unique" else 2.3) and float(m["cd"]) <= 0.0:
 					m["state"] = "windup"
-					m["timer"] = 0.85
+					m["timer"] = 0.65 if bool(m["rare"]) else 0.72
 					m_ring.position = Vector3(mn.position.x, 0.04, mn.position.z)
 					m_ring.show()
 				elif dist > 1.8:
-					mn.position += to_p.normalized() * (2.5 if bool(m["rare"]) else 2.9) * delta
+					mn.position += to_p.normalized() * (3.4 if bool(m["rare"]) else 3.2) * delta
 			else:
 				var to_home := flat((m["home"] as Vector3) - mn.position)
 				if to_home.length() > 0.5:
-					mn.position += to_home.normalized() * 1.9 * delta
+					mn.position += to_home.normalized() * 2.2 * delta
 					mn.rotation.y = atan2(to_home.x, to_home.z)
 
 func _update_boss(delta: float) -> void:
 	boss_timer -= delta
+	var enraged := boss_hp <= int(MAX_BOSS_HP / 2)
 	match boss_state:
 		ForestBossState.IDLE:
 			var toward := flat(feet() - boss.position)
 			boss.rotation.y = atan2(toward.x, toward.z)
-			boss_cue.text = "翡翠樹王"
+			boss_cue.text = "翡翠樹王（狂暴！）" if enraged else "翡翠樹王"
 			if boss_timer <= 0.0:
 				boss_state = ForestBossState.WINDUP
-				boss_timer = 2.0
+				boss_timer = 1.15 if enraged else 1.45
 				attack_ring.position = boss.position + Vector3(0, 0.05, 0)
 				attack_ring.show()
 				boss_staff.rotation_degrees.x = -70.0
-				boss_cue.text = "紅光蓄力！按 [Q] 破防"
+				boss_cue.text = "紅光蓄力！按 [Q/RMB] 破防或 [Space] 閃避"
 				boss_cue.modulate = STAMP_RED
 		ForestBossState.WINDUP:
 			if boss_timer <= 0.0:
 				attack_ring.hide()
 				boss_staff.rotation_degrees.x = 22.0
-				shake_time = 0.20
+				shake_time = 0.22
 				shake_strength = 0.24
-				if flat(feet() - boss.position).length() < 3.6:
-					take_player_damage(1)
+				if flat(feet() - boss.position).length() < 3.8:
+					take_player_damage(2)
+				var base_y := atan2(feet().x - boss.position.x, feet().z - boss.position.z)
+				var rays := 7 if enraged else 5
+				for ri in range(rays):
+					var ang := base_y + (float(ri) - float(rays - 1) * 0.5) * 0.28
+					spawn_enemy_projectile(boss.position, Vector3(sin(ang), 0.0, cos(ang)) * (13.0 if enraged else 11.0), 1, Color("#98ffbd"), 0.42)
 				boss_state = ForestBossState.IDLE
-				boss_timer = 1.4
+				boss_timer = 0.95 if enraged else 1.25
 				boss_cue.modulate = Color("#98ffbd")
 		ForestBossState.STAGGERED:
 			boss.rotation.z = sin(Time.get_ticks_msec() * 0.03) * 0.22

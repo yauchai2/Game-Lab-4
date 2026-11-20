@@ -63,7 +63,7 @@ var settings_overlay: Control
 var hitstop_frames := 0
 var attack_cooldown := 0.0
 var wolf_charge_cooldown := 0.0
-var wolf_charge_max := 1.4
+var wolf_charge_max := 4.2
 var wolf_charge_timer := 0.0
 var shake_time := 0.0
 var shake_strength := 0.18
@@ -108,6 +108,8 @@ var bouncing_coins: Array[Dictionary] = []
 var water_ripples: Array[Dictionary] = []
 var cloud_puffs: Array[Dictionary] = []
 var projectiles: Array[Dictionary] = []
+var enemy_projectiles: Array[Dictionary] = []
+var last_checkpoint_pos := Vector3.INF
 var destructibles: Array[Dictionary] = []
 var flying_birds: Array[Dictionary] = []
 var bird_alert_target := Vector3.INF
@@ -917,6 +919,7 @@ func transition_signpost(pos: Vector3, icon_title: String, color := GOLD, rot_de
 
 # --- Core Trio Builders (with lively organic animations) ---
 func setup_core_trio(spawn_pos: Vector3) -> void:
+	last_checkpoint_pos = spawn_pos
 	_make_body(player, spawn_pos, PLAYER_RADIUS)
 	player.add_child(player_visual)
 	var proc_parts: Array[Node3D] = []
@@ -1631,6 +1634,25 @@ func _animate_living_world(delta: float) -> void:
 			pn.queue_free()
 			projectiles.remove_at(i)
 
+	# Enemy ranged projectiles (dodgeable with [Space] I-frames!)
+	for i in range(enemy_projectiles.size() - 1, -1, -1):
+		var ep: Dictionary = enemy_projectiles[i]
+		if not is_instance_valid(ep["node"]):
+			enemy_projectiles.remove_at(i)
+			continue
+		var en: Node3D = ep["node"]
+		ep["age"] = float(ep["age"]) + delta
+		en.position += (ep["vel"] as Vector3) * delta
+		en.rotation.y += delta * 10.0
+		if flat(en.position - feet()).length() < float(ep["radius"]) + 0.55:
+			take_player_damage(int(ep["dmg"]))
+			en.queue_free()
+			enemy_projectiles.remove_at(i)
+			continue
+		if float(ep["age"]) > 2.2:
+			en.queue_free()
+			enemy_projectiles.remove_at(i)
+
 	# Flying bird flock animation (@amelicart horizon silhouettes)
 	for i in range(flying_birds.size() - 1, -1, -1):
 		var fb: Dictionary = flying_birds[i]
@@ -1888,19 +1910,42 @@ func perform_dodge() -> void:
 			player_visual.rotation.x = 0.0
 		)
 
+func spawn_enemy_projectile(origin: Vector3, vel: Vector3, dmg := 1, col := STAMP_RED, radius := 0.34) -> void:
+	var orb := sphere(self, origin + Vector3(0, 0.85, 0), Vector3.ONE * (radius * 2.1), col, true)
+	enemy_projectiles.append({"node": orb, "vel": vel, "dmg": dmg, "radius": radius, "age": 0.0})
+
 func take_player_damage(amount := 1) -> bool:
 	if is_invulnerable():
 		PrologueState.play_sfx("dodge")
 		spawn_damage_pop(feet(), "閃避!", MIST_CYAN, true)
 		show_player_emote("💨", 0.7)
 		return false
-	PrologueState.player_hp = maxi(1, PrologueState.player_hp - amount)
-	shake_time = 0.22
-	shake_strength = 0.20
+	PrologueState.player_hp = maxi(0, PrologueState.player_hp - amount)
+	shake_time = 0.24
+	shake_strength = 0.22
 	flash_hit(wolf_visual if PrologueState.mounted else player_visual)
 	spawn_damage_pop(feet(), "-%d ♥" % amount, STAMP_RED, true)
 	update_status_line()
+	if PrologueState.player_hp <= 0:
+		_on_player_defeated()
 	return true
+
+func _on_player_defeated() -> void:
+	PrologueState.player_hp = 5
+	PrologueState.flask_charges = 3
+	invuln_timer = 1.8
+	PrologueState.mounted = false
+	var respawn := last_checkpoint_pos if last_checkpoint_pos != Vector3.INF else Vector3.ZERO
+	player.position = respawn
+	wolf.position = respawn + Vector3(-1.4, 0.0, -0.5)
+	for ep in enemy_projectiles:
+		if is_instance_valid(ep["node"]):
+			(ep["node"] as Node3D).queue_free()
+	enemy_projectiles.clear()
+	PrologueState.play_sfx("stamp")
+	show_player_emote("💀", 1.8)
+	show_subtitle("重傷倒地！已撤回最近檢查點重整旗鼓（善用 [Space] 翻滾與 [1] 茶壺！）", 4.0)
+	update_status_line()
 
 func register_combat_hit(pos: Vector3, is_crit := false) -> void:
 	hit_combo_count += 1

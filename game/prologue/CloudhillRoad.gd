@@ -2,7 +2,7 @@ extends "res://prologue/PrologueBase.gd"
 
 enum BossState { IDLE, WINDUP, STAGGERED, KNEELED, RETIRED }
 
-const MAX_BOSS_HP := 10
+const MAX_BOSS_HP := 16
 const WEST_EXIT := Vector3(-25.5, 0.0, 0.4)
 const TIMBER_POS := Vector3(-14.5, 0.0, 0.0)
 const WALL_X := -4.5
@@ -456,8 +456,10 @@ func _update_checkpoints() -> void:
 			orb.material_override = glow
 			(cp["label"] as Label3D).text = "✦ " + String(cp["title"]) + "（已啟動）"
 			(cp["label"] as Label3D).modulate = GOLD
+			last_checkpoint_pos = cp["pos"]
 			PrologueState.player_hp = 5
 			PrologueState.flask_charges = 3
+			PrologueState.play_sfx("checkpoint")
 			show_player_emote("✦", 1.4)
 			show_subtitle("已啟動探索檢查點：《%s》（體力與茶壺全滿）" % String(cp["title"]), 3.0)
 
@@ -483,30 +485,30 @@ func _spawn_poe_mobs() -> void:
 	# and populate the 150m x 96m PoE 2 wilderness with packs, golden Rares & 2 hidden orange Uniques!
 	var spawns := [
 		# Main Highway (mobs[0..3])
-		{"pos": Vector3(-18.5, 0.0, 2.8), "name": "發條巡邏兵", "hp": 3, "tier": "normal"},
-		{"pos": Vector3(-11.2, 0.0, -3.5), "name": "發條巡邏兵", "hp": 3, "tier": "normal"},
-		{"pos": Vector3(-8.2, 0.0, 2.8), "name": "★ 加班班長", "hp": 7, "tier": "rare"},
-		{"pos": Vector3(-17.8, 0.0, -4.2), "name": "發條巡邏兵", "hp": 3, "tier": "normal"},
+		{"pos": Vector3(-18.5, 0.0, 2.8), "name": "發條巡邏兵", "hp": 5, "tier": "normal"},
+		{"pos": Vector3(-11.2, 0.0, -3.5), "name": "發條巡邏兵", "hp": 5, "tier": "normal"},
+		{"pos": Vector3(-8.2, 0.0, 2.8), "name": "★ 加班班長", "hp": 10, "tier": "rare"},
+		{"pos": Vector3(-17.8, 0.0, -4.2), "name": "發條巡邏兵", "hp": 5, "tier": "normal"},
 		# Sub-region 1: NW Old-Army Ruins
-		{"pos": Vector3(-37.0, 0.0, -24.0), "name": "生鏽步兵", "hp": 4, "tier": "normal"},
-		{"pos": Vector3(-40.5, 0.0, -26.0), "name": "生鏽步兵", "hp": 4, "tier": "normal"},
-		{"pos": Vector3(-44.0, 0.0, -30.0), "name": "★ 舊軍砲兵長", "hp": 10, "tier": "rare"},
+		{"pos": Vector3(-37.0, 0.0, -24.0), "name": "生鏽步兵", "hp": 6, "tier": "normal"},
+		{"pos": Vector3(-40.5, 0.0, -26.0), "name": "生鏽步兵", "hp": 6, "tier": "normal"},
+		{"pos": Vector3(-44.0, 0.0, -30.0), "name": "★ 舊軍砲兵長", "hp": 15, "tier": "rare"},
 		# Sub-region 2: North Autumn Windmill Ridge -> Hidden Unique #1
-		{"pos": Vector3(-18.0, 0.0, -31.5), "name": "風車守衛", "hp": 5, "tier": "normal"},
-		{"pos": Vector3(-14.5, 0.0, -33.0), "name": "風車守衛", "hp": 5, "tier": "normal"},
-		{"pos": Vector3(-7.5, 0.0, -35.5), "name": "❖【傳奇】失控百年發條巨像", "hp": 20, "tier": "unique"},
+		{"pos": Vector3(-18.0, 0.0, -31.5), "name": "風車守衛", "hp": 7, "tier": "normal"},
+		{"pos": Vector3(-14.5, 0.0, -33.0), "name": "風車守衛", "hp": 7, "tier": "normal"},
+		{"pos": Vector3(-7.5, 0.0, -35.5), "name": "❖【傳奇】失控百年發條巨像", "hp": 28, "tier": "unique"},
 		# Sub-region 3: SW Endless Pink Flower Sea
-		{"pos": Vector3(-34.5, 0.0, 25.5), "name": "花海巡邏兵", "hp": 4, "tier": "normal"},
-		{"pos": Vector3(-38.0, 0.0, 28.0), "name": "花海巡邏兵", "hp": 4, "tier": "normal"},
-		{"pos": Vector3(-42.5, 0.0, 30.5), "name": "★ 粉花海園丁長", "hp": 10, "tier": "rare"},
+		{"pos": Vector3(-34.5, 0.0, 25.5), "name": "花海巡邏兵", "hp": 6, "tier": "normal"},
+		{"pos": Vector3(-38.0, 0.0, 28.0), "name": "花海巡邏兵", "hp": 6, "tier": "normal"},
+		{"pos": Vector3(-42.5, 0.0, 30.5), "name": "★ 粉花海園丁長", "hp": 15, "tier": "rare"},
 		# Sub-region 4: South Waterfall Canyon Basin
-		{"pos": Vector3(-16.5, 0.0, 30.5), "name": "溪谷斥候", "hp": 5, "tier": "normal"},
-		{"pos": Vector3(-10.5, 0.0, 33.5), "name": "★ 溪谷巡邏隊長", "hp": 11, "tier": "rare"},
+		{"pos": Vector3(-16.5, 0.0, 30.5), "name": "溪谷斥候", "hp": 7, "tier": "normal"},
+		{"pos": Vector3(-10.5, 0.0, 33.5), "name": "★ 溪谷巡邏隊長", "hp": 16, "tier": "rare"},
 		# Sub-region 5: East Emerald Highland -> Hidden Unique #2
-		{"pos": Vector3(53.0, 0.0, -10.5), "name": "翡翠哨兵", "hp": 5, "tier": "normal"},
-		{"pos": Vector3(56.5, 0.0, -14.0), "name": "翡翠哨兵", "hp": 5, "tier": "normal"},
-		{"pos": Vector3(58.5, 0.0, 16.5), "name": "翡翠哨兵", "hp": 5, "tier": "normal"},
-		{"pos": Vector3(63.5, 0.0, -20.5), "name": "❖【傳奇】翡翠樹影守望者", "hp": 22, "tier": "unique"},
+		{"pos": Vector3(53.0, 0.0, -10.5), "name": "翡翠哨兵", "hp": 7, "tier": "normal"},
+		{"pos": Vector3(56.5, 0.0, -14.0), "name": "翡翠哨兵", "hp": 7, "tier": "normal"},
+		{"pos": Vector3(58.5, 0.0, 16.5), "name": "翡翠哨兵", "hp": 7, "tier": "normal"},
+		{"pos": Vector3(63.5, 0.0, -20.5), "name": "❖【傳奇】翡翠樹影守望者", "hp": 32, "tier": "unique"},
 	]
 	for sp in spawns:
 		var node := Node3D.new()
@@ -536,7 +538,7 @@ func _spawn_poe_mobs() -> void:
 		m_ring.hide()
 		mobs.append({
 			"node": node, "label": lbl, "name": String(sp["name"]), "home": sp["pos"],
-			"ring": m_ring, "state": "idle", "timer": 0.0, "cd": 0.6, "stun": 0.0,
+			"ring": m_ring, "state": "idle", "timer": 0.0, "cd": 0.5, "stun": 0.0, "stun_cd": 0.0, "ranged_cd": 1.8,
 			"hp": int(sp["hp"]), "max_hp": int(sp["hp"]), "rare": is_rare, "tier": tier, "alive": true,
 		})
 
@@ -700,7 +702,7 @@ func on_vortex_pull(origin: Vector3, radius: float) -> void:
 			spawn_damage_pop(mn.position, "聚怪暈眩!", MIST_CYAN, false)
 
 func _update_mobs_ai(delta: float) -> void:
-	if input_locked or inv_open:
+	if input_locked or is_modal_open():
 		return
 	var p_pos := feet()
 	for m in mobs:
@@ -709,6 +711,8 @@ func _update_mobs_ai(delta: float) -> void:
 		var mn: Node3D = m["node"]
 		var m_ring: MeshInstance3D = m["ring"]
 		m["cd"] = maxf(0.0, float(m["cd"]) - delta)
+		m["stun_cd"] = maxf(0.0, float(m["stun_cd"]) - delta)
+		m["ranged_cd"] = maxf(0.0, float(m["ranged_cd"]) - delta)
 		if float(m["stun"]) > 0.0:
 			m["stun"] = float(m["stun"]) - delta
 			mn.rotation.z = sin(Time.get_ticks_msec() * 0.03) * 0.22
@@ -717,6 +721,7 @@ func _update_mobs_ai(delta: float) -> void:
 		mn.rotation.z = 0.0
 		var to_p := flat(p_pos - mn.position)
 		var dist := to_p.length()
+		var tier := String(m.get("tier", "normal"))
 		var st := String(m["state"])
 		if st == "windup":
 			m["timer"] = float(m["timer"]) - delta
@@ -725,26 +730,34 @@ func _update_mobs_ai(delta: float) -> void:
 			if float(m["timer"]) <= 0.0:
 				m_ring.hide()
 				m["state"] = "idle"
-				m["cd"] = 1.65
+				m["cd"] = 1.05 if tier == "unique" else (1.2 if tier == "rare" else 1.35)
 				flash_hit(mn)
-				if dist < (2.5 if bool(m["rare"]) else 2.0):
-					take_player_damage(1)
+				var hit_r := 3.4 if tier == "unique" else (2.7 if tier == "rare" else 2.1)
+				if dist < hit_r:
+					take_player_damage(3 if tier == "unique" else (2 if tier == "rare" else 1))
 		else:
 			m_ring.hide()
-			if dist < 8.5 and flat(mn.position - (m["home"] as Vector3)).length() < 9.5:
+			if dist < 11.0 and flat(mn.position - (m["home"] as Vector3)).length() < 12.5:
 				mn.rotation.y = atan2(to_p.x, to_p.z)
-				if dist <= 2.1 and float(m["cd"]) <= 0.0:
+				if (tier == "rare" or tier == "unique") and dist > 4.2 and float(m["ranged_cd"]) <= 0.0:
+					m["ranged_cd"] = 2.6 if tier == "unique" else 3.0
+					var base_yaw := atan2(to_p.x, to_p.z)
+					var spread: Array = [-0.45, -0.22, 0.0, 0.22, 0.45] if tier == "unique" else [-0.28, 0.0, 0.28]
+					for sa: float in spread:
+						var dir := Vector3(sin(base_yaw + sa), 0.0, cos(base_yaw + sa)).normalized()
+						spawn_enemy_projectile(mn.position, dir * 11.5, 2 if tier == "unique" else 1, Color("#ff7b3b") if tier == "unique" else STAMP_RED)
+				if dist <= (2.8 if tier == "unique" else 2.2) and float(m["cd"]) <= 0.0:
 					m["state"] = "windup"
-					m["timer"] = 0.85
+					m["timer"] = 0.65 if bool(m["rare"]) else 0.72
 					m_ring.position = Vector3(mn.position.x, 0.04, mn.position.z)
 					m_ring.show()
 				elif dist > 1.75:
-					var spd := 2.4 if bool(m["rare"]) else 2.8
+					var spd := 3.4 if bool(m["rare"]) else 3.1
 					mn.position += to_p.normalized() * spd * delta
 			else:
 				var to_home := flat((m["home"] as Vector3) - mn.position)
 				if to_home.length() > 0.5:
-					mn.position += to_home.normalized() * 1.8 * delta
+					mn.position += to_home.normalized() * 2.1 * delta
 					mn.rotation.y = atan2(to_home.x, to_home.z)
 
 func on_wolf_action() -> void:
@@ -763,10 +776,15 @@ func on_wolf_action() -> void:
 	else:
 		for m in mobs:
 			if m["alive"] and flat(feet() - (m["node"] as Node3D).position).length() < 3.6:
-				m["stun"] = 1.2
-				m["state"] = "idle"
-				(m["ring"] as Node3D).hide()
-				spawn_damage_pop((m["node"] as Node3D).position, "撞斷!", GOLD, false)
+				var tier := String(m.get("tier", "normal"))
+				if float(m["stun_cd"]) > 0.0 or (tier == "unique" and String(m["state"]) != "windup"):
+					spawn_damage_pop((m["node"] as Node3D).position, "霸體!", Color("#ff9f5a"), false)
+				else:
+					m["stun"] = 1.0
+					m["stun_cd"] = 6.5 if tier == "unique" else 5.0
+					m["state"] = "idle"
+					(m["ring"] as Node3D).hide()
+					spawn_damage_pop((m["node"] as Node3D).position, "撞斷!", GOLD, false)
 	if not PrologueState.timber_broken and PrologueState.mounted and flat(wolf.position - TIMBER_POS).length() < 5.2:
 		PrologueState.timber_broken = true
 		# Break 2.5D: Side-angle dynamic leap shot as Giant Wolf smashes the barricade (@amelicart This Way.jpg)!
@@ -858,30 +876,36 @@ func _start_boss_encounter() -> void:
 
 func _update_boss(delta: float) -> void:
 	boss_timer -= delta
+	var enraged := boss_hp <= int(MAX_BOSS_HP / 2)
 	match boss_state:
 		BossState.IDLE:
 			var toward := flat(feet() - boss.position)
 			boss.rotation.y = atan2(toward.x, toward.z)
-			boss_cue.text = "稻草人哨長"
+			boss_cue.text = "稻草人哨長（認真加班！）" if enraged else "稻草人哨長"
 			if boss_timer <= 0.0:
 				boss_state = BossState.WINDUP
-				boss_timer = 2.0
+				boss_timer = 1.15 if enraged else 1.45
 				attack_ring.position = boss.position + Vector3(0, 0.05, 0)
 				attack_ring.show()
 				boss_hammer.rotation_degrees.x = -75.0
-				boss_cue.text = "紅光蓄力！按 [Q]"
+				boss_cue.text = "紅光蓄力！按 [Q/RMB] 破防或 [Space] 閃避"
 				boss_cue.modulate = STAMP_RED
 		BossState.WINDUP:
 			if boss_timer <= 0.0:
 				attack_ring.hide()
 				boss_hammer.rotation_degrees.x = 25.0
-				shake_time = 0.16
-				shake_strength = 0.20
-				if flat(feet() - boss.position).length() < 2.8:
-					if take_player_damage(1):
+				shake_time = 0.18
+				shake_strength = 0.22
+				if flat(feet() - boss.position).length() < 3.0:
+					if take_player_damage(2):
 						show_player_emote("💦", 1.0)
+				var base_y := atan2(feet().x - boss.position.x, feet().z - boss.position.z)
+				var rays := 7 if enraged else 5
+				for ri in range(rays):
+					var ang := base_y + (float(ri) - float(rays - 1) * 0.5) * 0.26
+					spawn_enemy_projectile(boss.position, Vector3(sin(ang), 0.0, cos(ang)) * (12.5 if enraged else 10.5), 1, FIRE_ORANGE, 0.36)
 				boss_state = BossState.IDLE
-				boss_timer = 1.3
+				boss_timer = 0.95 if enraged else 1.2
 				boss_cue.modulate = Color("#ffd59e")
 		BossState.STAGGERED:
 			boss.rotation.z = sin(Time.get_ticks_msec() * 0.03) * 0.24
