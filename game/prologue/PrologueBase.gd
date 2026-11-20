@@ -45,6 +45,7 @@ const WOLF_RADIUS := 0.82
 const GOUACHE_SHADER := preload("res://shaders/amelicart_gouache.gdshader")
 const GRASS_SHADER := preload("res://shaders/stylized_grass.gdshader")
 const FOLIAGE_SHADER := preload("res://shaders/painterly_foliage.gdshader")
+const WATER_SEA_SHADER := preload("res://shaders/living_water_sea.gdshader")
 var scene_shadow_tint := Color("#464d7a")
 
 # 60 FPS integer frame counter hitstop (never mutates Engine.time_scale)
@@ -553,66 +554,119 @@ func lighthouse_islet(pos: Vector3, rot_deg := 0.0) -> Node3D:
 	return root
 
 func build_horizon_panorama(center: Vector3, inner_rx: float, inner_rz: float, theme: String) -> void:
-	# 1. Vast surrounding ocean / lake / cloud-sea plane (zero bare void!)
-	var base_col := Color("#162d4d")
+	# 1. Animated living water / starry lake / rolling sunset cloud-sea (ZERO flat single-color void!)
+	var deep_c := Color("#122645")
+	var shallow_c := Color("#1f416e")
+	var foam_c := Color("#8cd4f5")
 	var hill_cols: Array[Color] = [Color("#1c3352"), Color("#223f63"), Color("#2b4c73")]
 	var tree_cols: Array[Color] = [PINE_DARK, PINE_TEAL, Color("#254a5c")]
 	var cloud_col := Color("#98b4d9")
+	var w_scale := 0.14
+	var w_speed := 0.28
 	if theme == "day_island":
-		base_col = Color("#2486db")
+		deep_c = Color("#1264c4")
+		shallow_c = Color("#2ca2f0")
+		foam_c = Color("#e8faff")
 		hill_cols = [Color("#6fb362"), Color("#84c26b"), Color("#5aa06e")]
 		tree_cols = [MEADOW_GREEN, MEADOW_LIGHT, PINE_TEAL]
 		cloud_col = CLOUD_WHITE
+		w_scale = 0.16
+		w_speed = 0.42
 	elif theme == "sunset_clouds":
-		base_col = Color("#d9c5e8")
+		deep_c = Color("#b297d6")
+		shallow_c = Color("#f0c4de")
+		foam_c = Color("#fff4e6")
 		hill_cols = [PINK_PEAK, PURPLE_PEAK, Color("#b29ce0")]
 		tree_cols = [PINE_ORANGE, Color("#d97836"), Color("#4a6b8a")]
 		cloud_col = Color("#fff1f6")
+		w_scale = 0.09
+		w_speed = 0.24
 
-	var sea_plane := cylinder(self, Vector3(center.x, -1.45, center.z), inner_rx + 78.0, inner_rx + 78.0, 0.25, base_col, true)
-	sea_plane.scale.z = (inner_rz + 78.0) / maxf(inner_rx + 78.0, 1.0)
+	var sea_mesh := PlaneMesh.new()
+	sea_mesh.size = Vector2((inner_rx + 120.0) * 2.0, (inner_rz + 120.0) * 2.0)
+	var sea_inst := MeshInstance3D.new()
+	sea_inst.mesh = sea_mesh
+	var smat := ShaderMaterial.new()
+	smat.shader = WATER_SEA_SHADER
+	smat.set_shader_parameter("deep_color", deep_c)
+	smat.set_shader_parameter("shallow_color", shallow_c)
+	smat.set_shader_parameter("foam_color", foam_c)
+	smat.set_shader_parameter("wave_scale", w_scale)
+	smat.set_shader_parameter("wave_speed", w_speed)
+	sea_inst.material_override = smat
+	sea_inst.position = Vector3(center.x, -1.25, center.z)
+	add_child(sea_inst)
 
-	# 2. Outer ring of lush surrounding islets / forested hills (360 degrees)
+	# 2. ZERO-GAP INNER BORDER RING (tightly hugs playable terrain so no flat void ever shows!)
+	if theme == "night_forest":
+		# Dense Little Joy 360-degree forest ring hugging the walkable boundary
+		for i in range(28):
+			var ang := float(i) * TAU / 28.0
+			var p := center + Vector3(cos(ang) * (inner_rx + 2.5 + float(i % 3) * 2.8), -0.45, sin(ang) * (inner_rz + 2.0 + float(i % 3) * 2.4))
+			organic_mound(self, p, 7.8 + float(i % 3) * 1.8, 6.8 + float(i % 2) * 1.6, 1.35, hill_cols[i % hill_cols.size()], float(i) * 19.0)
+			pine_tree(p + Vector3(0.0, 0.55, 0.0), 1.35 + float(i % 3) * 0.22, tree_cols[i % tree_cols.size()], false)
+			cozy_tree(p + Vector3(cos(ang + 0.5) * 3.0, 0.55, sin(ang + 0.5) * 2.6), 1.15 + float(i % 2) * 0.22, tree_cols[(i + 1) % tree_cols.size()], float((i % 3) - 1) * 6.0, false)
+	elif theme == "day_island":
+		# Golden sandy shoreline + double white coastal foam rings (@shoejaat e986e55c!)
+		organic_mound(self, Vector3(center.x, -0.78, center.z), inner_rx + 3.2, inner_rz + 2.8, 0.62, Color("#f2d694"), 4.0)
+		var foam_outer := organic_mound(self, Vector3(center.x, -1.10, center.z), inner_rx + 5.6, inner_rz + 5.0, 0.14, Color("#d8f6ff"), -6.0, true)
+		water_ripples.append({"node": foam_outer, "phase": 0.4})
+		for i in range(10):
+			var ang := float(i) * TAU / 10.0 + 0.35
+			var ip := center + Vector3(cos(ang) * (inner_rx + 12.5 + float(i % 3) * 4.5), -0.65, sin(ang) * (inner_rz + 10.5 + float(i % 3) * 3.8))
+			organic_mound(self, ip, 6.2 + float(i % 3) * 1.6, 5.4 + float(i % 2) * 1.4, 0.85, Color("#f2d694"), float(i) * 29.0)
+			organic_mound(self, ip + Vector3(0, 0.45, 0), 4.6 + float(i % 3) * 1.2, 4.0 + float(i % 2) * 1.1, 0.55, hill_cols[i % hill_cols.size()], float(i) * 15.0)
+			cozy_tree(ip + Vector3(0, 0.72, 0), 1.15 + float(i % 2) * 0.25, tree_cols[i % tree_cols.size()], 4.0, false)
+			boulder_cluster(ip + Vector3(2.2, 0.25, -1.4), 0.9, STONE_LIGHT, true, false, float(i) * 30.0)
+	elif theme == "sunset_clouds":
+		# Dense billowing low cloud-sea pillows + autumn tree ridge tightly hugging the canyon edges
+		for i in range(28):
+			var ang := float(i) * TAU / 28.0
+			var cp := center + Vector3(cos(ang) * (inner_rx + 3.5 + float(i % 3) * 3.5), -0.95 + float(i % 2) * 0.7, sin(ang) * (inner_rz + 3.0 + float(i % 3) * 2.8))
+			fluffy_cloud(cp, 1.85 + float(i % 3) * 0.45, 2.0, cloud_col)
+			if i % 2 == 0:
+				var hp := center + Vector3(cos(ang) * (inner_rx + 12.0), -0.55, sin(ang) * (inner_rz + 10.5))
+				organic_mound(self, hp, 9.2, 7.6, 1.8, hill_cols[i % hill_cols.size()], float(i) * 17.0)
+				cozy_tree(hp + Vector3(0, 0.9, 0), 1.35, tree_cols[i % tree_cols.size()], 5.0, false)
+
+	# 3. Outer ring of lush distant hills & trees (360 degrees)
 	for i in range(18):
 		var ang := float(i) * TAU / 18.0 + 0.18
-		var dist_x := inner_rx + 12.0 + fmod(float(i * 7), 10.0)
-		var dist_z := inner_rz + 10.0 + fmod(float(i * 5), 9.0)
-		var pos := center + Vector3(cos(ang) * dist_x, -0.75, sin(ang) * dist_z)
-		organic_mound(self, pos, 8.5 + float(i % 4) * 2.2, 7.2 + float(i % 3) * 2.0, 1.8, hill_cols[i % hill_cols.size()], float(i) * 23.0)
-		# Distant lush trees on outer hills (like Little Joy 360 forest)
+		var dist_x := inner_rx + 22.0 + fmod(float(i * 7), 12.0)
+		var dist_z := inner_rz + 18.0 + fmod(float(i * 5), 10.0)
+		var pos := center + Vector3(cos(ang) * dist_x, -0.65, sin(ang) * dist_z)
+		organic_mound(self, pos, 10.5 + float(i % 4) * 2.4, 8.8 + float(i % 3) * 2.2, 2.2, hill_cols[i % hill_cols.size()], float(i) * 23.0)
 		for ti in range(2):
-			var tp := pos + Vector3(cos(ang + float(ti) * 0.9) * 3.2, 0.9, sin(ang + float(ti) * 0.9) * 2.8)
+			var tp := pos + Vector3(cos(ang + float(ti) * 0.9) * 3.8, 1.05, sin(ang + float(ti) * 0.9) * 3.2)
 			if (i + ti) % 2 == 0:
-				pine_tree(tp, 1.35 + float(ti) * 0.25, tree_cols[(i + ti) % tree_cols.size()], false)
+				pine_tree(tp, 1.55 + float(ti) * 0.25, tree_cols[(i + ti) % tree_cols.size()], false)
 			else:
-				cozy_tree(tp, 1.2 + float(ti) * 0.2, tree_cols[(i + ti) % tree_cols.size()], float((i % 3) - 1) * 6.0, false)
+				cozy_tree(tp, 1.35 + float(ti) * 0.2, tree_cols[(i + ti) % tree_cols.size()], float((i % 3) - 1) * 6.0, false)
 
-	# 3. Far horizon stylized @amelicart rounded mountain peaks
-	for mi in range(12):
-		var mang := float(mi) * TAU / 12.0 + 0.3
-		var mpos := center + Vector3(cos(mang) * (inner_rx + 46.0), 3.5 + float(mi % 3) * 2.5, sin(mang) * (inner_rz + 42.0))
-		sphere(self, mpos, Vector3(16.0 + float(mi % 4) * 3.5, 20.0 + float(mi % 3) * 6.5, 15.0 + float(mi % 3) * 3.0), hill_cols[mi % hill_cols.size()].lightened(0.08), true)
+	# 4. Far horizon stylized @amelicart rounded mountain peaks
+	for mi in range(16):
+		var mang := float(mi) * TAU / 16.0 + 0.2
+		var mpos := center + Vector3(cos(mang) * (inner_rx + 56.0), 4.5 + float(mi % 3) * 3.2, sin(mang) * (inner_rz + 50.0))
+		sphere(self, mpos, Vector3(19.0 + float(mi % 4) * 4.0, 24.0 + float(mi % 3) * 7.5, 17.0 + float(mi % 3) * 3.5), hill_cols[mi % hill_cols.size()].lightened(0.08), true)
 
-	# 4. Sky layer of drifting volumetric clouds all around the horizon
-	for ci in range(12):
-		var cang := float(ci) * TAU / 12.0
-		var cpos := center + Vector3(cos(cang) * (inner_rx + 26.0), 7.5 + float(ci % 3) * 2.8, sin(cang) * (inner_rz + 22.0))
-		fluffy_cloud(cpos, 1.65 + float(ci % 3) * 0.35, 2.6, cloud_col)
+	# 5. Sky layer of drifting volumetric clouds all around the horizon
+	for ci in range(14):
+		var cang := float(ci) * TAU / 14.0
+		var cpos := center + Vector3(cos(cang) * (inner_rx + 30.0), 8.2 + float(ci % 3) * 3.0, sin(cang) * (inner_rz + 25.0))
+		fluffy_cloud(cpos, 1.85 + float(ci % 3) * 0.4, 2.8, cloud_col)
 
-	# 5. Theme sky landmarks (crescent moon + stars for night; distant skyship/buoys for day/sunset)
+	# 6. Theme sky landmarks (crescent moon + stars for night; buoys & lifebuoys for day; skyship for sunset)
 	if theme == "night_forest":
-		# Crescent moon & starry sky
 		sphere(self, center + Vector3(-16.0, 22.0, -48.0), Vector3(4.2, 4.2, 1.2), Color("#fff3b0"), true)
 		sphere(self, center + Vector3(-14.6, 22.6, -47.2), Vector3(3.6, 3.6, 1.2), Color("#122242"), true)
-		for si in range(24):
+		for si in range(28):
 			var sang := float(si) * 2.399
-			var spos := center + Vector3(cos(sang) * (inner_rx + 36.0), 14.0 + fmod(float(si * 7), 14.0), sin(sang) * (inner_rz + 34.0))
+			var spos := center + Vector3(cos(sang) * (inner_rx + 40.0), 14.0 + fmod(float(si * 7), 14.0), sin(sang) * (inner_rz + 38.0))
 			sphere(self, spos, Vector3.ONE * (0.28 + float(si % 3) * 0.12), Color("#fff8d6"), true)
 	elif theme == "day_island":
-		# Cute floating sea buoys around the archipelago
-		for bi in range(4):
-			var bang := float(bi) * TAU / 4.0 + 0.65
-			var bpos := center + Vector3(cos(bang) * (inner_rx + 6.5), -1.15, sin(bang) * (inner_rz + 5.5))
+		for bi in range(6):
+			var bang := float(bi) * TAU / 6.0 + 0.55
+			var bpos := center + Vector3(cos(bang) * (inner_rx + 8.5), -1.05, sin(bang) * (inner_rz + 7.5))
 			var buoy := Node3D.new()
 			buoy.position = bpos
 			add_child(buoy)
@@ -620,10 +674,9 @@ func build_horizon_panorama(center: Vector3, inner_rx: float, inner_rz: float, t
 			cylinder(buoy, Vector3(0, 0.72, 0), 0.28, 0.35, 0.35, WHITE_WALL, true)
 			sway_items.append({"node": buoy, "base_rot": buoy.rotation, "amp": 0.09, "speed": 2.1, "phase": float(bi)})
 	elif theme == "sunset_clouds":
-		# Warm golden sun & whimsical @amelicart distant skyship silhouette
-		sphere(self, center + Vector3(54.0, 20.0, -34.0), Vector3(7.2, 7.2, 2.0), Color("#ffe39e"), true)
+		sphere(self, center + Vector3(58.0, 22.0, -36.0), Vector3(7.6, 7.6, 2.0), Color("#ffe39e"), true)
 		var ship := Node3D.new()
-		ship.position = center + Vector3(32.0, 13.5, -24.0)
+		ship.position = center + Vector3(34.0, 13.5, -24.0)
 		add_child(ship)
 		sphere(ship, Vector3(0, 0, 0), Vector3(2.8, 1.2, 1.4), TIMBER_LIGHT, true)
 		box(ship, Vector3(0, 1.5, 0), Vector3(0.18, 2.6, 2.2), Color("#3b6fb6"), false, true)

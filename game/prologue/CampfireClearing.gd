@@ -112,17 +112,32 @@ func _build_map() -> void:
 	spawn_destructible_crate(Vector3(-20.5, 0.0, 4.2), 4)
 	spawn_destructible_crate(Vector3(-1.2, 0.0, 14.5), 4)
 	spawn_destructible_crate(Vector3(18.0, 0.0, -9.8), 4)
-	build_horizon_panorama(Vector3(0.0, 0.0, 0.0), 27.0, 19.0, "night_forest")
-	# Wind-blown @amelicart night grass & glowing wildflowers (580 tufts via MultiMesh)
+	# Seamless full-meadow base + outer exploration glades (68m x 50m, zero bare gaps!)
+	organic_mound(self, Vector3(0.0, -0.58, 0.0), 34.5, 25.0, 1.12, NIGHT_GRASS, -3.0)
+	organic_mound(self, Vector3(-25.5, -0.50, -13.5), 11.0, 8.8, 1.04, NIGHT_GRASS_LIGHT, 16.0)
+	organic_mound(self, Vector3(20.5, -0.50, 14.0), 11.5, 9.2, 1.04, NIGHT_GRASS_LIGHT, -14.0)
+	curved_path([Vector3(-18.5, 0, -2.0), Vector3(-22.5, 0, -8.5), Vector3(-26.0, 0, -14.0)], 1.8, TRAIL_STONE)
+	curved_path([Vector3(9.5, 0, 5.5), Vector3(15.2, 0, 10.5), Vector3(20.5, 0, 14.0)], 1.9, TRAIL)
+	# NW Ancient Standing Stones & SE Lakeside Cabin Picnic Corner
+	for si in range(6):
+		var sang := float(si) * TAU / 6.0
+		boulder_cluster(Vector3(-26.0 + cos(sang) * 3.8, 0.0, -14.0 + sin(sang) * 3.4), 0.95, STONE_LIGHT, true, true, sang * 57.0)
+	cozy_cabin(Vector3(22.5, 0.0, 15.2), -38.0, Color("#c9583e"), TIMBER_LIGHT)
+	spawn_destructible_crate(Vector3(-26.0, 0.0, -14.0), 5)
+	spawn_destructible_crate(Vector3(18.5, 0.0, 13.5), 4)
+	build_horizon_panorama(Vector3(0.0, 0.0, 0.0), 33.5, 24.5, "night_forest")
+	# Wind-blown @amelicart night grass & glowing wildflowers (880 tufts via MultiMesh)
 	spawn_wind_grass_meadow(Vector3(-4.0, 0, -2.5), 11.5, 6.2, 200, NIGHT_GRASS, Color("#4f8091"), Color("#8ad6f5"), 0.16, 0.95)
 	spawn_wind_grass_meadow(Vector3(-16.5, 0, 2.5), 9.5, 7.5, 140, NIGHT_GRASS, Color("#48788a"), Color("#f2d085"), 0.18, 1.0)
 	spawn_wind_grass_meadow(Vector3(-3.5, 0, 13.0), 9.2, 5.6, 120, NIGHT_GRASS_LIGHT, Color("#5c9499"), Color("#e88ba7"), 0.20, 1.0)
 	spawn_wind_grass_meadow(Vector3(14.5, 0, -5.5), 8.2, 6.4, 120, NIGHT_GRASS_LIGHT, Color("#568c94"), Color("#ffe38a"), 0.18, 0.95)
+	spawn_wind_grass_meadow(Vector3(-25.0, 0, -13.0), 10.0, 8.0, 150, NIGHT_GRASS, Color("#538aa0"), Color("#8ad6f5"), 0.22, 1.05)
+	spawn_wind_grass_meadow(Vector3(20.0, 0, 13.5), 10.0, 8.0, 150, NIGHT_GRASS_LIGHT, Color("#5c999c"), Color("#ffe38a"), 0.22, 1.0)
 
-	invisible_boundary_wall(Vector3(-26.5, 0.8, 0.0), Vector3(0.8, 1.8, 38.0))
-	invisible_boundary_wall(Vector3(26.5, 0.8, 0.0), Vector3(0.8, 1.8, 38.0))
-	invisible_boundary_wall(Vector3(0.0, 0.8, -18.2), Vector3(54.0, 1.8, 0.8))
-	invisible_boundary_wall(Vector3(0.0, 0.8, 18.4), Vector3(54.0, 1.8, 0.8))
+	invisible_boundary_wall(Vector3(-33.5, 0.8, 0.0), Vector3(0.8, 1.8, 50.0))
+	invisible_boundary_wall(Vector3(33.5, 0.8, 0.0), Vector3(0.8, 1.8, 50.0))
+	invisible_boundary_wall(Vector3(0.0, 0.8, -24.5), Vector3(68.0, 1.8, 0.8))
+	invisible_boundary_wall(Vector3(0.0, 0.8, 24.5), Vector3(68.0, 1.8, 0.8))
 
 	for i in range(9):
 		var ang := i * TAU / 9.0 + 0.15
