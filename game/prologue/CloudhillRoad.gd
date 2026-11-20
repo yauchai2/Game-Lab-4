@@ -386,6 +386,7 @@ func _spawn_poe_mobs() -> void:
 		{"pos": Vector3(-11.2, 0.0, -3.5), "name": "發條巡邏兵", "hp": 3, "rare": false},
 		{"pos": Vector3(-8.2, 0.0, 2.8), "name": "★ 加班班長", "hp": 7, "rare": true},
 		{"pos": Vector3(-17.8, 0.0, -4.2), "name": "發條巡邏兵", "hp": 3, "rare": false},
+		{"pos": Vector3(-24.0, 0.0, 18.5), "name": "★ 粉花海園丁長", "hp": 8, "rare": true},
 	]
 	for sp in spawns:
 		var node := Node3D.new()
@@ -399,8 +400,11 @@ func _spawn_poe_mobs() -> void:
 		sphere(node, Vector3(0, 1.40, 0), Vector3(0.60, 0.58, 0.58), col.lightened(0.15))
 		register_living_npc(node, 0.0, 0.06, 3.8)
 		var lbl := label_at(node, Vector3(0, 2.12, 0), String(sp["name"]), GOLD if is_rare else Color("#e0ecff"), 26)
+		var m_ring := marker(sp["pos"], STAMP_RED, 1.75 if is_rare else 1.35)
+		m_ring.hide()
 		mobs.append({
-			"node": node, "label": lbl, "name": String(sp["name"]),
+			"node": node, "label": lbl, "name": String(sp["name"]), "home": sp["pos"],
+			"ring": m_ring, "state": "idle", "timer": 0.0, "cd": 0.6, "stun": 0.0,
 			"hp": int(sp["hp"]), "max_hp": int(sp["hp"]), "rare": is_rare, "alive": true,
 		})
 
@@ -480,6 +484,7 @@ func _clear_fog(fog_node: Node3D) -> void:
 func _physics_process(delta: float) -> void:
 	var t := Time.get_ticks_msec() * 0.001
 	_update_fellow_travelers(delta)
+	_update_mobs_ai(delta)
 	if boss_talk_timer > 0.0:
 		boss_talk_timer -= delta
 		if boss_talk_timer <= 0.0:
@@ -540,11 +545,88 @@ func update_wolf_follow(_delta: float) -> void:
 	var spd := 12.5 if wolf_charge_timer > 0.0 else 6.2
 	move_body(wolf, diff.normalized() if diff.length() > stop_dist else Vector3.ZERO, spd)
 
+func on_vortex_pull(origin: Vector3, radius: float) -> void:
+	for m in mobs:
+		if not m["alive"]:
+			continue
+		var mn: Node3D = m["node"]
+		var diff := flat(origin - mn.position)
+		if diff.length() <= radius:
+			var pull_p := origin - diff.normalized() * minf(1.4, diff.length())
+			create_tween().tween_property(mn, "position", Vector3(pull_p.x, mn.position.y, pull_p.z), 0.24).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			m["stun"] = 1.4
+			m["state"] = "idle"
+			(m["ring"] as Node3D).hide()
+			spawn_damage_pop(mn.position, "聚怪暈眩!", MIST_CYAN, false)
+
+func _update_mobs_ai(delta: float) -> void:
+	if input_locked or inv_open:
+		return
+	var p_pos := feet()
+	for m in mobs:
+		if not m["alive"]:
+			continue
+		var mn: Node3D = m["node"]
+		var m_ring: MeshInstance3D = m["ring"]
+		m["cd"] = maxf(0.0, float(m["cd"]) - delta)
+		if float(m["stun"]) > 0.0:
+			m["stun"] = float(m["stun"]) - delta
+			mn.rotation.z = sin(Time.get_ticks_msec() * 0.03) * 0.22
+			m_ring.hide()
+			continue
+		mn.rotation.z = 0.0
+		var to_p := flat(p_pos - mn.position)
+		var dist := to_p.length()
+		var st := String(m["state"])
+		if st == "windup":
+			m["timer"] = float(m["timer"]) - delta
+			m_ring.position = Vector3(mn.position.x, 0.04, mn.position.z)
+			m_ring.show()
+			if float(m["timer"]) <= 0.0:
+				m_ring.hide()
+				m["state"] = "idle"
+				m["cd"] = 1.65
+				flash_hit(mn)
+				if dist < (2.5 if bool(m["rare"]) else 2.0):
+					take_player_damage(1)
+		else:
+			m_ring.hide()
+			if dist < 8.5 and flat(mn.position - (m["home"] as Vector3)).length() < 9.5:
+				mn.rotation.y = atan2(to_p.x, to_p.z)
+				if dist <= 2.1 and float(m["cd"]) <= 0.0:
+					m["state"] = "windup"
+					m["timer"] = 0.85
+					m_ring.position = Vector3(mn.position.x, 0.04, mn.position.z)
+					m_ring.show()
+				elif dist > 1.75:
+					var spd := 2.4 if bool(m["rare"]) else 2.8
+					mn.position += to_p.normalized() * spd * delta
+			else:
+				var to_home := flat((m["home"] as Vector3) - mn.position)
+				if to_home.length() > 0.5:
+					mn.position += to_home.normalized() * 1.8 * delta
+					mn.rotation.y = atan2(to_home.x, to_home.z)
+
 func on_wolf_action() -> void:
 	if wolf_charge_cooldown > 0.0:
 		return
 	wolf_charge_cooldown = wolf_charge_max
 	wolf_charge_timer = 0.55
+	_damage_destructibles(feet(), 3.0)
+	if PrologueState.active_seal == "vortex":
+		var vring := marker(feet(), MIST_CYAN, 2.6)
+		var vtw := create_tween()
+		vtw.tween_property(vring, "scale", Vector3(2.4, 1.0, 2.4), 0.32)
+		vtw.tween_callback(vring.queue_free)
+		spawn_damage_pop(feet(), "引力聚怪!", MIST_CYAN, true)
+		on_vortex_pull(feet(), 6.8)
+	else:
+		for m in mobs:
+			if m["alive"] and flat(feet() - (m["node"] as Node3D).position).length() < 3.6:
+				m["stun"] = 1.2
+				m["state"] = "idle"
+				(m["ring"] as Node3D).hide()
+				spawn_damage_pop((m["node"] as Node3D).position, "撞斷!", GOLD, false)
 	if not PrologueState.timber_broken and PrologueState.mounted and flat(wolf.position - TIMBER_POS).length() < 5.2:
 		PrologueState.timber_broken = true
 		# Break 2.5D: Side-angle dynamic leap shot as Giant Wolf smashes the barricade (@amelicart This Way.jpg)!
@@ -656,8 +738,8 @@ func _update_boss(delta: float) -> void:
 				shake_time = 0.16
 				shake_strength = 0.20
 				if flat(feet() - boss.position).length() < 2.8:
-					PrologueState.player_hp = maxi(1, PrologueState.player_hp - 1)
-					show_player_emote("💦", 1.0)
+					if take_player_damage(1):
+						show_player_emote("💦", 1.0)
 				boss_state = BossState.IDLE
 				boss_timer = 1.3
 				boss_cue.modulate = Color("#ffd59e")
@@ -683,17 +765,18 @@ func _interrupt_boss_with_wolf() -> void:
 	spawn_damage_pop(boss.position, "破防 STAGGER!", GOLD, true)
 	_boss_say("嗚哇！哪來的斥候狼！", 2.2)
 
-func _damage_nearby_mobs(base_dmg: int, is_crit: bool) -> void:
+func _damage_nearby_mobs(base_dmg: int, is_crit: bool, radius := 2.8) -> void:
 	for m in mobs:
 		if not m["alive"]:
 			continue
 		var m_node: Node3D = m["node"]
-		if flat(player.position - m_node.position).length() < 2.8:
+		if flat(player.position - m_node.position).length() < radius:
 			m["hp"] = maxi(0, int(m["hp"]) - base_dmg)
 			hitstop_frames = 3
 			shake_time = 0.08
 			shake_strength = 0.14
 			flash_hit(m_node)
+			register_combat_hit(m_node.position, is_crit)
 			var push := flat(m_node.position - player.position).normalized() * 0.42
 			m_node.position += push
 			spawn_damage_pop(m_node.position, ("CRIT! %d" % base_dmg) if is_crit else "-%d" % base_dmg, GOLD if is_crit else Color.WHITE, is_crit)
@@ -701,22 +784,25 @@ func _damage_nearby_mobs(base_dmg: int, is_crit: bool) -> void:
 			lbl.text = "%s (%d/%d)" % [String(m["name"]), int(m["hp"]), int(m["max_hp"])]
 			if int(m["hp"]) <= 0:
 				m["alive"] = false
+				(m["ring"] as Node3D).queue_free()
 				var drop_pos := m_node.position
 				m_node.queue_free()
 				_drop_loot(drop_pos, bool(m["rare"]))
 
 func on_sword_hit() -> void:
 	var is_crit := randi() % 100 < PrologueState.get_total_crit()
-	var dmg := PrologueState.get_total_atk() * (2 if is_crit else 1)
-	_damage_nearby_mobs(dmg, is_crit)
+	var dmg := maxi(1, int(round(float(PrologueState.get_total_atk()) * get_attack_multiplier())) * (2 if is_crit else 1))
+	var reach := 3.5 if combo_step == 3 else 2.8
+	_damage_nearby_mobs(dmg, is_crit, reach)
 
-	if boss_active and flat(player.position - boss.position).length() < 2.8:
+	if boss_active and flat(player.position - boss.position).length() < reach:
 		var total_dmg := dmg + (PrologueState.get_stagger_bonus() if boss_state == BossState.STAGGERED else 0)
 		boss_hp = maxi(0, boss_hp - total_dmg)
 		hitstop_frames = 3
 		shake_time = 0.09
 		shake_strength = 0.16
 		flash_hit(boss)
+		register_combat_hit(boss.position, is_crit)
 		spawn_damage_pop(boss.position, ("CRIT! %d" % total_dmg) if is_crit else "-%d" % total_dmg, GOLD if (is_crit or boss_state == BossState.STAGGERED) else Color.WHITE, is_crit)
 		if boss_hp <= 0:
 			boss_active = false
@@ -739,11 +825,13 @@ func on_projectile_hit(pos: Vector3) -> bool:
 			m["hp"] = maxi(0, int(m["hp"]) - dmg)
 			PrologueState.play_sfx("hit")
 			flash_hit(m_node)
+			register_combat_hit(m_node.position, is_crit)
 			spawn_damage_pop(m_node.position, ("CRIT! %d" % dmg) if is_crit else "-%d" % dmg, GOLD if is_crit else Color.WHITE, is_crit)
 			var lbl: Label3D = m["label"]
 			lbl.text = "%s (%d/%d)" % [String(m["name"]), int(m["hp"]), int(m["max_hp"])]
 			if int(m["hp"]) <= 0:
 				m["alive"] = false
+				(m["ring"] as Node3D).queue_free()
 				var drop_pos := m_node.position
 				m_node.queue_free()
 				_drop_loot(drop_pos, bool(m["rare"]))
@@ -753,6 +841,7 @@ func on_projectile_hit(pos: Vector3) -> bool:
 		boss_hp = maxi(0, boss_hp - total_dmg)
 		PrologueState.play_sfx("hit")
 		flash_hit(boss)
+		register_combat_hit(boss.position, is_crit)
 		spawn_damage_pop(boss.position, ("CRIT! %d" % total_dmg) if is_crit else "-%d" % total_dmg, GOLD if (is_crit or boss_state == BossState.STAGGERED) else Color.WHITE, is_crit)
 		if boss_hp <= 0:
 			boss_active = false

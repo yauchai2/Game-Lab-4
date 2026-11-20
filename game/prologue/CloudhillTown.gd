@@ -11,6 +11,8 @@ const STASH_POS := Vector3(11.4, 0.0, 7.6)
 const SLIME_HOME := Vector3(-3.4, 0.0, 5.2)
 const DUMMY_1_POS := Vector3(3.2, 0.0, 8.6)
 const DUMMY_2_POS := Vector3(6.4, 0.0, 8.2)
+const LIGHTHOUSE_VIEW_POS := Vector3(-24.0, 0.0, 14.5)
+const SANDBAR_CHEST_POS := Vector3(-11.0, 0.0, 22.8)
 
 var goblin_bubble: Label3D
 var goblin_talk_timer := 0.0
@@ -20,6 +22,7 @@ var dummies: Array[Node3D] = []
 var ambient_chatter_timer := 3.5
 var patron_bubble: Label3D
 var waterwheel_node: Node3D
+var sandbar_chest_beam: MeshInstance3D
 var town_travelers: Array[Dictionary] = []
 
 func _ready() -> void:
@@ -90,6 +93,14 @@ func _build_town() -> void:
 	curved_path([Vector3(-13.5, 0, 8.2), Vector3(-19.5, 0, 12.5), Vector3(-24.0, 0, 14.5)], 2.0, BOARDWALK)
 	wooden_footbridge(Vector3(-21.2, 0.0, 13.2), 5.6, 2.2, 32.0, 0.35)
 	lighthouse_islet(Vector3(-27.2, 0.0, 15.2), 24.0)
+	# Lighthouse Panoramic Telescope Stand
+	var scope := Node3D.new()
+	scope.position = LIGHTHOUSE_VIEW_POS
+	add_child(scope)
+	cylinder(scope, Vector3(0, 0.65, 0), 0.08, 0.11, 1.3, TIMBER)
+	var tube := cylinder(scope, Vector3(0, 1.32, 0), 0.14, 0.10, 0.72, GOLD)
+	tube.rotation_degrees = Vector3(72.0, -32.0, 0.0)
+	marker(LIGHTHOUSE_VIEW_POS + Vector3(0.4, 0, -0.4), Color("#7dd6ff"), 0.62)
 	stone_archway(Vector3(0.5, 0.0, -16.8), 0.0, 1.15, true)
 	cozy_cabin(Vector3(-11.5, 0.0, -17.5), 18.0, CORAL_ROOF, WHITE_WALL)
 	cozy_cabin(Vector3(12.2, 0.0, -17.2), -22.0, Color("#d6583a"), WHITE_WALL)
@@ -105,7 +116,17 @@ func _build_town() -> void:
 	wooden_footbridge(Vector3(-9.5, 0.0, 16.5), 4.6, 2.2, 84.0, 0.36)
 	cozy_tree(Vector3(-14.5, 0.0, 23.2), 1.15, MEADOW_GREEN, 6.0)
 	pine_tree(Vector3(-6.8, 0.0, 23.8), 1.15, PINE_TEAL)
-	spawn_destructible_crate(Vector3(-11.2, 0.0, 23.0), 5)
+	# Southern Sandbar Hidden Treasure Chest (gifts Paycheck Double Seal!)
+	var schest := Node3D.new()
+	schest.position = SANDBAR_CHEST_POS
+	schest.rotation_degrees.y = 18.0
+	add_child(schest)
+	box(schest, Vector3(0, 0.42, 0), Vector3(1.15, 0.84, 0.82), GOLD, true)
+	box(schest, Vector3(0, 0.84, 0), Vector3(1.22, 0.16, 0.88), CORAL_ROOF)
+	sandbar_chest_beam = cylinder(schest, Vector3(0, 2.1, 0), 0.10, 0.16, 4.2, GOLD, true)
+	sandbar_chest_beam.visible = not PrologueState.sandbar_chest_claimed
+	marker(SANDBAR_CHEST_POS + Vector3(0, 0, -1.1), GOLD, 0.62)
+	spawn_destructible_crate(Vector3(-8.8, 0.0, 21.8), 5)
 	# Northern Windmill Hilltop Promenade
 	curved_path([Vector3(6.5, 0, -16.4), Vector3(13.5, 0, -21.5), Vector3(20.5, 0, -22.5)], 2.1, TRAIL, TRAIL_STONE)
 	cozy_cabin(Vector3(22.0, 0.0, -22.8), -32.0, CORAL_ROOF, WHITE_WALL)
@@ -412,6 +433,34 @@ func on_interact() -> void:
 		PrologueState.transition_to("res://prologue/CampfireClearing.tscn", "from_town", "湖畔營火窩")
 		return
 
+	if near(LIGHTHOUSE_VIEW_POS, 2.8):
+		play_cinematic_shot(Vector3(-34.0, 9.5, 24.5), Vector3(-6.0, 2.0, 2.0), 2.8, true, 52.0, true)
+		spawn_flying_bird_flock(Vector3(-28.0, 6.2, 12.0), Vector3(4.8, 0.4, -1.4), 6)
+		show_player_emote("🔭", 1.6)
+		if not PrologueState.lighthouse_viewed:
+			PrologueState.lighthouse_viewed = true
+			spawn_bouncing_coins(LIGHTHOUSE_VIEW_POS, 4, 5)
+			show_subtitle("遠眺雲丘海灣全景！發現隱藏觀景點（+20¢）", 3.6)
+		else:
+			show_subtitle("海風拂面，燈塔與雲丘市集盡收眼底。", 2.8)
+		return
+
+	if near(SANDBAR_CHEST_POS, 2.8):
+		if not PrologueState.sandbar_chest_claimed:
+			PrologueState.sandbar_chest_claimed = true
+			PrologueState.unlock_seal("paycheck")
+			PrologueState.orb_gold += 1
+			PrologueState.play_sfx("coin")
+			if sandbar_chest_beam:
+				sandbar_chest_beam.hide()
+			spawn_bouncing_coins(SANDBAR_CHEST_POS, 6, 5)
+			spawn_damage_pop(SANDBAR_CHEST_POS, "獲得【雙薪印章】!", GOLD, true)
+			show_player_emote("✨", 1.6)
+			show_subtitle("開啟沙洲秘寶箱！獲《雙薪印章》（暴擊+20%兼爆金幣）與《百年金漆罐》x1！", 4.4)
+		else:
+			show_subtitle("沙洲秘寶箱已開啟，按 [I] 即可切換《雙薪印章》！", 2.8)
+		return
+
 	if near(EAST_EXIT, 2.8):
 		if not PrologueState.has_sword:
 			show_player_emote("💦", 1.4)
@@ -420,8 +469,9 @@ func on_interact() -> void:
 		PrologueState.transition_to("res://prologue/CloudhillRoad.tscn", "from_town", "雲海古道")
 
 func on_sword_hit() -> void:
+	var reach := 3.2 if combo_step == 3 else 2.3
 	for d in dummies:
-		if flat(player.position - d.position).length() < 2.3:
+		if flat(player.position - d.position).length() < reach:
 			_hit_dummy(d)
 
 func on_projectile_hit(pos: Vector3) -> bool:
@@ -433,13 +483,14 @@ func on_projectile_hit(pos: Vector3) -> bool:
 
 func _hit_dummy(d: Node3D) -> void:
 	var is_crit := randi() % 100 < PrologueState.get_total_crit()
-	var dmg := PrologueState.get_total_atk() * (2 if is_crit else 1)
+	var dmg := maxi(1, int(round(float(PrologueState.get_total_atk()) * get_attack_multiplier())) * (2 if is_crit else 1))
 	hitstop_frames = 3
 	shake_time = 0.08
 	shake_strength = 0.14
 	PrologueState.play_sfx("hit")
 	flash_hit(d)
-	spawn_damage_pop(d.position, ("CRIT! %d" % dmg) if is_crit else "-%d" % dmg, GOLD if is_crit else Color.WHITE, is_crit)
+	register_combat_hit(d.position, is_crit)
+	spawn_damage_pop(d.position, ("CRIT! %d" % dmg) if is_crit else "-%d" % dmg, GOLD if is_crit else Color.WHITE, is_crit or combo_step == 3)
 	var tw := create_tween()
 	tw.tween_property(d, "rotation:z", 0.38, 0.07)
 	tw.tween_property(d, "rotation:z", 0.0, 0.16)
@@ -449,7 +500,7 @@ func _goblin_say(words: String, duration := 4.5) -> void:
 	goblin_talk_timer = duration
 
 func _update_ui() -> void:
-	var step := "向哥布林買五折短劍" if not PrologueState.has_sword else "按 [I] 造裝，或過東木橋出發刷怪"
+	var step := "向哥布林買五折短劍" if not PrologueState.has_sword else "按 [I] 造裝／切印章，或過東木橋出發刷怪"
 	if PrologueState.boss_retired:
 		step = "找波波吞白裝，或經驛站重刷古道"
 	set_zone_objective("雲丘市集", step)
@@ -463,6 +514,10 @@ func _update_ui() -> void:
 		set_prompt("[ E ] 波波一鍵吞白裝換通貨")
 	elif near(STASH_POS + Vector3(0, 0, -1.2), 2.6):
 		set_prompt("[ E ] 造裝工坊 [I]")
+	elif near(LIGHTHOUSE_VIEW_POS, 2.8):
+		set_prompt("[ E ] 燈塔全景望遠鏡（遠眺海灣）")
+	elif near(SANDBAR_CHEST_POS, 2.8):
+		set_prompt("[ E ] 開啟沙洲秘寶箱" if not PrologueState.sandbar_chest_claimed else "[ E ] 沙洲秘寶箱（已開啟）")
 	elif near(WAYPOINT_POS + Vector3(0, 0, 1.5), 2.7):
 		set_prompt("[ E ] 快傳重置雲海古道" if PrologueState.waypoint_road_unlocked else "[ E ] 信使鳥驛站")
 	elif near(WEST_EXIT, 2.8):

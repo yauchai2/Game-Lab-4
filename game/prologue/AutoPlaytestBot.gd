@@ -84,16 +84,23 @@ func _run_campfire(scene: Node, _delta: float) -> void:
 			else:
 				step = 4
 		4:
+			if _walk_to(scene, Vector3(-2.6, 0.0, 4.9), 1.6):
+				scene.on_interact()
+				scene.perform_dodge()
+				print("AUTOPLAY_M1: 湖畔木棧道垂釣＋測試 [Space] 翻滾閃避完成 (seal=%s)" % PrologueState.active_seal)
+				timer = 0.75
+				step = 5
+		5:
 			if _walk_to(scene, Vector3(-7.6, 0.0, -4.4), 1.5):
 				scene.on_interact()
 				print("AUTOPLAY_M1: 探查西北角青苔骷髏洞完成")
 				timer = 0.7
-				step = 5
-		5:
+				step = 6
+		6:
 			if _walk_to(scene, Vector3(16.5, 0.0, -1.2), 1.6):
 				scene.on_interact()
 				print("AUTOPLAY_M1: 過木橋前往雲丘市集")
-				step = 6
+				step = 7
 
 # --- Map 2: Expanded 52m x 34m Cloudhill Town Hub ---
 func _run_town(scene: Node, _delta: float) -> void:
@@ -145,8 +152,12 @@ func _run_town(scene: Node, _delta: float) -> void:
 		7:
 			if _walk_to(scene, Vector3(3.2, 0.0, 7.6), 1.3):
 				scene.perform_sword_attack()
-				print("AUTOPLAY_M2: 揮劍測試試刀木樁")
-				timer = 0.45
+				scene.attack_cooldown = 0.0
+				scene.perform_sword_attack()
+				scene.attack_cooldown = 0.0
+				scene.perform_sword_attack()
+				print("AUTOPLAY_M2: 測試短劍三段連擊（第 3 段 360° 旋風斬）＋劍氣波 (combo=%d)" % scene.hit_combo_count)
+				timer = 0.55
 				step = 8
 		8:
 			# Test Slingshot mounted ranged combat on training dummy!
@@ -312,8 +323,8 @@ func _run_road(scene: Node, _delta: float) -> void:
 				timer = 1.5
 				step = 15
 		15:
-			print("AUTOPLAY_COMPLETE: ALL_3_EXPANDED_MAPS_VERIFIED | ATK=%d | Coins=%d | Inv=%d | GoldOrbs=%d" % [
-				PrologueState.get_total_atk(), PrologueState.coins, PrologueState.inventory.size(), PrologueState.orb_gold
+			print("AUTOPLAY_COMPLETE: ALL_3_EXPANDED_MAPS_VERIFIED | ATK=%d | Coins=%d | Inv=%d | GoldOrbs=%d | Seal=%s | Combo=%d" % [
+				PrologueState.get_total_atk(), PrologueState.coins, PrologueState.inventory.size(), PrologueState.orb_gold, PrologueState.active_seal, scene.hit_combo_count
 			])
 			active = false
 			get_tree().quit(0)

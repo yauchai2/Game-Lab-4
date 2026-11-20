@@ -3,6 +3,8 @@ extends "res://prologue/PrologueBase.gd"
 const CAMPFIRE_POS := Vector3(0.0, 0.0, 0.0)
 const LOG_JOURNAL_POS := Vector3(2.2, 0.0, -0.5)
 const SKULL_CAVE_POS := Vector3(-7.6, 0.0, -4.4)
+const PIER_POS := Vector3(-2.6, 0.0, 4.9)
+const GOLEM_POS := Vector3(-26.0, 0.0, -14.0)
 const EXIT_TO_TOWN := Vector3(16.5, 0.0, -1.2)
 
 var campfire_flame: MeshInstance3D
@@ -10,6 +12,9 @@ var campfire_smoke: MeshInstance3D
 var skull_lantern: MeshInstance3D
 var title_overlay: Control
 var start_pill: PanelContainer
+var fishing_cooldown := 0.0
+var golem_node: Node3D
+var golem_bubble: Label3D
 
 # 10-Second Visual Hook: Lost Overtime Clockwork Grunt right next to camp!
 var lost_grunt: Node3D
@@ -90,6 +95,7 @@ func _build_map() -> void:
 	var rod := cylinder(pier, Vector3(0.35, 0.65, 1.35), 0.02, 0.04, 1.85, TIMBER_LIGHT)
 	rod.rotation_degrees = Vector3(52.0, 0.0, -8.0)
 	cylinder(pier, Vector3(-0.35, 0.22, 0.9), 0.18, 0.15, 0.34, STONE_LIGHT)
+	marker(PIER_POS + Vector3(0, 0, 0.2), Color("#7dd6ff"), 0.56)
 	spawn_destructible_crate(Vector3(-3.8, 0.0, 2.2), 3)
 	spawn_destructible_crate(Vector3(6.2, 0.0, 3.8), 3)
 
@@ -118,12 +124,23 @@ func _build_map() -> void:
 	organic_mound(self, Vector3(20.5, -0.50, 14.0), 11.5, 9.2, 1.04, NIGHT_GRASS_LIGHT, -14.0)
 	curved_path([Vector3(-18.5, 0, -2.0), Vector3(-22.5, 0, -8.5), Vector3(-26.0, 0, -14.0)], 1.8, TRAIL_STONE)
 	curved_path([Vector3(9.5, 0, 5.5), Vector3(15.2, 0, 10.5), Vector3(20.5, 0, 14.0)], 1.9, TRAIL)
-	# NW Ancient Standing Stones & SE Lakeside Cabin Picnic Corner
+	# NW Ancient Standing Stones & Friendly Retired Mini-Golem + SE Lakeside Cabin Picnic Corner
 	for si in range(6):
 		var sang := float(si) * TAU / 6.0
 		boulder_cluster(Vector3(-26.0 + cos(sang) * 3.8, 0.0, -14.0 + sin(sang) * 3.4), 0.95, STONE_LIGHT, true, true, sang * 57.0)
+	golem_node = Node3D.new()
+	golem_node.position = GOLEM_POS
+	add_child(golem_node)
+	sphere(golem_node, Vector3(0, 0.62, 0), Vector3(1.12, 0.96, 0.98), STONE_LIGHT)
+	sphere(golem_node, Vector3(0, 1.24, 0.08), Vector3(0.72, 0.60, 0.68), STONE)
+	sphere(golem_node, Vector3(0, 1.48, -0.05), Vector3(0.68, 0.28, 0.62), Color("#4e7c48"))
+	sphere(golem_node, Vector3(-0.18, 1.26, 0.38), Vector3(0.14, 0.14, 0.10), MIST_CYAN, true)
+	sphere(golem_node, Vector3(0.18, 1.26, 0.38), Vector3(0.14, 0.14, 0.10), MIST_CYAN, true)
+	golem_bubble = label_at(golem_node, Vector3(0, 2.05, 0), "引力印章好用嗎♪" if PrologueState.golem_befriended else "古石小憩中…💤", MIST_CYAN, 26)
+	register_living_npc(golem_node, 0.0, 0.05, 1.8)
+	marker(GOLEM_POS + Vector3(0, 0, 1.55), MIST_CYAN, 0.62)
 	cozy_cabin(Vector3(22.5, 0.0, 15.2), -38.0, Color("#c9583e"), TIMBER_LIGHT)
-	spawn_destructible_crate(Vector3(-26.0, 0.0, -14.0), 5)
+	spawn_destructible_crate(Vector3(-24.2, 0.0, -11.8), 5)
 	spawn_destructible_crate(Vector3(18.5, 0.0, 13.5), 4)
 	build_horizon_panorama(Vector3(0.0, 0.0, 0.0), 33.5, 24.5, "night_forest")
 	# Wind-blown @amelicart night grass & glowing wildflowers (880 tufts via MultiMesh)
@@ -303,6 +320,7 @@ func on_map_input(event: InputEvent) -> bool:
 
 func _physics_process(delta: float) -> void:
 	var t := Time.get_ticks_msec() * 0.001
+	fishing_cooldown = maxf(0.0, fishing_cooldown - delta)
 	campfire_flame.scale.y = 0.92 + sin(t * 11.0) * 0.14
 	campfire_smoke.position.y = 1.45 + fmod(t * 0.55, 1.2)
 	campfire_smoke.position.x = sin(t * 2.2) * 0.22
@@ -342,6 +360,9 @@ func _retire_camp_grunt() -> void:
 	PrologueState.campfire_dish = "烤魚"
 	PrologueState.player_hp = 5
 	PrologueState.flask_charges = 2
+	PrologueState.unlock_seal("split")
+	if PrologueState.active_seal.is_empty():
+		PrologueState.set_active_seal("split")
 	get_tree().create_timer(0.65).timeout.connect(func() -> void:
 		if is_instance_valid(grunt_helmet):
 			grunt_helmet.hide()
@@ -350,28 +371,33 @@ func _retire_camp_grunt() -> void:
 		if is_instance_valid(lost_grunt):
 			create_tween().tween_property(lost_grunt, "position", Vector3(-1.35, 0.0, -0.55), 0.55)
 	)
-	show_subtitle("迷路小兵原地退休幫你烤魚（攻擊 +1）並噴出第一道藍光柱！", 3.6)
+	show_subtitle("迷路兵退休烤魚（+1攻），噴出藍光柱與《分裂印章》（揮劍射劍氣／彈弓三發）！", 4.2)
 
 func on_sword_hit() -> void:
-	if not grunt_retired and is_instance_valid(lost_grunt) and flat(player.position - lost_grunt.position).length() < 2.8:
-		grunt_hp = maxi(0, grunt_hp - PrologueState.get_total_atk())
+	var reach := 3.4 if combo_step == 3 else 2.8
+	if not grunt_retired and is_instance_valid(lost_grunt) and flat(player.position - lost_grunt.position).length() < reach:
+		var dmg := maxi(1, int(round(float(PrologueState.get_total_atk()) * get_attack_multiplier())))
+		grunt_hp = maxi(0, grunt_hp - dmg)
 		hitstop_frames = 3
 		shake_time = 0.09
 		shake_strength = 0.14
 		PrologueState.play_sfx("hit")
 		flash_hit(lost_grunt)
-		spawn_damage_pop(lost_grunt.position, "-%d" % PrologueState.get_total_atk(), GOLD, grunt_hp <= 0)
+		register_combat_hit(lost_grunt.position, combo_step == 3)
+		spawn_damage_pop(lost_grunt.position, "-%d" % dmg, GOLD, grunt_hp <= 0 or combo_step == 3)
 		var push := flat(lost_grunt.position - player.position).normalized() * 0.45
 		lost_grunt.position += push
 		if grunt_hp <= 0:
 			_retire_camp_grunt()
 
 func on_projectile_hit(pos: Vector3) -> bool:
-	if not grunt_retired and is_instance_valid(lost_grunt) and flat(pos - lost_grunt.position).length() < 1.3:
-		grunt_hp = maxi(0, grunt_hp - PrologueState.get_total_atk())
+	if not grunt_retired and is_instance_valid(lost_grunt) and flat(pos - lost_grunt.position).length() < 1.35:
+		var dmg := PrologueState.get_total_atk()
+		grunt_hp = maxi(0, grunt_hp - dmg)
 		PrologueState.play_sfx("hit")
 		flash_hit(lost_grunt)
-		spawn_damage_pop(lost_grunt.position, "-%d" % PrologueState.get_total_atk(), GOLD, grunt_hp <= 0)
+		register_combat_hit(lost_grunt.position, false)
+		spawn_damage_pop(lost_grunt.position, "-%d" % dmg, GOLD, grunt_hp <= 0)
 		if grunt_hp <= 0:
 			_retire_camp_grunt()
 		return true
@@ -393,6 +419,42 @@ func on_interact() -> void:
 		return
 	if near(EXIT_TO_TOWN, 2.8):
 		PrologueState.transition_to("res://prologue/CloudhillTown.tscn", "from_campfire", "雲丘市集")
+	elif near(PIER_POS, 2.5):
+		if fishing_cooldown > 0.0:
+			show_subtitle("湖面魚群正在靠岸，稍等一會再拋竿！", 2.0)
+			return
+		fishing_cooldown = 3.5
+		PrologueState.player_hp = 5
+		PrologueState.flask_charges = 2
+		PrologueState.play_sfx("coin")
+		var fish := sphere(self, PIER_POS + Vector3(0.0, 0.15, 2.2), Vector3(0.32, 0.22, 0.48), GOLD, true)
+		var ftw := create_tween()
+		ftw.tween_property(fish, "position", feet() + Vector3(0, 1.35, 0), 0.42).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		ftw.tween_callback(fish.queue_free)
+		if randi() % 2 == 0:
+			PrologueState.orb_blue += 1
+			spawn_damage_pop(PIER_POS, "釣到藍印章!", Color("#7dd6ff"), true)
+			show_subtitle("湖畔垂釣大豐收！滿血＋水壺補滿＋《藍印章》x1！", 3.2)
+		else:
+			spawn_bouncing_coins(PIER_POS, 3, 5)
+			spawn_damage_pop(PIER_POS, "釣到金鯉魚!", GOLD, true)
+			show_subtitle("湖畔垂釣大豐收！滿血＋水壺補滿＋15¢！", 3.2)
+		show_player_emote("🐟", 1.4)
+	elif near(GOLEM_POS, 3.2):
+		if not PrologueState.golem_befriended:
+			PrologueState.golem_befriended = true
+			PrologueState.unlock_seal("vortex")
+			PrologueState.play_sfx("heal")
+			flash_hit(golem_node)
+			spawn_bouncing_coins(GOLEM_POS, 4, 5)
+			golem_bubble.text = "引力印章好用嗎♪"
+			play_cinematic_shot(GOLEM_POS + Vector3(3.4, 2.4, 5.0), GOLEM_POS + Vector3(0, 0.9, 0), 1.45, true, 46.0, true)
+			show_player_emote("✨", 1.6)
+			show_subtitle("退休小石魔像贈送《引力印章》！（[Q] 巨狼衝撞聚怪，按 [I] 隨時切換）", 4.2)
+		else:
+			flash_hit(golem_node)
+			show_player_emote("♥", 1.1)
+			show_subtitle("小石魔像開心地拍了拍青苔：「路上順風！」", 2.8)
 	elif near(CAMPFIRE_POS, 2.1):
 		PrologueState.player_hp = 5
 		PrologueState.flask_charges = 2
@@ -418,7 +480,7 @@ func on_interact() -> void:
 			show_subtitle("骷髏洞字條：「勸退四大 Boss 後再來找我！」", 3.0)
 
 func _update_ui() -> void:
-	var goal := "左鍵/J 或 Q 勸退迷路加班兵！" if not grunt_retired else "撿起藍光柱，過木橋往東去雲丘市集"
+	var goal := "左鍵/J 或 Q 勸退迷路加班兵！" if not grunt_retired else "撿起藍光柱，過木橋往東去雲丘市集（可探湖畔釣魚／西北古石陣）"
 	set_zone_objective("湖畔營火窩", goal)
 	update_status_line()
 	if not PrologueState.has_started:
@@ -428,6 +490,10 @@ func _update_ui() -> void:
 		set_prompt("[ E ] 拾取藍光柱裝備")
 	elif near(EXIT_TO_TOWN, 2.8):
 		set_prompt("[ E ] 前往：雲丘市集")
+	elif near(PIER_POS, 2.5):
+		set_prompt("[ E ] 湖畔垂釣（滿血＋釣寶）")
+	elif near(GOLEM_POS, 3.2):
+		set_prompt("[ E ] 與退休小石魔像打招呼")
 	elif near(CAMPFIRE_POS, 2.1):
 		set_prompt("[ E ] 烤魚水壺（滿血 +1攻）")
 	elif near(LOG_JOURNAL_POS, 2.0):

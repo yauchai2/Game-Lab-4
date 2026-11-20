@@ -13,9 +13,16 @@ var gate_opened := false
 var boss_retired := false
 var high_chest_claimed := false
 var waypoint_road_unlocked := false
+var golem_befriended := false
+var sandbar_chest_claimed := false
+var lighthouse_viewed := false
 var mounted := false
 var player_hp := 5
 var coins := 50
+
+# PoE 2-style Support Seals (immediately reshape active combat skills!)
+var unlocked_seals: Array[String] = []
+var active_seal := "" # "split", "vortex", "paycheck"
 
 # PoE 2-style Crafting Currencies
 var orb_blue := 2   # 改裝藍印章 (Transmutation)
@@ -135,6 +142,18 @@ func play_sfx(kind: String) -> void:
 			f1 = 65.0
 			amp = 0.36
 			noise_mix = 0.55
+		"dodge":
+			frames = int(sr * 0.10)
+			f0 = 360.0
+			f1 = 150.0
+			amp = 0.22
+			noise_mix = 0.45
+		"whirl":
+			frames = int(sr * 0.18)
+			f0 = 260.0
+			f1 = 680.0
+			amp = 0.30
+			noise_mix = 0.35
 		_:
 			return
 	var avail := pb.get_frames_available()
@@ -164,9 +183,14 @@ func reset_all() -> void:
 	boss_retired = false
 	high_chest_claimed = false
 	waypoint_road_unlocked = false
+	golem_befriended = false
+	sandbar_chest_claimed = false
+	lighthouse_viewed = false
 	mounted = false
 	player_hp = 5
 	coins = 50
+	unlocked_seals.clear()
+	active_seal = ""
 	orb_blue = 2
 	orb_gold = 1
 	orb_chaos = 2
@@ -337,6 +361,8 @@ func get_total_atk() -> int:
 
 func get_total_crit() -> int:
 	var total := 10
+	if active_seal == "paycheck":
+		total += 20
 	for gear in [equipped_weapon, equipped_saddle]:
 		if gear.is_empty():
 			continue
@@ -344,6 +370,29 @@ func get_total_crit() -> int:
 			if a["stat"] == "crit":
 				total += int(a["val"])
 	return mini(100, total)
+
+func unlock_seal(seal_id: String) -> bool:
+	if unlocked_seals.has(seal_id):
+		return false
+	unlocked_seals.append(seal_id)
+	if active_seal.is_empty():
+		active_seal = seal_id
+	play_sfx("craft")
+	return true
+
+func set_active_seal(seal_id: String) -> String:
+	if not unlocked_seals.has(seal_id):
+		return "尚未解鎖此輔助印章！"
+	active_seal = seal_id
+	play_sfx("craft")
+	return "已鑲嵌輔助印章：" + get_seal_title(seal_id)
+
+func get_seal_title(seal_id: String) -> String:
+	match seal_id:
+		"split": return "【分裂印章】(彈弓3連射/揮劍發劍氣)"
+		"vortex": return "【引力印章】(巨狼撞與重劈聚怪暈眩)"
+		"paycheck": return "【雙薪印章】(+20%暴擊且暴擊噴幣)"
+		_: return "未鑲嵌"
 
 func get_stagger_bonus() -> int:
 	var total := 1

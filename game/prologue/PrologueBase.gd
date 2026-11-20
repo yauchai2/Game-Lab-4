@@ -58,6 +58,15 @@ var shake_time := 0.0
 var shake_strength := 0.18
 var air_slam_active := false
 var vertical_vel := 0.0
+var dodge_timer := 0.0
+var dodge_cooldown := 0.0
+var dodge_max_cd := 0.75
+var dodge_dir := Vector3.ZERO
+var invuln_timer := 0.0
+var combo_step := 0
+var combo_reset_timer := 0.0
+var hit_combo_count := 0
+var hit_combo_timer := 0.0
 var emote_timer := 0.0
 var subtitle_timer := 0.0
 var input_locked := false
@@ -115,16 +124,20 @@ var subtitle_label: Label
 var prompt_panel: PanelContainer
 var prompt_label: Label
 
-# Boss HP Bar (Top-Center)
+# Boss HP Bar (Top-Center) & Combo Counter Badge
 var boss_panel: PanelContainer
 var boss_name_label: Label
 var boss_hp_bar: ProgressBar
 var boss_state_badge: Label
+var combo_badge_panel: PanelContainer
+var combo_badge_label: Label
 
 # Compact Bottom Hotbar Pills
 var slot_attack: PanelContainer
 var slot_attack_cd: ColorRect
 var slot_attack_sub: Label
+var slot_dodge: PanelContainer
+var slot_dodge_cd: ColorRect
 var slot_mount: PanelContainer
 var slot_mount_sub: Label
 var slot_wolf: PanelContainer
@@ -135,11 +148,12 @@ var slot_bag: PanelContainer
 var slot_coop: PanelContainer
 var slot_reset: PanelContainer
 
-# PoE 2 Inventory & Currency Crafting Modal (press I)
+# PoE 2 Inventory, Support Seals & Currency Crafting Modal (press I)
 var inv_panel: PanelContainer
 var inv_stats_label: Label
 var inv_equipped_label: Label
 var inv_currency_label: Label
+var inv_seal_row: HBoxContainer
 var inv_list_box: VBoxContainer
 var inv_feedback_label: Label
 
@@ -1086,6 +1100,19 @@ func setup_hud() -> void:
 	objective_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	o_box.add_child(objective_label)
 
+	combo_badge_panel = PanelContainer.new()
+	combo_badge_panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	combo_badge_panel.offset_left = -168
+	combo_badge_panel.offset_right = -18
+	combo_badge_panel.offset_top = 86
+	combo_badge_panel.offset_bottom = 124
+	combo_badge_panel.add_theme_stylebox_override("panel", make_panel_style(Color(0.24, 0.11, 0.08, 0.88), FIRE_ORANGE, 14, 2, 12, 4))
+	combo_badge_panel.hide()
+	hud_root.add_child(combo_badge_panel)
+	combo_badge_label = _styled_label("", 17, GOLD, false)
+	combo_badge_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	combo_badge_panel.add_child(combo_badge_label)
+
 	# 3. Top-Center: Boss HP Bar (only shown during Boss encounter)
 	boss_panel = PanelContainer.new()
 	boss_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
@@ -1120,8 +1147,8 @@ func setup_hud() -> void:
 	# 4. Bottom-Center: Compact Floating Prompt & Clean Action Pills
 	var bottom_stack := VBoxContainer.new()
 	bottom_stack.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
-	bottom_stack.offset_left = -360
-	bottom_stack.offset_right = 360
+	bottom_stack.offset_left = -420
+	bottom_stack.offset_right = 420
 	bottom_stack.offset_top = -178
 	bottom_stack.offset_bottom = -14
 	bottom_stack.alignment = BoxContainer.ALIGNMENT_END
@@ -1148,13 +1175,16 @@ func setup_hud() -> void:
 
 	var hotbar := HBoxContainer.new()
 	hotbar.alignment = BoxContainer.ALIGNMENT_CENTER
-	hotbar.add_theme_constant_override("separation", 8)
+	hotbar.add_theme_constant_override("separation", 7)
 	bottom_stack.add_child(hotbar)
 
 	var atk_pair := _make_hotbar_slot(hotbar, "J / 左鍵", "揮劍", Color("#4da1e8"))
 	slot_attack = atk_pair[0]
 	slot_attack_cd = atk_pair[1]
 	slot_attack_sub = atk_pair[2]
+	var ddg_pair := _make_hotbar_slot(hotbar, "Space", "翻滾", MIST_CYAN)
+	slot_dodge = ddg_pair[0]
+	slot_dodge_cd = ddg_pair[1]
 	var mnt_pair := _make_hotbar_slot(hotbar, "F", "上鞍", Color("#498e62"))
 	slot_mount = mnt_pair[0]
 	slot_mount_sub = mnt_pair[2]
@@ -1209,6 +1239,10 @@ func _build_inventory_modal() -> void:
 	root_v.add_child(inv_equipped_label)
 	inv_currency_label = _styled_label("", 14, Color("#8a4b16"), false)
 	root_v.add_child(inv_currency_label)
+
+	inv_seal_row = HBoxContainer.new()
+	inv_seal_row.add_theme_constant_override("separation", 6)
+	root_v.add_child(inv_seal_row)
 
 	var craft_row := HBoxContainer.new()
 	craft_row.add_theme_constant_override("separation", 6)
@@ -1282,6 +1316,24 @@ func _refresh_inventory_ui(msg := "") -> void:
 	inv_currency_label.text = "藍印章 x%d ｜ 金漆罐 x%d ｜ 洗白劑 x%d" % [
 		PrologueState.orb_blue, PrologueState.orb_gold, PrologueState.orb_chaos
 	]
+
+	if inv_seal_row:
+		for sc in inv_seal_row.get_children():
+			sc.queue_free()
+		inv_seal_row.add_child(_styled_label("輔助印章：", 13, UI_INK, false))
+		if PrologueState.unlocked_seals.is_empty():
+			inv_seal_row.add_child(_styled_label("尚未取得（探索或擊退敵人解鎖）", 13, Color("#7a634b"), false))
+		else:
+			for sid in PrologueState.unlocked_seals:
+				var sbtn := Button.new()
+				var is_on := (PrologueState.active_seal == sid)
+				sbtn.text = ("★ " if is_on else "○ ") + PrologueState.get_seal_title(sid)
+				var cap_sid := sid
+				sbtn.pressed.connect(func() -> void:
+					var next_id := "" if PrologueState.active_seal == cap_sid else cap_sid
+					_refresh_inventory_ui(PrologueState.set_active_seal(next_id))
+				)
+				inv_seal_row.add_child(sbtn)
 
 	for c in inv_list_box.get_children():
 		c.queue_free()
@@ -1510,7 +1562,20 @@ func step_shared_physics(delta: float, cam_override_target := Vector3.INF) -> bo
 	attack_cooldown = maxf(0.0, attack_cooldown - delta)
 	wolf_charge_cooldown = maxf(0.0, wolf_charge_cooldown - delta)
 	wolf_charge_timer = maxf(0.0, wolf_charge_timer - delta)
+	dodge_timer = maxf(0.0, dodge_timer - delta)
+	dodge_cooldown = maxf(0.0, dodge_cooldown - delta)
+	invuln_timer = maxf(0.0, invuln_timer - delta)
 	shake_time = maxf(0.0, shake_time - delta)
+	if combo_reset_timer > 0.0:
+		combo_reset_timer -= delta
+		if combo_reset_timer <= 0.0:
+			combo_step = 0
+	if hit_combo_timer > 0.0:
+		hit_combo_timer -= delta
+		if hit_combo_timer <= 0.0:
+			hit_combo_count = 0
+			if combo_badge_panel:
+				combo_badge_panel.hide()
 
 	if emote_timer > 0.0:
 		emote_timer -= delta
@@ -1548,6 +1613,14 @@ func step_shared_physics(delta: float, cam_override_target := Vector3.INF) -> bo
 		if player.position.y <= 0.0:
 			player.position.y = 0.0
 			_finish_air_slam()
+	elif dodge_timer > 0.0:
+		if PrologueState.mounted:
+			move_body(wolf, dodge_dir, 14.2 * spd_mult)
+			player.position = wolf.position + Vector3.UP * 1.38
+			player.rotation.y = wolf.rotation.y
+		else:
+			move_body(player, dodge_dir, 12.6 * spd_mult)
+			update_wolf_follow(delta)
 	elif PrologueState.mounted:
 		var spd := (12.5 if wolf_charge_timer > 0.0 else 7.8) * spd_mult
 		move_body(wolf, dir if dir.length() > 0.05 else (Vector3.RIGHT if wolf_charge_timer > 0.0 else Vector3.ZERO), spd)
@@ -1581,8 +1654,12 @@ func _update_hotbar_visuals() -> void:
 	var can_use_atk := can_attack and (not PrologueState.mounted or PrologueState.is_slingshot())
 	slot_attack.modulate = Color.WHITE if can_use_atk else Color(0.55, 0.55, 0.62, 0.85)
 	if slot_attack_sub:
-		slot_attack_sub.text = "彈弓" if PrologueState.is_slingshot() else "揮劍"
+		slot_attack_sub.text = "彈弓" if PrologueState.is_slingshot() else ("旋風!" if combo_step == 2 else "揮劍")
 	slot_attack_cd.visible = attack_cooldown > 0.0
+	if slot_dodge_cd:
+		slot_dodge_cd.visible = dodge_cooldown > 0.0
+		if dodge_cooldown > 0.0:
+			slot_dodge_cd.scale.y = clampf(dodge_cooldown / dodge_max_cd, 0.0, 1.0)
 	if PrologueState.mounted:
 		slot_mount_sub.text = "彈飛劈!" if PrologueState.has_spring_saddle else "下鞍"
 	else:
@@ -1611,6 +1688,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.physical_keycode:
 			KEY_1: drink_flask()
+			KEY_SPACE: perform_dodge()
 			KEY_E: on_interact()
 			KEY_F: toggle_mount()
 			KEY_Q: on_wolf_action()
@@ -1619,6 +1697,64 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_R: PrologueState.reset_all()
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		perform_sword_attack()
+
+func is_invulnerable() -> bool:
+	return invuln_timer > 0.0 or air_slam_active
+
+func perform_dodge() -> void:
+	if dodge_cooldown > 0.0 or air_slam_active:
+		return
+	var h := float(Input.is_physical_key_pressed(KEY_D) or Input.is_physical_key_pressed(KEY_RIGHT)) - float(Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT))
+	var v := float(Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN)) - float(Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP))
+	var right := flat(camera.transform.basis.x).normalized()
+	var fwd := flat(camera.transform.basis.z).normalized()
+	var input_dir := (right * h + fwd * v).limit_length()
+	var yaw := wolf.rotation.y if PrologueState.mounted else player.rotation.y
+	dodge_dir = input_dir.normalized() if input_dir.length() > 0.08 else Vector3(sin(yaw), 0.0, cos(yaw)).normalized()
+	dodge_timer = 0.26
+	invuln_timer = 0.30
+	dodge_cooldown = dodge_max_cd
+	PrologueState.play_sfx("dodge")
+	var dust := marker(feet(), Color("#f2e9d8"), 1.05)
+	var dtw := create_tween()
+	dtw.tween_property(dust, "scale", Vector3(2.0, 1.0, 2.0), 0.24)
+	dtw.tween_callback(dust.queue_free)
+	if PrologueState.mounted:
+		flash_hit(wolf_visual)
+	else:
+		var rtw := create_tween()
+		rtw.tween_property(player_visual, "rotation:x", TAU, 0.24).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		rtw.tween_callback(func() -> void:
+			player_visual.rotation.x = 0.0
+		)
+
+func take_player_damage(amount := 1) -> bool:
+	if is_invulnerable():
+		PrologueState.play_sfx("dodge")
+		spawn_damage_pop(feet(), "閃避!", MIST_CYAN, true)
+		show_player_emote("💨", 0.7)
+		return false
+	PrologueState.player_hp = maxi(1, PrologueState.player_hp - amount)
+	shake_time = 0.22
+	shake_strength = 0.20
+	flash_hit(wolf_visual if PrologueState.mounted else player_visual)
+	spawn_damage_pop(feet(), "-%d ♥" % amount, STAMP_RED, true)
+	update_status_line()
+	return true
+
+func register_combat_hit(pos: Vector3, is_crit := false) -> void:
+	hit_combo_count += 1
+	hit_combo_timer = 3.2
+	if combo_badge_panel and combo_badge_label:
+		combo_badge_label.text = "🔥 %d HIT!" % hit_combo_count
+		combo_badge_panel.show()
+		combo_badge_panel.scale = Vector2(1.18, 1.18)
+		create_tween().tween_property(combo_badge_panel, "scale", Vector2.ONE, 0.14)
+	if is_crit and PrologueState.active_seal == "paycheck":
+		spawn_bouncing_coins(pos, 2, 5)
+
+func get_attack_multiplier() -> float:
+	return 1.6 if combo_step == 3 else 1.0
 
 func drink_flask() -> void:
 	if PrologueState.flask_charges <= 0:
@@ -1650,12 +1786,22 @@ func on_coop_summon() -> void:
 	show_player_emote("✉️", 1.2)
 	show_subtitle("在「雲海石橋」按 [C] 即可拉隊友空降助拳！", 3.0)
 
+func on_vortex_pull(_origin: Vector3, _radius: float) -> void:
+	pass
+
 func on_wolf_action() -> void:
 	if wolf_charge_cooldown > 0.0:
 		return
 	wolf_charge_cooldown = wolf_charge_max
 	wolf_charge_timer = 0.45
 	_damage_destructibles(feet(), 3.0)
+	if PrologueState.active_seal == "vortex":
+		var vring := marker(feet(), MIST_CYAN, 2.6)
+		var vtw := create_tween()
+		vtw.tween_property(vring, "scale", Vector3(2.4, 1.0, 2.4), 0.32)
+		vtw.tween_callback(vring.queue_free)
+		spawn_damage_pop(feet(), "引力聚怪!", MIST_CYAN, true)
+		on_vortex_pull(feet(), 6.8)
 	show_player_emote("!", 0.7)
 
 func on_sword_hit() -> void:
@@ -1675,23 +1821,51 @@ func perform_sword_attack() -> void:
 		PrologueState.play_sfx("slingshot")
 		var origin := feet() + Vector3(0, 1.05 if PrologueState.mounted else 0.75, 0)
 		var yaw := wolf.rotation.y if PrologueState.mounted else player.rotation.y
-		var forward := Vector3(sin(yaw), 0.0, cos(yaw)).normalized()
-		var shot := sphere(self, origin + forward * 0.65, Vector3(0.28, 0.28, 0.28), GOLD, true)
-		projectiles.append({"node": shot, "vel": forward * 21.0, "age": 0.0})
+		var angles: Array[float] = [-0.24, 0.0, 0.24]
+		if PrologueState.active_seal != "split":
+			angles = [0.0]
+		for a in angles:
+			var forward := Vector3(sin(yaw + a), 0.0, cos(yaw + a)).normalized()
+			var shot := sphere(self, origin + forward * 0.65, Vector3(0.28, 0.28, 0.28), MIST_CYAN if PrologueState.active_seal == "split" else GOLD, true)
+			projectiles.append({"node": shot, "vel": forward * 21.0, "age": 0.0})
 		return
 	if PrologueState.mounted:
 		return
-	attack_cooldown = 0.28
-	PrologueState.play_sfx("slash")
-	spawn_slash_arc(player.position, player.rotation.y, GOLD if PrologueState.has_sword else Color("#e6f4ff"))
-	var lunge_dir := Vector3(sin(player.rotation.y), 0.0, cos(player.rotation.y)).normalized()
-	move_body(player, lunge_dir, 4.2)
-	var tw := create_tween().set_parallel(true)
-	tw.tween_property(player_sword, "rotation:y", -1.55, 0.09)
-	tw.tween_property(player_visual, "rotation:x", 0.22, 0.09)
-	tw.chain().tween_property(player_sword, "rotation:y", 0.0, 0.14)
-	tw.parallel().tween_property(player_visual, "rotation:x", 0.0, 0.14)
-	_damage_destructibles(player.position, 2.6)
+	combo_step = (combo_step % 3) + 1
+	combo_reset_timer = 0.95
+	if combo_step == 3:
+		attack_cooldown = 0.36
+		PrologueState.play_sfx("whirl")
+		var wring := marker(player.position, GOLD, 2.4)
+		var wtw := create_tween()
+		wtw.tween_property(wring, "scale", Vector3(1.65, 1.0, 1.65), 0.24)
+		wtw.tween_callback(wring.queue_free)
+		spawn_slash_arc(player.position, player.rotation.y, GOLD)
+		spawn_slash_arc(player.position, player.rotation.y + PI, FIRE_ORANGE)
+		spawn_damage_pop(player.position, "旋風斬!", GOLD, false)
+		var spin_tw := create_tween()
+		spin_tw.tween_property(player_visual, "rotation:y", TAU, 0.24).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		spin_tw.tween_callback(func() -> void:
+			player_visual.rotation.y = 0.0
+		)
+		_damage_destructibles(player.position, 3.4)
+	else:
+		attack_cooldown = 0.26
+		PrologueState.play_sfx("slash")
+		spawn_slash_arc(player.position, player.rotation.y + (0.35 if combo_step == 2 else 0.0), GOLD if PrologueState.has_sword else Color("#e6f4ff"))
+		var lunge_dir := Vector3(sin(player.rotation.y), 0.0, cos(player.rotation.y)).normalized()
+		move_body(player, lunge_dir, 4.2)
+		var tw := create_tween().set_parallel(true)
+		tw.tween_property(player_sword, "rotation:y", -1.55 if combo_step == 1 else 1.45, 0.09)
+		tw.tween_property(player_visual, "rotation:x", 0.22, 0.09)
+		tw.chain().tween_property(player_sword, "rotation:y", 0.0, 0.14)
+		tw.parallel().tween_property(player_visual, "rotation:x", 0.0, 0.14)
+		_damage_destructibles(player.position, 2.6)
+	if PrologueState.active_seal == "split":
+		var sw_fwd := Vector3(sin(player.rotation.y), 0.0, cos(player.rotation.y)).normalized()
+		var wave := box(self, player.position + sw_fwd * 0.9 + Vector3(0, 0.65, 0), Vector3(1.15, 0.12, 0.32), GOLD, false, true)
+		wave.rotation.y = player.rotation.y
+		projectiles.append({"node": wave, "vel": sw_fwd * 16.5, "age": 0.0})
 	on_sword_hit()
 
 func toggle_mount() -> void:
@@ -1736,6 +1910,8 @@ func _finish_air_slam() -> void:
 	tw.tween_property(ring, "scale", Vector3(1.8, 1.0, 1.8), 0.28)
 	tw.tween_callback(ring.queue_free)
 	spawn_damage_pop(player.position, "彈飛重劈! 200%", GOLD, true)
+	if PrologueState.active_seal == "vortex":
+		on_vortex_pull(player.position, 6.8)
 	show_player_emote("✨", 1.2)
 	on_air_slam_land()
 
@@ -1750,4 +1926,6 @@ func update_status_line() -> void:
 		tags.append("🍲+1")
 	if PrologueState.has_spring_saddle:
 		tags.append("🌀彈簧")
+	if not PrologueState.active_seal.is_empty():
+		tags.append("💠%s" % PrologueState.get_seal_title(PrologueState.active_seal))
 	gear_tags_label.text = "  ".join(tags)
