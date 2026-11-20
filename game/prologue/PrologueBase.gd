@@ -83,9 +83,19 @@ var water_ripples: Array[Dictionary] = []
 var cloud_puffs: Array[Dictionary] = []
 var projectiles: Array[Dictionary] = []
 var destructibles: Array[Dictionary] = []
+var flying_birds: Array[Dictionary] = []
 var bird_alert_target := Vector3.INF
 var _walk_phase := 0.0
 var _wolf_phase := 0.0
+
+# Cinematic Camera Director (allows breaking 2.5D ortho for story & dramatic moments)
+var default_cam_size := 16.0
+var cinematic_active := false
+var cinematic_timer := 0.0
+var cinematic_cam_pos := Vector3.ZERO
+var cinematic_look_at := Vector3.ZERO
+var letterbox_top: ColorRect
+var letterbox_bottom: ColorRect
 
 # Minimalist Storybook HUD nodes
 var hud_layer: CanvasLayer
@@ -520,7 +530,8 @@ func _damage_destructibles(origin: Vector3, radius := 2.6) -> bool:
 	return hit_any
 
 func play_giant_retirement_stamp(target_pos: Vector3) -> void:
-	# The signature 3-Second Visual Hook: Giant 3D Red Stamp slams from the sky!
+	# The signature 3-Second Visual Hook: Break 2.5D into a dramatic low-angle close-up!
+	play_cinematic_shot(target_pos + Vector3(-2.6, 2.35, 5.2), target_pos + Vector3(0, 1.05, 0), 1.25, true, 44.0, true)
 	var stamp := Node3D.new()
 	stamp.position = target_pos + Vector3(0, 6.2, 0)
 	add_child(stamp)
@@ -644,8 +655,9 @@ func _make_body(body: CharacterBody3D, pos: Vector3, radius: float) -> void:
 	add_shape(body, shape, Vector3.UP * radius)
 	body.position = pos
 
-# --- 2.5D Orthographic Oblique Top-Down Camera ---
+# --- 2.5D Orthographic Camera + Cinematic Break Director ---
 func setup_camera_and_lighting(cam_size: float, bg_col: Color, amb_col: Color, amb_energy: float, sun_col: Color, sun_energy: float) -> void:
+	default_cam_size = cam_size
 	add_child(camera)
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	camera.size = cam_size
@@ -665,7 +677,67 @@ func setup_camera_and_lighting(cam_size: float, bg_col: Color, amb_col: Color, a
 	sun.light_energy = sun_energy
 	sun.shadow_enabled = true
 
+func set_cinematic_pose(cam_pos: Vector3, look_target: Vector3, use_perspective := true, fov_or_size := 46.0, with_letterbox := true) -> void:
+	cinematic_active = true
+	cinematic_timer = -1.0
+	cinematic_cam_pos = cam_pos
+	cinematic_look_at = look_target
+	if use_perspective:
+		camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+		camera.fov = fov_or_size
+	else:
+		camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+		camera.size = fov_or_size
+	camera.position = cam_pos
+	camera.look_at(look_target)
+	_set_letterbox(with_letterbox)
+
+func play_cinematic_shot(cam_pos: Vector3, look_target: Vector3, duration := 1.6, use_perspective := true, fov_or_size := 46.0, with_letterbox := true) -> void:
+	cinematic_active = true
+	cinematic_timer = duration
+	cinematic_cam_pos = cam_pos
+	cinematic_look_at = look_target
+	if use_perspective:
+		camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+		camera.fov = fov_or_size
+	else:
+		camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+		camera.size = fov_or_size
+	_set_letterbox(with_letterbox)
+
+func exit_cinematic_shot() -> void:
+	if not cinematic_active:
+		return
+	cinematic_active = false
+	cinematic_timer = 0.0
+	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+	camera.size = default_cam_size
+	_set_letterbox(false)
+	position_camera(feet(), 1.0)
+
+func _set_letterbox(enabled: bool) -> void:
+	if not letterbox_top or not letterbox_bottom:
+		return
+	var h := 44.0 if enabled else 0.0
+	var tw := create_tween().set_parallel(true)
+	tw.tween_property(letterbox_top, "custom_minimum_size:y", h, 0.28)
+	tw.tween_property(letterbox_top, "offset_bottom", h, 0.28)
+	tw.tween_property(letterbox_bottom, "offset_top", -h, 0.28)
+
+func spawn_flying_bird_flock(start_pos: Vector3, vel: Vector3, count := 5, col := Color("#f7f9ff")) -> void:
+	for i in range(count):
+		var b := Node3D.new()
+		b.position = start_pos + Vector3(randf_range(-1.8, 1.8), randf_range(-0.6, 1.2), randf_range(-1.5, 1.5))
+		add_child(b)
+		var lw := box(b, Vector3(-0.22, 0, 0), Vector3(0.42, 0.05, 0.14), col, false, true)
+		var rw := box(b, Vector3(0.22, 0, 0), Vector3(0.42, 0.05, 0.14), col, false, true)
+		flying_birds.append({"node": b, "lw": lw, "rw": rw, "vel": vel, "age": 0.0, "phase": float(i) * 1.1})
+
 func position_camera(target: Vector3, lerp_weight: float) -> void:
+	if cinematic_active:
+		camera.position = camera.position.lerp(cinematic_cam_pos, clampf(lerp_weight * 1.4, 0.0, 1.0)) if lerp_weight < 1.0 else cinematic_cam_pos
+		camera.look_at(cinematic_look_at)
+		return
 	var offset := Vector3(3.2, 14.2, 16.5)
 	var desired := target + offset
 	camera.position = camera.position.lerp(desired, lerp_weight) if lerp_weight < 1.0 else desired
@@ -694,6 +766,21 @@ func setup_hud() -> void:
 	hud_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_layer.add_child(hud_root)
+
+	# Cinematic Letterbox Bars (slide in softly when breaking 2.5D for story shots)
+	letterbox_top = ColorRect.new()
+	letterbox_top.color = Color(0.05, 0.06, 0.11, 0.94)
+	letterbox_top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	letterbox_top.offset_bottom = 0.0
+	letterbox_top.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hud_layer.add_child(letterbox_top)
+
+	letterbox_bottom = ColorRect.new()
+	letterbox_bottom.color = Color(0.05, 0.06, 0.11, 0.94)
+	letterbox_bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	letterbox_bottom.offset_top = 0.0
+	letterbox_bottom.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hud_layer.add_child(letterbox_bottom)
 
 	# 1. Top-Left: Ultra-clean Vitals Pill (hearts + compact stat icons)
 	var vitals_card := PanelContainer.new()
@@ -824,17 +911,22 @@ func _build_inventory_modal() -> void:
 	inv_panel.offset_right = 350
 	inv_panel.offset_top = -225
 	inv_panel.offset_bottom = 215
-	inv_panel.add_theme_stylebox_override("panel", make_panel_style(UI_PARCHMENT, UI_WOOD_BORDER, 20, 3, 20, 14))
+	inv_panel.add_theme_stylebox_override("panel", make_panel_style(Color("#f7f1df"), Color("#b89b72"), 20, 3, 22, 14))
 	inv_panel.hide()
 	hud_layer.add_child(inv_panel)
 
 	var root_v := VBoxContainer.new()
-	root_v.add_theme_constant_override("separation", 8)
+	root_v.add_theme_constant_override("separation", 7)
 	inv_panel.add_child(root_v)
+
+	# @amelicart Picnic Blanket Fringe Header
+	var top_fringe := _styled_label("╷  ╷  ╷  ╷  ╷  ╷  ╷  ╷  ╷  ╷  ╷  ╷  ╷  ╷  ╷  ╷  ╷  ╷  ╷  ╷  ╷  ╷  ╷", 11, Color("#cbbca0"), false)
+	top_fringe.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	root_v.add_child(top_fringe)
 
 	var header := HBoxContainer.new()
 	root_v.add_child(header)
-	var h_title := _styled_label("🎒 旅人背包 × 造裝工坊", 19, UI_INK, false)
+	var h_title := _styled_label("🧺 旅人裝備毯 × 造裝工坊  🐥 綠羽帽 · 藍旅衣 · 四葉草 · 水壺", 16, UI_INK, false)
 	h_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(h_title)
 	var close_btn := Button.new()
@@ -1104,6 +1196,22 @@ func _animate_living_world(delta: float) -> void:
 			pn.queue_free()
 			projectiles.remove_at(i)
 
+	# Flying bird flock animation (@amelicart horizon silhouettes)
+	for i in range(flying_birds.size() - 1, -1, -1):
+		var fb: Dictionary = flying_birds[i]
+		if not is_instance_valid(fb["node"]):
+			flying_birds.remove_at(i)
+			continue
+		var bn: Node3D = fb["node"]
+		fb["age"] = float(fb["age"]) + delta
+		bn.position += (fb["vel"] as Vector3) * delta
+		var flap := sin(t * 11.0 + float(fb["phase"])) * 0.55
+		(fb["lw"] as Node3D).rotation.z = flap
+		(fb["rw"] as Node3D).rotation.z = -flap
+		if float(fb["age"]) > 6.5:
+			bn.queue_free()
+			flying_birds.remove_at(i)
+
 	var p_speed := flat(player.velocity).length()
 	if p_speed > 0.4 and not PrologueState.mounted and not air_slam_active:
 		_walk_phase += delta * 12.5
@@ -1147,8 +1255,14 @@ func step_shared_physics(delta: float, cam_override_target := Vector3.INF) -> bo
 
 	_update_hotbar_visuals()
 
+	if cinematic_active and cinematic_timer > 0.0:
+		cinematic_timer -= delta
+		if cinematic_timer <= 0.0:
+			exit_cinematic_shot()
+
 	if input_locked or inv_open or PrologueState.is_transitioning:
 		bird.position = player.position + Vector3(0.0, 1.48 + sin(Time.get_ticks_msec() * 0.007) * 0.07, 0.0)
+		position_camera(cam_override_target if cam_override_target != Vector3.INF else feet(), clampf(delta * 4.5, 0.0, 1.0))
 		return true
 
 	var h := float(Input.is_physical_key_pressed(KEY_D) or Input.is_physical_key_pressed(KEY_RIGHT)) - float(Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT))
@@ -1301,9 +1415,13 @@ func perform_sword_attack() -> void:
 	attack_cooldown = 0.28
 	PrologueState.play_sfx("slash")
 	spawn_slash_arc(player.position, player.rotation.y, GOLD if PrologueState.has_sword else Color("#e6f4ff"))
-	var tw := create_tween()
+	var lunge_dir := Vector3(sin(player.rotation.y), 0.0, cos(player.rotation.y)).normalized()
+	move_body(player, lunge_dir, 4.2)
+	var tw := create_tween().set_parallel(true)
 	tw.tween_property(player_sword, "rotation:y", -1.55, 0.09)
-	tw.tween_property(player_sword, "rotation:y", 0.0, 0.14)
+	tw.tween_property(player_visual, "rotation:x", 0.22, 0.09)
+	tw.chain().tween_property(player_sword, "rotation:y", 0.0, 0.14)
+	tw.parallel().tween_property(player_visual, "rotation:x", 0.0, 0.14)
 	_damage_destructibles(player.position, 2.6)
 	on_sword_hit()
 
@@ -1333,6 +1451,11 @@ func toggle_mount() -> void:
 	elif near(wolf.position, 2.7):
 		PrologueState.mounted = true
 		player.position = wolf.position + Vector3.UP * 1.38
+		# Cute parabolic hop onto wolf saddle + wolf spring-squish animation
+		player_visual.position.y = 0.65
+		var hop_tw := create_tween()
+		hop_tw.tween_property(player_visual, "position:y", 0.0, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		flash_hit(wolf_visual)
 		show_player_emote("✨", 0.8)
 
 func _finish_air_slam() -> void:

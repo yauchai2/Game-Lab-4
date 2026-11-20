@@ -32,6 +32,10 @@ func _ready() -> void:
 	if not PrologueState.has_started:
 		input_locked = true
 		set_hud_visible(false)
+		# Break 2.5D ortho into @amelicart low-angle lakeside campfire storybook cover!
+		wolf_visual.scale = Vector3(1.06, 0.72, 1.06)
+		player.rotation.y = deg_to_rad(-28.0)
+		set_cinematic_pose(Vector3(0.4, 2.35, 8.8), Vector3(-0.6, 1.35, -1.6), true, 48.0, true)
 		_build_title_overlay()
 	_update_ui()
 
@@ -108,6 +112,10 @@ func _build_map() -> void:
 		var stick := cylinder(self, CAMPFIRE_POS + Vector3(cos(rad_a) * 0.45, 0.72, sin(rad_a) * 0.45), 0.04, 0.05, 1.65, TIMBER)
 		stick.rotation_degrees = Vector3(sin(rad_a) * 22.0, 0.0, -cos(rad_a) * 22.0)
 	sphere(self, CAMPFIRE_POS + Vector3(0, 0.92, 0), Vector3(0.42, 0.34, 0.42), Color("#3b4454"))
+	# Shimmering orange campfire reflection strips on the southern lake water (@amelicart Image 1)
+	for ri in range(4):
+		var refl := box(self, Vector3(0.1, -0.10, 6.2 + float(ri) * 0.65), Vector3(0.85 - float(ri) * 0.12, 0.03, 0.32), FIRE_ORANGE if ri % 2 == 0 else GOLD, false, true)
+		water_ripples.append({"node": refl, "phase": float(ri) * 1.1})
 	var light := OmniLight3D.new()
 	light.light_color = Color("#ffa047")
 	light.light_energy = 5.4
@@ -241,6 +249,12 @@ func on_map_input(event: InputEvent) -> bool:
 			PrologueState.has_started = true
 			input_locked = false
 			set_hud_visible(true)
+			# Wake-up animation: wolf stretches upright, birds fly past, camera returns to 2.5D!
+			create_tween().tween_property(wolf_visual, "scale", Vector3.ONE, 0.32).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			player_visual.position.y = 0.45
+			create_tween().tween_property(player_visual, "position:y", 0.0, 0.25)
+			spawn_flying_bird_flock(Vector3(-8.0, 4.8, -5.0), Vector3(4.2, 0.35, -0.8), 5)
+			exit_cinematic_shot()
 			if title_overlay:
 				var tw := create_tween()
 				tw.tween_property(title_overlay, "modulate:a", 0.0, 0.35)
@@ -256,8 +270,9 @@ func _physics_process(delta: float) -> void:
 	campfire_smoke.position.x = sin(t * 2.2) * 0.22
 	if start_pill and is_instance_valid(start_pill):
 		start_pill.modulate.a = 0.78 + sin(t * 4.5) * 0.22
-	var cam_t := (feet() + Vector3(sin(t * 0.45) * 0.65, 0.0, cos(t * 0.35) * 0.45)) if not PrologueState.has_started else Vector3.INF
-	if not step_shared_physics(delta, cam_t):
+	if not PrologueState.has_started and cinematic_active:
+		cinematic_cam_pos = Vector3(0.4 + sin(t * 0.45) * 0.55, 2.35 + sin(t * 0.7) * 0.08, 8.8)
+	if not step_shared_physics(delta):
 		return
 	if camp_loot_node and is_instance_valid(camp_loot_node):
 		bird_alert_target = camp_loot_node.position

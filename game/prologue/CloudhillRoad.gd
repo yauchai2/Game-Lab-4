@@ -73,12 +73,16 @@ func _play_arrival_intro() -> void:
 	PrologueState.road_intro_played = true
 	intro_playing = true
 	input_locked = true
+	# Break 2.5D: Low-angle panoramic sweep across the autumn highland & bridge
+	play_cinematic_shot(Vector3(-25.5, 3.2, 6.2), Vector3(-6.0, 1.4, -0.5), 2.1, true, 50.0, true)
+	spawn_flying_bird_flock(Vector3(-18.0, 5.2, -4.0), Vector3(5.2, 0.25, 0.4), 5)
 	show_player_emote("!", 2.0)
 	show_subtitle("《雲海古道》── 雲霧深處，舊軍哨長還在拼命加班……", 2.4)
-	get_tree().create_timer(2.2).timeout.connect(func() -> void:
+	get_tree().create_timer(2.1).timeout.connect(func() -> void:
 		if intro_playing:
 			intro_playing = false
 			input_locked = false
+			exit_cinematic_shot()
 	)
 
 func on_map_input(event: InputEvent) -> bool:
@@ -86,6 +90,7 @@ func on_map_input(event: InputEvent) -> bool:
 		if (event is InputEventKey and event.pressed) or (event is InputEventMouseButton and event.pressed):
 			intro_playing = false
 			input_locked = false
+			exit_cinematic_shot()
 			return true
 	return false
 
@@ -147,8 +152,9 @@ func _build_road_map() -> void:
 		[Vector3(31.5, 0, 7.2), 1.2, PINE_TEAL]
 	]:
 		cozy_tree(tp[0], float(tp[1]), tp[2], randf_range(-7.0, 7.0))
-	flower_patch(Vector3(-19.2, 0, -3.5), 8, [Color("#7c8ce0"), Color("#fff2b2"), Color("#f2796b")], 2.2)
-	flower_patch(Vector3(-10.8, 0, 5.2), 8, [Color("#ff9eb5"), Color("#ffe066")], 2.1)
+	flower_patch(Vector3(-19.2, 0, -3.5), 14, [Color("#ff6f9c"), Color("#ff9eb5"), Color("#fff2b2"), Color("#f2796b")], 3.4)
+	flower_patch(Vector3(-15.8, 0, 4.6), 14, [Color("#ff5c8d"), Color("#ff9eb5"), Color("#ffe066")], 3.2)
+	flower_patch(Vector3(-10.8, 0, 5.2), 10, [Color("#ff9eb5"), Color("#ffe066")], 2.4)
 	flower_patch(Vector3(27.8, 0, -2.5), 9, [Color("#7cb8ff"), Color("#fff0a6"), Color("#f28ca8")], 2.3)
 
 	sunbeam_shaft(Vector3(-17.0, 0.0, -1.0), 3.4, 20.0, Color(1.0, 0.90, 0.65, 0.11))
@@ -456,10 +462,14 @@ func _physics_process(delta: float) -> void:
 		_update_boss(delta)
 	if PrologueState.boss_retired and not vista_zoomed and feet().x > 24.0:
 		vista_zoomed = true
+		default_cam_size = 24.0
 		PrologueState.waypoint_road_unlocked = true
 		_clear_fog(fog_vista)
-		create_tween().tween_property(camera, "size", 24.0, 2.0)
+		# Break 2.5D: Over-the-shoulder perspective scenic vista looking toward the pink/purple peaks & Emerald Stairway!
+		play_cinematic_shot(Vector3(21.2, 3.2, 3.4), Vector3(44.0, 4.0, -3.0), 2.3, true, 52.0, true)
+		spawn_flying_bird_flock(Vector3(31.0, 6.2, -5.0), Vector3(4.5, 0.3, 1.2), 6, Color("#fff7d6"))
 		show_player_emote("✨", 2.5)
+		show_subtitle("雲海散開了！遠方就是第一章《翡翠天梯古林》！", 3.5)
 	if PrologueState.boss_retired and high_chest.visible:
 		bird_alert_target = high_chest.position
 	elif chest.visible:
@@ -501,6 +511,11 @@ func on_wolf_action() -> void:
 	wolf_charge_timer = 0.55
 	if not PrologueState.timber_broken and PrologueState.mounted and flat(wolf.position - TIMBER_POS).length() < 5.2:
 		PrologueState.timber_broken = true
+		# Break 2.5D: Side-angle dynamic leap shot as Giant Wolf smashes the barricade (@amelicart This Way.jpg)!
+		play_cinematic_shot(TIMBER_POS + Vector3(-1.5, 2.1, 7.6), TIMBER_POS + Vector3(0.5, 1.2, 0.0), 1.05, true, 44.0, true)
+		wolf_visual.position.y = 0.85
+		create_tween().tween_property(wolf_visual, "position:y", 0.0, 0.34).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		spawn_flying_bird_flock(TIMBER_POS + Vector3(0.5, 2.4, -2.0), Vector3(4.8, 1.4, -1.2), 4)
 		spawn_wood_burst(TIMBER_POS, TIMBER_LIGHT, 10)
 		if is_instance_valid(timber_barricade):
 			timber_barricade.queue_free()

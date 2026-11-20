@@ -331,6 +331,7 @@ func on_interact() -> void:
 			PrologueState.play_sfx("coin")
 			show_player_emote("💰", 1.4)
 			_goblin_say("爽快！再送你《旅人彈弓》（支援騎射！）與白裝胚子！", 5.5)
+			play_cinematic_shot(SHOP_INTERACT + Vector3(2.8, 2.2, 4.4), SHOP_INTERACT + Vector3(-0.3, 1.1, -1.0), 1.15, true, 46.0, true)
 			create_tween().tween_property(player, "rotation:y", player.rotation.y + TAU, 0.45)
 		else:
 			show_player_emote("?", 1.2)
