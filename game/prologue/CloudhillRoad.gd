@@ -299,7 +299,7 @@ func _physics_process(delta: float) -> void:
 	if not step_shared_physics(delta, cam_override):
 		return
 
-	if not boss_active and not PrologueState.boss_retired and PrologueState.gate_opened and feet().x > BRIDGE_START_X + 1.2:
+	if not boss_active and boss_state == BossState.IDLE and not PrologueState.boss_retired and PrologueState.gate_opened and feet().x > BRIDGE_START_X + 1.2:
 		_start_boss_encounter()
 	if boss_active:
 		_update_boss(delta)
@@ -315,22 +315,24 @@ func _physics_process(delta: float) -> void:
 func update_wolf_follow(_delta: float) -> void:
 	var target := player.position
 	var stop_dist := 1.75
-	if wolf_charge_timer > 0.0 and boss_active:
-		target = boss.position + Vector3(-1.3, 0, 0)
-		stop_dist = 0.25
-		if flat(wolf.position - boss.position).length() < 2.3 and boss_state == BossState.WINDUP:
-			_interrupt_boss_with_wolf()
-	elif not PrologueState.gate_opened and player.position.x > WALL_X - 0.2 and wolf.position.x < WALL_X:
+	if not PrologueState.gate_opened and player.position.x > WALL_X - 0.2 and wolf.position.x < WALL_X:
 		target = Vector3(WALL_X - 1.8, 0, NARROW_SLIT_Z)
 		stop_dist = 0.4
 		wolf_emote.text = "?"
+	elif PrologueState.gate_opened and absf(player.position.x - WALL_X) > 1.2 and (player.position.x - WALL_X) * (wolf.position.x - WALL_X) < 0.0:
+		wolf_emote.text = ""
+		var side := -1.0 if player.position.x > WALL_X else 1.0
+		var aligned := absf(wolf.position.z - GATE_Z) < 0.65
+		target = Vector3(WALL_X + (-side * 1.6 if aligned else side * 1.6), 0, GATE_Z)
+		stop_dist = 0.2
+	elif wolf_charge_timer > 0.0 and boss_active:
+		wolf_emote.text = ""
+		target = boss.position + Vector3(-1.3, 0, 0)
+		stop_dist = 0.25
+		if flat(wolf.position - boss.position).length() < 2.5 and boss_state == BossState.WINDUP:
+			_interrupt_boss_with_wolf()
 	else:
 		wolf_emote.text = ""
-		if PrologueState.gate_opened and absf(player.position.x - WALL_X) > 1.2 and (player.position.x - WALL_X) * (wolf.position.x - WALL_X) < 0.0:
-			var side := -1.0 if player.position.x > WALL_X else 1.0
-			var aligned := absf(wolf.position.z - GATE_Z) < 0.65
-			target = Vector3(WALL_X + (-side * 1.6 if aligned else side * 1.6), 0, GATE_Z)
-			stop_dist = 0.2
 
 	var diff := flat(target - wolf.position)
 	var spd := 12.5 if wolf_charge_timer > 0.0 else 6.0
