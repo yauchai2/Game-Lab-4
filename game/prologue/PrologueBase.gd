@@ -30,11 +30,11 @@ const PURPLE_PEAK := Color("#988ad6")
 const CLOUD_WHITE := Color("#f8ecf3")
 const STAMP_RED := Color("#e03c3c")
 
-# Storybook UI Palette
+# Minimalist Storybook UI Palette
 const UI_PARCHMENT := Color("#fbf2df")
 const UI_WOOD_BORDER := Color("#6b4a35")
 const UI_INK := Color("#2e211b")
-const UI_DARK_BG := Color(0.10, 0.13, 0.22, 0.88)
+const UI_DARK_BG := Color(0.09, 0.12, 0.21, 0.80)
 const UI_ACCENT_GOLD := Color("#f5c65b")
 const UI_HP_RED := Color("#e0534f")
 const UI_HP_BG := Color("#3d2d29")
@@ -46,9 +46,10 @@ const WOLF_RADIUS := 0.82
 var hitstop_frames := 0
 var attack_cooldown := 0.0
 var wolf_charge_cooldown := 0.0
-var wolf_charge_max := 1.5
+var wolf_charge_max := 1.4
 var wolf_charge_timer := 0.0
 var shake_time := 0.0
+var shake_strength := 0.18
 var air_slam_active := false
 var vertical_vel := 0.0
 var emote_timer := 0.0
@@ -73,20 +74,20 @@ var wolf_spring_pad: MeshInstance3D
 var player_emote: Label3D
 var wolf_emote: Label3D
 
-# Organic world animation pools (gentle breeze, bobbing motes, living NPCs)
+# Organic world animation & juicy VFX pools
 var sway_items: Array[Dictionary] = []
 var float_motes: Array[Dictionary] = []
 var living_npcs: Array[Dictionary] = []
+var bouncing_coins: Array[Dictionary] = []
 var _walk_phase := 0.0
 var _wolf_phase := 0.0
 
-# Upgraded Storybook HUD nodes
+# Minimalist Storybook HUD nodes
 var hud_layer: CanvasLayer
 var hud_root: Control
 var zone_badge_label: Label
 var objective_label: Label
 var hp_hearts_label: Label
-var hp_bar: ProgressBar
 var gear_tags_label: Label
 var subtitle_panel: PanelContainer
 var subtitle_label: Label
@@ -99,7 +100,7 @@ var boss_name_label: Label
 var boss_hp_bar: ProgressBar
 var boss_state_badge: Label
 
-# 5-Slot Bottom ARPG Hotbar
+# Compact Bottom Hotbar Pills
 var slot_attack: PanelContainer
 var slot_attack_cd: ColorRect
 var slot_mount: PanelContainer
@@ -316,9 +317,98 @@ func build_fellow_rider(pos: Vector3, rider_tunic: Color, beast_col: Color, beas
 	sphere(root, Vector3(0, 1.88, 0), Vector3(0.46, 0.44, 0.44), Color("#f4c9a8"))
 	cylinder(root, Vector3(0, 2.12, 0), 0.07, 0.30, 0.26, rider_tunic.darkened(0.18))
 	sphere(root, Vector3(0.28, 2.38, 0.1), Vector3(0.26, 0.22, 0.26), Color("#ffbf3c"))
-	var name_lbl := label_at(root, Vector3(0, 2.72, 0), title_txt, badge_col, 26)
-	var bubble_lbl := label_at(root, Vector3(0, 3.22, 0), "", Color("#fff7c2"), 28)
+	var name_lbl := label_at(root, Vector3(0, 2.68, 0), title_txt, badge_col, 22)
+	var bubble_lbl := label_at(root, Vector3(0, 3.16, 0), "", Color("#fff7c2"), 26)
 	return {"node": root, "name_lbl": name_lbl, "bubble": bubble_lbl, "bubble_t": 0.0}
+
+# --- Juicy ARPG Combat & 3-Second Visual Hook VFX ---
+func spawn_damage_pop(pos: Vector3, text_val: String, col := Color.WHITE, big := false) -> void:
+	var lbl := label_at(self, pos + Vector3(randf_range(-0.35, 0.35), 1.65, randf_range(-0.25, 0.25)), text_val, col, 48 if big else 34)
+	lbl.scale = Vector3.ONE * (1.35 if big else 1.0)
+	var tw := create_tween().set_parallel(true)
+	tw.tween_property(lbl, "position:y", lbl.position.y + (1.35 if big else 0.95), 0.65).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(lbl, "modulate:a", 0.0, 0.65).set_delay(0.18)
+	tw.chain().tween_callback(lbl.queue_free)
+
+func spawn_slash_arc(origin: Vector3, yaw: float, col := Color("#fff5cc")) -> void:
+	var arc := Node3D.new()
+	arc.position = origin + Vector3(0, 0.65, 0)
+	arc.rotation.y = yaw
+	add_child(arc)
+	for i in range(4):
+		var ang := -0.95 + float(i) * 0.62
+		var seg := box(arc, Vector3(sin(ang) * 1.15, 0.0, cos(ang) * 1.15), Vector3(0.55, 0.07, 0.18), col, false, true)
+		seg.rotation.y = ang
+	var tw := create_tween().set_parallel(true)
+	tw.tween_property(arc, "scale", Vector3(1.35, 1.0, 1.35), 0.16)
+	tw.tween_property(arc, "rotation:y", yaw - 0.85, 0.16)
+	tw.chain().tween_callback(arc.queue_free)
+
+func flash_hit(node: Node3D) -> void:
+	if not is_instance_valid(node):
+		return
+	var orig_s := node.scale
+	var tw := create_tween()
+	tw.tween_property(node, "scale", Vector3(orig_s.x * 1.24, orig_s.y * 0.78, orig_s.z * 1.24), 0.06)
+	tw.tween_property(node, "scale", orig_s, 0.12)
+
+func pop_in_node(node: Node3D) -> void:
+	if not is_instance_valid(node):
+		return
+	node.show()
+	node.scale = Vector3(0.1, 0.1, 0.1)
+	var tw := create_tween()
+	tw.tween_property(node, "scale", Vector3(1.18, 1.18, 1.18), 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(node, "scale", Vector3.ONE, 0.12)
+
+func spawn_bouncing_coins(origin: Vector3, count: int, coin_val := 5) -> void:
+	for i in range(count):
+		var c := cylinder(self, origin + Vector3(0, 0.55, 0), 0.18, 0.18, 0.06, GOLD, true)
+		c.rotation_degrees.x = 75.0
+		var ang := randf_range(0.0, TAU)
+		var spd := randf_range(2.2, 4.4)
+		bouncing_coins.append({
+			"node": c,
+			"vel": Vector3(cos(ang) * spd, randf_range(4.2, 6.4), sin(ang) * spd),
+			"val": coin_val,
+			"age": 0.0,
+		})
+
+func spawn_wood_burst(origin: Vector3, col := TIMBER_LIGHT, pieces := 8) -> void:
+	for i in range(pieces):
+		var p := box(self, origin + Vector3(randf_range(-0.6, 0.6), 0.8, randf_range(-1.8, 1.8)), Vector3(0.42, 0.22, 0.22), col)
+		var dest := p.position + Vector3(randf_range(1.6, 4.2), randf_range(0.8, 2.2), randf_range(-2.2, 2.2))
+		var tw := create_tween().set_parallel(true)
+		tw.tween_property(p, "position", dest, 0.42).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.tween_property(p, "rotation_degrees", Vector3(randf_range(-240, 240), randf_range(-240, 240), randf_range(-240, 240)), 0.42)
+		tw.tween_property(p, "scale", Vector3(0.05, 0.05, 0.05), 0.42)
+		tw.chain().tween_callback(p.queue_free)
+
+func play_giant_retirement_stamp(target_pos: Vector3) -> void:
+	# The signature 3-Second Visual Hook: Giant 3D Red Stamp slams from the sky!
+	var stamp := Node3D.new()
+	stamp.position = target_pos + Vector3(0, 6.2, 0)
+	add_child(stamp)
+	cylinder(stamp, Vector3(0, 0.85, 0), 0.34, 0.42, 1.35, TIMBER)
+	sphere(stamp, Vector3(0, 1.55, 0), Vector3(0.62, 0.56, 0.62), TIMBER_LIGHT)
+	cylinder(stamp, Vector3(0, 0.15, 0), 1.18, 1.24, 0.35, STAMP_RED, true)
+	label_at(stamp, Vector3(0, 0.45, 0.9), "【正式退休！】", Color("#fff6d1"), 52)
+
+	var tw := create_tween()
+	tw.tween_property(stamp, "position:y", 0.35, 0.22).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
+	tw.tween_callback(func() -> void:
+		hitstop_frames = 6
+		shake_time = 0.28
+		shake_strength = 0.26
+		var ring := marker(target_pos, STAMP_RED, 2.6)
+		var rtw := create_tween()
+		rtw.tween_property(ring, "scale", Vector3(2.2, 1.0, 2.2), 0.36)
+		rtw.tween_callback(ring.queue_free)
+		spawn_bouncing_coins(target_pos, 5, 5)
+	)
+	tw.tween_interval(0.75)
+	tw.tween_property(stamp, "position:y", 6.5, 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.tween_callback(stamp.queue_free)
 
 func invisible_boundary_wall(pos: Vector3, size: Vector3, rot_deg := 0.0) -> void:
 	var body := StaticBody3D.new()
@@ -329,13 +419,13 @@ func invisible_boundary_wall(pos: Vector3, size: Vector3, rot_deg := 0.0) -> voi
 	sh.size = size
 	add_shape(body, sh, Vector3.ZERO)
 
-func label_at(parent: Node3D, pos: Vector3, words: String, color := Color.WHITE, font_size := 36) -> Label3D:
+func label_at(parent: Node3D, pos: Vector3, words: String, color := Color.WHITE, font_size := 34) -> Label3D:
 	var label := Label3D.new()
 	label.text = words
 	label.modulate = color
 	label.font_size = font_size
-	label.outline_size = 10
-	label.pixel_size = 0.0085
+	label.outline_size = 9
+	label.pixel_size = 0.0082
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	label.no_depth_test = true
 	parent.add_child(label)
@@ -349,7 +439,7 @@ func marker(pos: Vector3, color: Color, radius := 0.58) -> MeshInstance3D:
 	mesh.height = 0.04
 	return mesh_at(self, pos + Vector3.UP * 0.035, mesh, color, true)
 
-func transition_signpost(pos: Vector3, title: String, color := GOLD, rot_deg := -12.0) -> void:
+func transition_signpost(pos: Vector3, icon_title: String, color := GOLD, rot_deg := -12.0) -> void:
 	var root := Node3D.new()
 	root.position = pos
 	root.rotation_degrees.y = rot_deg
@@ -358,14 +448,13 @@ func transition_signpost(pos: Vector3, title: String, color := GOLD, rot_deg := 
 	post.rotation_degrees.z = 3.5
 	var board := box(root, Vector3(0.28, 1.42, 0), Vector3(1.18, 0.36, 0.12), TIMBER_LIGHT)
 	board.rotation_degrees.z = -5.0
-	marker(pos + Vector3(0, 0, 0.6), color, 0.82)
-	label_at(self, pos + Vector3(0, 2.35, 0), title, color, 34)
+	marker(pos + Vector3(0, 0, 0.5), color, 0.78)
+	label_at(self, pos + Vector3(0, 2.28, 0), icon_title, color, 28)
 
 # --- Core Trio Builders (with lively organic animations) ---
 func setup_core_trio(spawn_pos: Vector3) -> void:
 	_make_body(player, spawn_pos, PLAYER_RADIUS)
 	player.add_child(player_visual)
-	# Compact storybook proportions (rounded tunic, scarf, feather cap, leather pack)
 	cylinder(player_visual, Vector3(0, 0.34, 0), 0.24, 0.28, 0.52, Color("#4da1e8"))
 	sphere(player_visual, Vector3(0, 0.60, 0.02), Vector3(0.42, 0.18, 0.38), Color("#d96b43"))
 	sphere(player_visual, Vector3(0, 0.85, 0.02), Vector3(0.52, 0.50, 0.48), Color("#f4c9a8"))
@@ -374,7 +463,8 @@ func setup_core_trio(spawn_pos: Vector3) -> void:
 	feather.rotation_degrees.z = 16.0
 	sphere(player_visual, Vector3(0, 0.44, -0.26), Vector3(0.38, 0.38, 0.24), Color("#8c5234"))
 	player_sword = box(player_visual, Vector3(0.38, 0.48, 0.28), Vector3(0.11, 0.11, 0.88), Color("#e6f4ff"))
-	player_sword.visible = PrologueState.has_sword
+	# Always give the traveler a starter stick/sword feel so combat works from second 1!
+	player_sword.visible = true
 	player_emote = label_at(player, Vector3(0, 1.82, 0), "", Color("#fff59d"), 46)
 
 	_make_body(wolf, spawn_pos + Vector3(-1.45, 0, -0.55), WOLF_RADIUS)
@@ -445,8 +535,8 @@ func position_camera(target: Vector3, lerp_weight: float) -> void:
 	camera.position = camera.position.lerp(desired, lerp_weight) if lerp_weight < 1.0 else desired
 	camera.look_at(camera.position - offset)
 
-# --- Storybook UI/UX + PoE 2 Crafting HUD ---
-func make_panel_style(bg: Color, border: Color, radius := 12, border_w := 2, pad_x := 14, pad_y := 10) -> StyleBoxFlat:
+# --- Minimalist Storybook UI/UX ---
+func make_panel_style(bg: Color, border: Color, radius := 14, border_w := 2, pad_x := 14, pad_y := 8) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = bg
 	sb.border_color = border
@@ -456,9 +546,9 @@ func make_panel_style(bg: Color, border: Color, radius := 12, border_w := 2, pad
 	sb.content_margin_right = pad_x
 	sb.content_margin_top = pad_y
 	sb.content_margin_bottom = pad_y
-	sb.shadow_color = Color(0.05, 0.06, 0.12, 0.28)
-	sb.shadow_size = 6
-	sb.shadow_offset = Vector2(0, 3)
+	sb.shadow_color = Color(0.05, 0.06, 0.12, 0.22)
+	sb.shadow_size = 5
+	sb.shadow_offset = Vector2(0, 2)
 	return sb
 
 func setup_hud() -> void:
@@ -469,133 +559,120 @@ func setup_hud() -> void:
 	hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_layer.add_child(hud_root)
 
+	# 1. Top-Left: Ultra-clean Vitals Pill (hearts + compact stat icons)
 	var vitals_card := PanelContainer.new()
-	vitals_card.position = Vector2(20, 18)
-	vitals_card.custom_minimum_size = Vector2(310, 74)
-	vitals_card.add_theme_stylebox_override("panel", make_panel_style(UI_PARCHMENT, UI_WOOD_BORDER, 14, 3, 14, 10))
+	vitals_card.position = Vector2(18, 16)
+	vitals_card.add_theme_stylebox_override("panel", make_panel_style(UI_PARCHMENT, UI_WOOD_BORDER, 18, 2, 14, 7))
 	vitals_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_root.add_child(vitals_card)
 
 	var v_box := VBoxContainer.new()
-	v_box.add_theme_constant_override("separation", 5)
+	v_box.add_theme_constant_override("separation", 3)
 	vitals_card.add_child(v_box)
-
-	var hp_row := HBoxContainer.new()
-	hp_row.add_theme_constant_override("separation", 10)
-	v_box.add_child(hp_row)
-	hp_hearts_label = _styled_label("旅人  ♥ ♥ ♥ ♥ ♥", 15, UI_INK, false)
-	hp_row.add_child(hp_hearts_label)
-
-	hp_bar = ProgressBar.new()
-	hp_bar.min_value = 0
-	hp_bar.max_value = 5
-	hp_bar.value = PrologueState.player_hp
-	hp_bar.show_percentage = false
-	hp_bar.custom_minimum_size = Vector2(110, 14)
-	hp_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	hp_bar.add_theme_stylebox_override("background", make_panel_style(UI_HP_BG, UI_WOOD_BORDER, 7, 1, 0, 0))
-	hp_bar.add_theme_stylebox_override("fill", make_panel_style(UI_HP_RED, Color.TRANSPARENT, 7, 0, 0, 0))
-	hp_row.add_child(hp_bar)
-
-	gear_tags_label = _styled_label("", 13, Color("#6b4a35"), false)
+	hp_hearts_label = _styled_label("♥ ♥ ♥ ♥ ♥", 16, UI_HP_RED, false)
+	v_box.add_child(hp_hearts_label)
+	gear_tags_label = _styled_label("", 13, UI_INK, false)
 	v_box.add_child(gear_tags_label)
 
+	# 2. Top-Right: Ultra-clean 2-line Zone + Crisp Objective Pill
 	var obj_card := PanelContainer.new()
 	obj_card.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	obj_card.offset_left = -410
-	obj_card.offset_right = -20
-	obj_card.offset_top = 18
-	obj_card.offset_bottom = 96
-	obj_card.add_theme_stylebox_override("panel", make_panel_style(UI_DARK_BG, UI_ACCENT_GOLD, 14, 2, 16, 10))
+	obj_card.offset_left = -310
+	obj_card.offset_right = -18
+	obj_card.offset_top = 16
+	obj_card.offset_bottom = 78
+	obj_card.add_theme_stylebox_override("panel", make_panel_style(UI_DARK_BG, UI_ACCENT_GOLD, 16, 2, 14, 7))
 	obj_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_root.add_child(obj_card)
 
 	var o_box := VBoxContainer.new()
-	o_box.add_theme_constant_override("separation", 4)
+	o_box.add_theme_constant_override("separation", 2)
 	obj_card.add_child(o_box)
-	zone_badge_label = _styled_label("地圖", 13, UI_ACCENT_GOLD, false)
+	zone_badge_label = _styled_label("", 12, UI_ACCENT_GOLD, false)
 	o_box.add_child(zone_badge_label)
-	objective_label = _styled_label("", 16, Color("#fff9eb"), false)
+	objective_label = _styled_label("", 15, Color("#fff9eb"), false)
 	objective_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	o_box.add_child(objective_label)
 
+	# 3. Top-Center: Boss HP Bar (only shown during Boss encounter)
 	boss_panel = PanelContainer.new()
 	boss_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	boss_panel.offset_left = -220
-	boss_panel.offset_right = 220
-	boss_panel.offset_top = 18
-	boss_panel.offset_bottom = 92
-	boss_panel.add_theme_stylebox_override("panel", make_panel_style(UI_DARK_BG, STAMP_RED, 14, 2, 16, 10))
+	boss_panel.offset_left = -210
+	boss_panel.offset_right = 210
+	boss_panel.offset_top = 16
+	boss_panel.offset_bottom = 84
+	boss_panel.add_theme_stylebox_override("panel", make_panel_style(UI_DARK_BG, STAMP_RED, 16, 2, 16, 8))
 	boss_panel.hide()
 	hud_root.add_child(boss_panel)
 
 	var b_box := VBoxContainer.new()
-	b_box.add_theme_constant_override("separation", 5)
+	b_box.add_theme_constant_override("separation", 4)
 	boss_panel.add_child(b_box)
 	var b_top := HBoxContainer.new()
 	b_box.add_child(b_top)
-	boss_name_label = _styled_label("稻草人哨長", 16, Color("#fff2cc"), false)
+	boss_name_label = _styled_label("稻草人哨長", 15, Color("#fff2cc"), false)
 	boss_name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b_top.add_child(boss_name_label)
-	boss_state_badge = _styled_label("", 14, GOLD, false)
+	boss_state_badge = _styled_label("", 13, GOLD, false)
 	b_top.add_child(boss_state_badge)
 	boss_hp_bar = ProgressBar.new()
 	boss_hp_bar.min_value = 0
-	boss_hp_bar.max_value = 6
-	boss_hp_bar.value = 6
+	boss_hp_bar.max_value = 10
+	boss_hp_bar.value = 10
 	boss_hp_bar.show_percentage = false
-	boss_hp_bar.custom_minimum_size = Vector2(390, 16)
-	boss_hp_bar.add_theme_stylebox_override("background", make_panel_style(UI_HP_BG, UI_WOOD_BORDER, 8, 1, 0, 0))
-	boss_hp_bar.add_theme_stylebox_override("fill", make_panel_style(Color("#f06b4f"), Color.TRANSPARENT, 8, 0, 0, 0))
+	boss_hp_bar.custom_minimum_size = Vector2(370, 14)
+	boss_hp_bar.add_theme_stylebox_override("background", make_panel_style(UI_HP_BG, UI_WOOD_BORDER, 7, 1, 0, 0))
+	boss_hp_bar.add_theme_stylebox_override("fill", make_panel_style(Color("#f06b4f"), Color.TRANSPARENT, 7, 0, 0, 0))
 	b_box.add_child(boss_hp_bar)
 
+	# 4. Bottom-Center: Compact Floating Prompt & Clean Action Pills
 	var bottom_stack := VBoxContainer.new()
 	bottom_stack.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
-	bottom_stack.offset_left = -380
-	bottom_stack.offset_right = 380
-	bottom_stack.offset_top = -205
-	bottom_stack.offset_bottom = -16
+	bottom_stack.offset_left = -360
+	bottom_stack.offset_right = 360
+	bottom_stack.offset_top = -178
+	bottom_stack.offset_bottom = -14
 	bottom_stack.alignment = BoxContainer.ALIGNMENT_END
-	bottom_stack.add_theme_constant_override("separation", 8)
+	bottom_stack.add_theme_constant_override("separation", 6)
 	bottom_stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_root.add_child(bottom_stack)
 
 	subtitle_panel = PanelContainer.new()
 	subtitle_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	subtitle_panel.add_theme_stylebox_override("panel", make_panel_style(UI_DARK_BG, Color("#7382a6"), 12, 1, 18, 8))
+	subtitle_panel.add_theme_stylebox_override("panel", make_panel_style(UI_DARK_BG, Color("#7382a6"), 14, 1, 16, 6))
 	subtitle_panel.hide()
 	bottom_stack.add_child(subtitle_panel)
-	subtitle_label = _styled_label("", 16, Color("#ffe8a3"), false)
+	subtitle_label = _styled_label("", 15, Color("#ffe8a3"), false)
 	subtitle_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitle_panel.add_child(subtitle_label)
 
 	prompt_panel = PanelContainer.new()
 	prompt_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	prompt_panel.add_theme_stylebox_override("panel", make_panel_style(UI_PARCHMENT, UI_ACCENT_GOLD, 20, 3, 18, 7))
+	prompt_panel.add_theme_stylebox_override("panel", make_panel_style(UI_PARCHMENT, UI_ACCENT_GOLD, 20, 2, 16, 6))
 	prompt_panel.hide()
 	bottom_stack.add_child(prompt_panel)
-	prompt_label = _styled_label("", 16, UI_INK, false)
+	prompt_label = _styled_label("", 15, UI_INK, false)
 	prompt_panel.add_child(prompt_label)
 
 	var hotbar := HBoxContainer.new()
 	hotbar.alignment = BoxContainer.ALIGNMENT_CENTER
-	hotbar.add_theme_constant_override("separation", 10)
+	hotbar.add_theme_constant_override("separation", 8)
 	bottom_stack.add_child(hotbar)
 
-	var atk_pair := _make_hotbar_slot(hotbar, "左鍵 / J", "揮劍", Color("#4da1e8"))
+	var atk_pair := _make_hotbar_slot(hotbar, "J / 左鍵", "揮劍", Color("#4da1e8"))
 	slot_attack = atk_pair[0]
 	slot_attack_cd = atk_pair[1]
-	var mnt_pair := _make_hotbar_slot(hotbar, "F", "上鞍騎乘", Color("#498e62"))
+	var mnt_pair := _make_hotbar_slot(hotbar, "F", "上鞍", Color("#498e62"))
 	slot_mount = mnt_pair[0]
 	slot_mount_sub = mnt_pair[2]
-	var wlf_pair := _make_hotbar_slot(hotbar, "Q", "巨狼破防", Color("#d97836"))
+	var wlf_pair := _make_hotbar_slot(hotbar, "Q", "巨狼撞", Color("#d97836"))
 	slot_wolf = wlf_pair[0]
 	slot_wolf_cd = wlf_pair[1]
-	var bag_pair := _make_hotbar_slot(hotbar, "I", "背包造裝", Color("#c99438"))
+	var bag_pair := _make_hotbar_slot(hotbar, "I", "造裝", Color("#c99438"))
 	slot_bag = bag_pair[0]
-	var coop_pair := _make_hotbar_slot(hotbar, "C", "拉人助拳", Color("#58b9ff"))
+	var coop_pair := _make_hotbar_slot(hotbar, "C", "拉隊友", Color("#58b9ff"))
 	slot_coop = coop_pair[0]
-	var rst_pair := _make_hotbar_slot(hotbar, "R", "重置序章", Color("#7d8597"))
+	var rst_pair := _make_hotbar_slot(hotbar, "R", "重置", Color("#7d8597"))
 	slot_reset = rst_pair[0]
 
 	_build_inventory_modal()
@@ -603,21 +680,21 @@ func setup_hud() -> void:
 func _build_inventory_modal() -> void:
 	inv_panel = PanelContainer.new()
 	inv_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	inv_panel.offset_left = -360
-	inv_panel.offset_right = 360
-	inv_panel.offset_top = -235
-	inv_panel.offset_bottom = 225
-	inv_panel.add_theme_stylebox_override("panel", make_panel_style(UI_PARCHMENT, UI_WOOD_BORDER, 18, 4, 22, 16))
+	inv_panel.offset_left = -350
+	inv_panel.offset_right = 350
+	inv_panel.offset_top = -225
+	inv_panel.offset_bottom = 215
+	inv_panel.add_theme_stylebox_override("panel", make_panel_style(UI_PARCHMENT, UI_WOOD_BORDER, 20, 3, 20, 14))
 	inv_panel.hide()
 	hud_layer.add_child(inv_panel)
 
 	var root_v := VBoxContainer.new()
-	root_v.add_theme_constant_override("separation", 10)
+	root_v.add_theme_constant_override("separation", 8)
 	inv_panel.add_child(root_v)
 
 	var header := HBoxContainer.new()
 	root_v.add_child(header)
-	var h_title := _styled_label("🎒 旅人背包 × PoE 2 退休魔物通貨造裝（按 I 關閉）", 20, UI_INK, false)
+	var h_title := _styled_label("🎒 旅人背包 × 造裝工坊", 19, UI_INK, false)
 	h_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(h_title)
 	var close_btn := Button.new()
@@ -625,59 +702,59 @@ func _build_inventory_modal() -> void:
 	close_btn.pressed.connect(toggle_inventory)
 	header.add_child(close_btn)
 
-	inv_stats_label = _styled_label("", 15, Color("#5a3b28"), false)
+	inv_stats_label = _styled_label("", 14, Color("#5a3b28"), false)
 	root_v.add_child(inv_stats_label)
-	inv_equipped_label = _styled_label("", 14, Color("#244a75"), false)
+	inv_equipped_label = _styled_label("", 13, Color("#244a75"), false)
 	root_v.add_child(inv_equipped_label)
-	inv_currency_label = _styled_label("", 15, Color("#8a4b16"), false)
+	inv_currency_label = _styled_label("", 14, Color("#8a4b16"), false)
 	root_v.add_child(inv_currency_label)
 
 	var craft_row := HBoxContainer.new()
-	craft_row.add_theme_constant_override("separation", 8)
+	craft_row.add_theme_constant_override("separation", 6)
 	root_v.add_child(craft_row)
 
 	var btn_equip := Button.new()
-	btn_equip.text = "穿戴所選裝備"
+	btn_equip.text = "穿戴"
 	btn_equip.pressed.connect(func() -> void:
 		var msg := PrologueState.equip_from_inventory(selected_inv_idx)
 		if not msg.is_empty():
 			selected_inv_idx = -1
-			player_sword.visible = PrologueState.has_sword
+			player_sword.visible = true
 			wolf_spring_pad.visible = PrologueState.has_spring_saddle
 			_refresh_inventory_ui(msg)
 	)
 	craft_row.add_child(btn_equip)
 
 	var btn_blue := Button.new()
-	btn_blue.text = "用【改裝藍印章】(白→藍)"
+	btn_blue.text = "藍印章 (白→藍)"
 	btn_blue.pressed.connect(func() -> void:
 		_refresh_inventory_ui(PrologueState.craft_blue(selected_inv_idx))
 	)
 	craft_row.add_child(btn_blue)
 
 	var btn_gold := Button.new()
-	btn_gold.text = "用【百年金漆罐】(升黃/加詞綴)"
+	btn_gold.text = "金漆罐 (升黃/加詞)"
 	btn_gold.pressed.connect(func() -> void:
 		_refresh_inventory_ui(PrologueState.craft_gold(selected_inv_idx))
 	)
 	craft_row.add_child(btn_gold)
 
 	var btn_chaos := Button.new()
-	btn_chaos.text = "用【史萊姆洗白劑】(重洗黃裝)"
+	btn_chaos.text = "洗白劑 (重洗黃裝)"
 	btn_chaos.pressed.connect(func() -> void:
 		_refresh_inventory_ui(PrologueState.craft_chaos(selected_inv_idx))
 	)
 	craft_row.add_child(btn_chaos)
 
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(670, 185)
+	scroll.custom_minimum_size = Vector2(650, 180)
 	root_v.add_child(scroll)
 	inv_list_box = VBoxContainer.new()
 	inv_list_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	inv_list_box.add_theme_constant_override("separation", 6)
+	inv_list_box.add_theme_constant_override("separation", 5)
 	scroll.add_child(inv_list_box)
 
-	inv_feedback_label = _styled_label("點選下方一件背包裝備後，即可穿戴或點擊通貨造裝！", 14, Color("#8a2f2f"), false)
+	inv_feedback_label = _styled_label("選取一件裝備後，即可穿戴或點擊通貨造裝。", 13, Color("#8a2f2f"), false)
 	root_v.add_child(inv_feedback_label)
 
 func toggle_inventory() -> void:
@@ -686,29 +763,29 @@ func toggle_inventory() -> void:
 	inv_open = not inv_open
 	inv_panel.visible = inv_open
 	if inv_open:
-		_refresh_inventory_ui("點選下方裝備即可穿戴，或使用造裝通貨即時洗詞綴！")
+		_refresh_inventory_ui("選取下方裝備即可穿戴或使用造裝通貨！")
 
 func _refresh_inventory_ui(msg := "") -> void:
 	if not msg.is_empty():
 		inv_feedback_label.text = msg
-	inv_stats_label.text = "總屬性：攻擊 %d　｜　暴擊 %d%%　｜　破防增傷 +%d　｜　移速 %d%%　｜　銅幣 %d¢" % [
+	inv_stats_label.text = "攻 %d ｜ 暴擊 %d%% ｜ 破防+%d ｜ 移速 %d%% ｜ %d¢" % [
 		PrologueState.get_total_atk(),
 		PrologueState.get_total_crit(),
 		PrologueState.get_stagger_bonus(),
 		int(round(PrologueState.get_speed_multiplier() * 100.0)),
 		PrologueState.coins
 	]
-	var w_txt := PrologueState.format_item_details(PrologueState.equipped_weapon) if not PrologueState.equipped_weapon.is_empty() else "（空）"
-	var s_txt := PrologueState.format_item_details(PrologueState.equipped_saddle) if not PrologueState.equipped_saddle.is_empty() else "（標準皮鞍）"
-	inv_equipped_label.text = "已裝備武器：%s\n已裝備狼鞍：%s" % [w_txt, s_txt]
-	inv_currency_label.text = "造裝通貨：改裝藍印章 x%d　｜　百年金漆罐 x%d　｜　史萊姆洗白劑 x%d" % [
+	var w_txt := PrologueState.format_item_details(PrologueState.equipped_weapon) if not PrologueState.equipped_weapon.is_empty() else "木劍（起手）"
+	var s_txt := PrologueState.format_item_details(PrologueState.equipped_saddle) if not PrologueState.equipped_saddle.is_empty() else "標準皮鞍"
+	inv_equipped_label.text = "武器：%s\n狼鞍：%s" % [w_txt, s_txt]
+	inv_currency_label.text = "藍印章 x%d ｜ 金漆罐 x%d ｜ 洗白劑 x%d" % [
 		PrologueState.orb_blue, PrologueState.orb_gold, PrologueState.orb_chaos
 	]
 
 	for c in inv_list_box.get_children():
 		c.queue_free()
 	if PrologueState.inventory.is_empty():
-		inv_list_box.add_child(_styled_label("背包目前為空。去地圖三擊敗小怪或精英班長就能噴出裝備與通貨！", 14, Color("#6b4a35"), false))
+		inv_list_box.add_child(_styled_label("背包為空，去擊退加班小兵或精英即可噴出光柱裝備！", 13, Color("#6b4a35"), false))
 	else:
 		for i in range(PrologueState.inventory.size()):
 			var item: Dictionary = PrologueState.inventory[i]
@@ -727,8 +804,8 @@ func _refresh_inventory_ui(msg := "") -> void:
 
 func _make_hotbar_slot(parent: HBoxContainer, key_txt: String, title_txt: String, accent: Color) -> Array:
 	var slot := PanelContainer.new()
-	slot.custom_minimum_size = Vector2(108, 58)
-	slot.add_theme_stylebox_override("panel", make_panel_style(UI_DARK_BG, accent, 12, 2, 8, 6))
+	slot.custom_minimum_size = Vector2(88, 48)
+	slot.add_theme_stylebox_override("panel", make_panel_style(UI_DARK_BG, accent, 14, 2, 6, 4))
 	parent.add_child(slot)
 
 	var overlay_host := Control.new()
@@ -744,12 +821,12 @@ func _make_hotbar_slot(parent: HBoxContainer, key_txt: String, title_txt: String
 
 	var vbox := VBoxContainer.new()
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	vbox.add_theme_constant_override("separation", 2)
+	vbox.add_theme_constant_override("separation", 1)
 	slot.add_child(vbox)
-	var k := _styled_label(key_txt, 12, accent.lightened(0.25), false)
+	var k := _styled_label(key_txt, 11, accent.lightened(0.25), false)
 	k.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(k)
-	var t := _styled_label(title_txt, 14, Color("#fff8e8"), false)
+	var t := _styled_label(title_txt, 13, Color("#fff8e8"), false)
 	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(t)
 	return [slot, cd_rect, t]
@@ -766,7 +843,7 @@ func _styled_label(words: String, size: int, color: Color, with_outline := true)
 	return l
 
 func set_zone_objective(zone_name: String, goal: String) -> void:
-	zone_badge_label.text = "🗺️  " + zone_name
+	zone_badge_label.text = zone_name
 	objective_label.text = goal
 
 func set_prompt(text_val: String) -> void:
@@ -796,13 +873,13 @@ func flat(v: Vector3) -> Vector3:
 func near(pos: Vector3, dist := 2.2) -> bool:
 	return flat(feet() - pos).length() < dist
 
-func show_player_emote(icon: String, duration := 1.5) -> void:
+func show_player_emote(icon: String, duration := 1.4) -> void:
 	player_emote.text = icon
 	emote_timer = duration
 	player_emote.scale = Vector3.ONE * 0.4
-	create_tween().tween_property(player_emote, "scale", Vector3.ONE, 0.18)
+	create_tween().tween_property(player_emote, "scale", Vector3.ONE, 0.16)
 
-func show_subtitle(words: String, duration := 3.5) -> void:
+func show_subtitle(words: String, duration := 3.2) -> void:
 	subtitle_label.text = words
 	subtitle_panel.visible = not words.is_empty()
 	subtitle_timer = duration
@@ -815,13 +892,11 @@ func move_body(body: CharacterBody3D, dir: Vector3, speed: float) -> void:
 
 func _animate_living_world(delta: float) -> void:
 	var t := Time.get_ticks_msec() * 0.001
-	# Gentle breeze sway on foliage, lanterns, bunting
 	for item in sway_items:
 		if is_instance_valid(item["node"]):
 			var n: Node3D = item["node"]
 			var base_r: Vector3 = item["base_rot"]
 			n.rotation.z = base_r.z + sin(t * float(item["speed"]) + float(item["phase"])) * float(item["amp"])
-	# Floating ambient fireflies / petals / cloud dust
 	for m in float_motes:
 		if is_instance_valid(m["node"]):
 			var mn: Node3D = m["node"]
@@ -830,13 +905,37 @@ func _animate_living_world(delta: float) -> void:
 			var sp := float(m["speed"])
 			var am := float(m["amp"])
 			mn.position = bp + Vector3(sin(t * sp * 0.7 + ph) * am, sin(t * sp + ph) * am * 0.8, cos(t * sp * 0.6 + ph) * am)
-	# Breathing / cheerful bounce on friendly NPCs & mobs
 	for npc in living_npcs:
 		if is_instance_valid(npc["node"]):
 			var nn: Node3D = npc["node"]
 			nn.position.y = float(npc["base_y"]) + absf(sin(t * float(npc["speed"]) + float(npc["phase"]))) * float(npc["amp"])
 
-	# Lively walk bob on player & bounding + tail wag on wolf
+	# Magnetic bouncing coins physics (super satisfying ARPG pickup!)
+	for i in range(bouncing_coins.size() - 1, -1, -1):
+		var c: Dictionary = bouncing_coins[i]
+		if not is_instance_valid(c["node"]):
+			bouncing_coins.remove_at(i)
+			continue
+		var cn: Node3D = c["node"]
+		c["age"] = float(c["age"]) + delta
+		var vel: Vector3 = c["vel"]
+		vel.y -= 16.0 * delta
+		cn.position += vel * delta
+		cn.rotation.y += delta * 6.0
+		if cn.position.y < 0.22:
+			cn.position.y = 0.22
+			vel.y = absf(vel.y) * 0.42
+			vel.x *= 0.65
+			vel.z *= 0.65
+		c["vel"] = vel
+		var to_p := feet() + Vector3(0, 0.7, 0) - cn.position
+		if float(c["age"]) > 0.35 and to_p.length() < 4.5:
+			cn.position += to_p.normalized() * 11.5 * delta
+			if to_p.length() < 0.75:
+				PrologueState.coins += int(c["val"])
+				cn.queue_free()
+				bouncing_coins.remove_at(i)
+
 	var p_speed := flat(player.velocity).length()
 	if p_speed > 0.4 and not PrologueState.mounted and not air_slam_active:
 		_walk_phase += delta * 12.5
@@ -899,12 +998,12 @@ func step_shared_physics(delta: float, cam_override_target := Vector3.INF) -> bo
 			player.position.y = 0.0
 			_finish_air_slam()
 	elif PrologueState.mounted:
-		var spd := (12.0 if wolf_charge_timer > 0.0 else 7.6) * spd_mult
+		var spd := (12.5 if wolf_charge_timer > 0.0 else 7.8) * spd_mult
 		move_body(wolf, dir if dir.length() > 0.05 else (Vector3.RIGHT if wolf_charge_timer > 0.0 else Vector3.ZERO), spd)
 		player.position = wolf.position + Vector3.UP * 1.38
 		player.rotation.y = wolf.rotation.y
 	else:
-		move_body(player, dir, 5.2 * spd_mult)
+		move_body(player, dir, 5.4 * spd_mult)
 		update_wolf_follow(delta)
 
 	var t_bird := Time.get_ticks_msec() * 0.007
@@ -915,25 +1014,25 @@ func step_shared_physics(delta: float, cam_override_target := Vector3.INF) -> bo
 	var target := cam_override_target if cam_override_target != Vector3.INF else feet()
 	position_camera(target, clampf(delta * 4.8, 0.0, 1.0))
 	if shake_time > 0.0:
-		camera.position += Vector3(randf_range(-0.18, 0.18), randf_range(-0.12, 0.12), 0.0)
+		camera.position += Vector3(randf_range(-shake_strength, shake_strength), randf_range(-shake_strength * 0.7, shake_strength * 0.7), 0.0)
 	return true
 
 func _update_hotbar_visuals() -> void:
 	if not slot_attack:
 		return
-	slot_attack.modulate = Color.WHITE if (can_attack and PrologueState.has_sword and not PrologueState.mounted) else Color(0.55, 0.55, 0.62, 0.85)
+	slot_attack.modulate = Color.WHITE if (can_attack and not PrologueState.mounted) else Color(0.55, 0.55, 0.62, 0.85)
 	slot_attack_cd.visible = attack_cooldown > 0.0
 	if PrologueState.mounted:
-		slot_mount_sub.text = "彈飛下劈!" if PrologueState.has_spring_saddle else "下鞍步行"
+		slot_mount_sub.text = "彈飛劈!" if PrologueState.has_spring_saddle else "下鞍"
 	else:
-		slot_mount_sub.text = "上鞍騎乘"
+		slot_mount_sub.text = "上鞍"
 	slot_wolf_cd.visible = wolf_charge_cooldown > 0.0
 	if wolf_charge_cooldown > 0.0:
 		slot_wolf_cd.scale.y = clampf(wolf_charge_cooldown / wolf_charge_max, 0.0, 1.0)
 
 func update_wolf_follow(_delta: float) -> void:
 	var diff := flat(player.position - wolf.position)
-	move_body(wolf, diff.normalized() if diff.length() > 1.85 else Vector3.ZERO, 6.0)
+	move_body(wolf, diff.normalized() if diff.length() > 1.85 else Vector3.ZERO, 6.2)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if PrologueState.is_transitioning:
@@ -964,7 +1063,7 @@ func on_interact() -> void:
 
 func on_coop_summon() -> void:
 	show_player_emote("✉️", 1.2)
-	show_subtitle("胖黃鳥：在「地圖三：雲海石橋」按 [C] 即可寄出求救信封，拉隊友進副本一起打 Boss！", 3.8)
+	show_subtitle("在「雲海石橋」按 [C] 即可拉隊友空降助拳！", 3.0)
 
 func on_wolf_action() -> void:
 	if wolf_charge_cooldown > 0.0:
@@ -980,12 +1079,13 @@ func on_air_slam_land() -> void:
 	pass
 
 func perform_sword_attack() -> void:
-	if not can_attack or not PrologueState.has_sword or PrologueState.mounted or attack_cooldown > 0.0:
+	if not can_attack or PrologueState.mounted or attack_cooldown > 0.0:
 		return
-	attack_cooldown = 0.30
+	attack_cooldown = 0.28
+	spawn_slash_arc(player.position, player.rotation.y, GOLD if PrologueState.has_sword else Color("#e6f4ff"))
 	var tw := create_tween()
-	tw.tween_property(player_sword, "rotation:y", -1.45, 0.10)
-	tw.tween_property(player_sword, "rotation:y", 0.0, 0.16)
+	tw.tween_property(player_sword, "rotation:y", -1.55, 0.09)
+	tw.tween_property(player_sword, "rotation:y", 0.0, 0.14)
 	on_sword_hit()
 
 func toggle_mount() -> void:
@@ -1018,28 +1118,25 @@ func toggle_mount() -> void:
 
 func _finish_air_slam() -> void:
 	air_slam_active = false
-	shake_time = 0.22
-	var ring := marker(player.position, GOLD, 2.6)
+	shake_time = 0.24
+	shake_strength = 0.22
+	var ring := marker(player.position, GOLD, 2.8)
 	var tw := create_tween()
-	tw.tween_property(ring, "scale", Vector3(1.6, 1.0, 1.6), 0.25)
+	tw.tween_property(ring, "scale", Vector3(1.8, 1.0, 1.8), 0.28)
 	tw.tween_callback(ring.queue_free)
-	show_player_emote("✨", 1.3)
-	show_subtitle("彈簧試驗鞍座・飛天暴擊下劈！(200% CRIT)", 2.2)
+	spawn_damage_pop(player.position, "彈飛重劈! 200%", GOLD, true)
+	show_player_emote("✨", 1.2)
 	on_air_slam_land()
 
 func update_status_line() -> void:
 	var hearts := ""
 	for i in range(5):
 		hearts += "♥ " if i < PrologueState.player_hp else "♡ "
-	hp_hearts_label.text = "旅人  " + hearts.strip_edges()
-	hp_bar.value = PrologueState.player_hp
+	hp_hearts_label.text = hearts.strip_edges()
 
-	var tags: Array[String] = ["攻%d" % PrologueState.get_total_atk()]
-	tags.append("包%d" % PrologueState.inventory.size())
+	var tags: Array[String] = ["⚔%d" % PrologueState.get_total_atk(), "💰%d¢" % PrologueState.coins, "🎒%d" % PrologueState.inventory.size()]
 	if not PrologueState.campfire_dish.is_empty():
-		tags.append("🍲" + PrologueState.campfire_dish)
+		tags.append("🍲+1")
 	if PrologueState.has_spring_saddle:
-		tags.append("🌀彈簧鞍")
-	if PrologueState.mounted:
-		tags.append("🐺騎乘")
-	gear_tags_label.text = " ｜ ".join(tags)
+		tags.append("🌀彈簧")
+	gear_tags_label.text = "  ".join(tags)
