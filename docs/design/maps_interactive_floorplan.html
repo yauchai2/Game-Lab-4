@@ -249,7 +249,39 @@ const MAPS = [
       { id: "rare_c", x: 18.0, z: -1.0, kind: "rare", name: "★ 樹冠巡林長" },
       { id: "cp3", x: 36.0, z: 0.0, kind: "checkpoint", name: "◆ 檢查點：樹王聖壇前" },
       { id: "boss", x: 60.0, z: 0.0, kind: "boss", name: "💀 區域 Boss：翡翠樹王（退休後開果茶亭）" },
-      { id: "exit_e", x: 78.0, z: 0.0, kind: "exit", name: "→ 舊軍鐘樓哨所（規劃中）" },
+      { id: "exit_e", x: 78.0, z: 0.0, kind: "exit", name: "→ 前往舊軍鐘樓哨所" },
+    ]
+  },
+  {
+    id: "clocktower", name: "5. 舊軍鐘樓哨所 (164m×106m)", bounds: { minX: -76, maxX: 88, minZ: -53, maxZ: 53 },
+    bg: "#645a82", land: "#b89d72", borderStyle: "廢棄石牆、巨岩與古舊木欄邊界",
+    desc: "第一章第三座超大型要塞：黃銅轉動巨齒輪廣場、5 大連通子區域、3 座檢查點、2 隻隱藏傳奇怪與百年鐘樓 Boss《重裝鐵鐘騎士》。",
+    regions: [
+      { x: -54, z: 0, rx: 19, rz: 15, color: "rgba(199,174,130,0.65)", label: "1. 西境哨所石階入口" },
+      { x: -14, z: -32, rx: 26, rz: 15, color: "rgba(168,147,120,0.68)", label: "2. 北境齒輪工坊廢墟" },
+      { x: -10, z: 31, rx: 26, rz: 15, color: "rgba(158,139,118,0.65)", label: "3. 南境舊軍砲壘壕溝" },
+      { x: 10, z: 0, rx: 22, rz: 15, color: "rgba(212,188,148,0.72)", label: "4. 中境鐘聲廣場" },
+      { x: 62, z: 0, rx: 19, rz: 19, color: "rgba(232,220,196,0.75)", label: "5. 東境百年鐘樓聖壇" },
+    ],
+    paths: [
+      [[-68, 0], [-42, 0], [-14, 1.5], [14, -1.5], [38, 0], [62, 0], [80, 0]],
+      [[-50, -4], [-36, -18], [-20, -28], [-34, -40]], [[-20, -28], [-2, -30], [14, -16]],
+      [[-50, 4], [-34, 18], [-16, 30], [14, 40.5]], [[-16, 30], [6, 22], [24, 10]]
+    ],
+    streams: [],
+    pois: [
+      { id: "exit_w", x: -68.0, z: 0.0, kind: "exit", name: "← 返回翡翠天梯古林" },
+      { id: "wp", x: -58.0, z: -4.5, kind: "checkpoint", name: "✦ 鐘樓傳送石陣 [U 世界圖]" },
+      { id: "cp1", x: -20.0, z: -25.0, kind: "checkpoint", name: "◆ 檢查點：齒輪工坊廢墟" },
+      { id: "rare_n", x: -6.0, z: -28.0, kind: "rare", name: "★ 齒輪維修長" },
+      { id: "uniq1", x: -34.0, z: -40.0, kind: "unique", name: "❖ 隱藏傳奇怪 #1：發條報時官 (HP 36)" },
+      { id: "cp2", x: -14.0, z: 25.0, kind: "checkpoint", name: "◆ 檢查點：舊軍砲壘壕溝" },
+      { id: "rare_s", x: 2.0, z: 28.0, kind: "rare", name: "★ 鐵甲砲兵長" },
+      { id: "uniq2", x: 14.0, z: 40.5, kind: "unique", name: "❖ 隱藏傳奇怪 #2：失控重型攻城機兵 (HP 38)" },
+      { id: "rare_c", x: 20.0, z: -1.0, kind: "rare", name: "★ 鐘樓禁衛隊長" },
+      { id: "cp3", x: 36.0, z: 0.0, kind: "checkpoint", name: "◆ 檢查點：鐘樓大門前" },
+      { id: "boss", x: 62.0, z: 0.0, kind: "boss", name: "💀 區域 Boss：重裝鐵鐘騎士（退休後開咖啡座）" },
+      { id: "exit_e", x: 80.0, z: 0.0, kind: "exit", name: "→ 沉霧燈塔港（第一幕終章）" },
     ]
   }
 ];
@@ -257,7 +289,7 @@ const MAPS = [
 let curIdx = 2; // Default to CloudhillRoad
 let selectedPoi = null;
 let draggingPoi = null;
-const customPins = { clearing: [], town: [], road: [], forest: [] };
+const customPins = { clearing: [], town: [], road: [], forest: [], clocktower: [] };
 const canvas = document.getElementById("mapCanvas");
 const ctx = canvas.getContext("2d");
 

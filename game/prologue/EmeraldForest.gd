@@ -570,7 +570,7 @@ func on_interact() -> void:
 		show_subtitle("開啟翡翠王冠寶箱！獲【傳奇】翡翠王冠聖劍＋金漆罐 x3＋50¢！", 4.5)
 		return
 	if near(EAST_EXIT, 3.0):
-		show_subtitle("前方為下一區域《舊軍鐘樓哨所》（已於世界地圖規劃，敬請期待）", 3.5)
+		PrologueState.transition_to("res://prologue/ClocktowerOutpost.tscn", "default", "舊軍鐘樓哨所")
 
 func _boss_say(words: String, duration := 3.2) -> void:
 	boss_bubble.text = words
