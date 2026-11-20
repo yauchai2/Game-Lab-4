@@ -65,6 +65,7 @@ func _ready() -> void:
 	setup_core_trio(spawn)
 	setup_camera_and_lighting(24.0 if vista_zoomed else 16.5, Color("#f2c3e0"), Color("#ffe2c2"), 0.88, Color("#ffe0b2"), 1.15, Color("#667bd4"), Color("#ffd1a6"), Color("#c9a8e0"))
 	setup_hud()
+	PrologueState.play_bgm("road")
 	_apply_persisted_state()
 
 	if not PrologueState.road_intro_played and PrologueState.spawn_tag != "from_waypoint":
@@ -713,6 +714,7 @@ func _start_boss_encounter() -> void:
 	boss_active = true
 	boss_state = BossState.IDLE
 	boss_timer = 1.2
+	PrologueState.play_bgm("boss")
 	_boss_say("站住！前方魔王軍第三防線！", 2.8)
 	show_player_emote("✉️", 1.8)
 
@@ -858,6 +860,7 @@ func on_projectile_hit(pos: Vector3) -> bool:
 func _retire_boss() -> void:
 	PrologueState.boss_retired = true
 	boss_state = BossState.RETIRED
+	PrologueState.play_bgm("road")
 	play_giant_retirement_stamp(boss.position)
 	if not coop_ally.is_empty():
 		PrologueState.coins += 30

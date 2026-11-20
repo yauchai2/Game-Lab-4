@@ -35,6 +35,7 @@ func _ready() -> void:
 	setup_core_trio(spawn)
 	setup_camera_and_lighting(15.2, Color("#0e172a"), Color("#3e5d94"), 0.64, Color("#6e94d4"), 0.42, Color("#08122b"), Color("#244970"), Color("#0e1b33"))
 	setup_hud()
+	PrologueState.play_bgm("campfire")
 
 	if not PrologueState.has_started:
 		input_locked = true

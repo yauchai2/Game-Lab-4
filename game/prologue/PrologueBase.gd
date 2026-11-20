@@ -46,7 +46,9 @@ const GOUACHE_SHADER := preload("res://shaders/amelicart_gouache.gdshader")
 const GRASS_SHADER := preload("res://shaders/stylized_grass.gdshader")
 const FOLIAGE_SHADER := preload("res://shaders/painterly_foliage.gdshader")
 const WATER_SEA_SHADER := preload("res://shaders/living_water_sea.gdshader")
+const MIXAMO_RIG_SCRIPT := preload("res://prologue/MixamoCharacterRig.gd")
 var scene_shadow_tint := Color("#464d7a")
+var mixamo_rig: Node3D
 
 # 60 FPS integer frame counter hitstop (never mutates Engine.time_scale)
 var hitstop_frames := 0
@@ -877,16 +879,23 @@ func transition_signpost(pos: Vector3, icon_title: String, color := GOLD, rot_de
 func setup_core_trio(spawn_pos: Vector3) -> void:
 	_make_body(player, spawn_pos, PLAYER_RADIUS)
 	player.add_child(player_visual)
-	cylinder(player_visual, Vector3(0, 0.34, 0), 0.24, 0.28, 0.52, Color("#4da1e8"))
-	sphere(player_visual, Vector3(0, 0.60, 0.02), Vector3(0.42, 0.18, 0.38), Color("#d96b43"))
-	sphere(player_visual, Vector3(0, 0.85, 0.02), Vector3(0.52, 0.50, 0.48), Color("#f4c9a8"))
-	cylinder(player_visual, Vector3(0, 1.13, 0), 0.08, 0.33, 0.32, Color("#498e62"))
+	var proc_parts: Array[Node3D] = []
+	proc_parts.append(cylinder(player_visual, Vector3(0, 0.34, 0), 0.24, 0.28, 0.52, Color("#4da1e8")))
+	proc_parts.append(sphere(player_visual, Vector3(0, 0.60, 0.02), Vector3(0.42, 0.18, 0.38), Color("#d96b43")))
+	proc_parts.append(sphere(player_visual, Vector3(0, 0.85, 0.02), Vector3(0.52, 0.50, 0.48), Color("#f4c9a8")))
+	proc_parts.append(cylinder(player_visual, Vector3(0, 1.13, 0), 0.08, 0.33, 0.32, Color("#498e62")))
 	var feather := box(player_visual, Vector3(-0.22, 1.25, -0.05), Vector3(0.08, 0.32, 0.14), Color("#d7e4ff"))
 	feather.rotation_degrees.z = 16.0
-	sphere(player_visual, Vector3(0, 0.44, -0.26), Vector3(0.38, 0.38, 0.24), Color("#8c5234"))
+	proc_parts.append(feather)
+	proc_parts.append(sphere(player_visual, Vector3(0, 0.44, -0.26), Vector3(0.38, 0.38, 0.24), Color("#8c5234")))
 	player_sword = box(player_visual, Vector3(0.38, 0.48, 0.28), Vector3(0.11, 0.11, 0.88), Color("#e6f4ff"))
 	# Always give the traveler a starter stick/sword feel so combat works from second 1!
 	player_sword.visible = true
+	mixamo_rig = MIXAMO_RIG_SCRIPT.new()
+	player_visual.add_child(mixamo_rig)
+	if mixamo_rig.try_load_mixamo_character(scene_shadow_tint):
+		for pp in proc_parts:
+			pp.hide()
 	player_emote = label_at(player, Vector3(0, 1.82, 0), "", Color("#fff59d"), 46)
 
 	_make_body(wolf, spawn_pos + Vector3(-1.45, 0, -0.55), WOLF_RADIUS)
@@ -1610,6 +1619,8 @@ func step_shared_physics(delta: float, cam_override_target := Vector3.INF) -> bo
 		vertical_vel -= 28.0 * delta
 		player.position.y += vertical_vel * delta
 		move_body(player, dir, 5.6 * spd_mult)
+		if mixamo_rig:
+			mixamo_rig.play_state("fall")
 		if player.position.y <= 0.0:
 			player.position.y = 0.0
 			_finish_air_slam()
@@ -1626,9 +1637,13 @@ func step_shared_physics(delta: float, cam_override_target := Vector3.INF) -> bo
 		move_body(wolf, dir if dir.length() > 0.05 else (Vector3.RIGHT if wolf_charge_timer > 0.0 else Vector3.ZERO), spd)
 		player.position = wolf.position + Vector3.UP * 1.38
 		player.rotation.y = wolf.rotation.y
+		if mixamo_rig:
+			mixamo_rig.play_state("idle")
 	else:
 		move_body(player, dir, 5.4 * spd_mult)
 		update_wolf_follow(delta)
+		if mixamo_rig and attack_cooldown <= 0.0:
+			mixamo_rig.play_state("run" if dir.length() > 0.08 else "idle")
 
 	var t_bird := Time.get_ticks_msec() * 0.007
 	var bird_speed := 10.0
@@ -1694,6 +1709,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_Q: on_wolf_action()
 			KEY_J: perform_sword_attack()
 			KEY_C: on_coop_summon()
+			KEY_M:
+				var muted := PrologueState.toggle_bgm_mute()
+				show_player_emote("🔇" if muted else "🎵", 1.1)
 			KEY_R: PrologueState.reset_all()
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		perform_sword_attack()
@@ -1715,6 +1733,8 @@ func perform_dodge() -> void:
 	invuln_timer = 0.30
 	dodge_cooldown = dodge_max_cd
 	PrologueState.play_sfx("dodge")
+	if mixamo_rig:
+		mixamo_rig.play_state("dodge", true)
 	var dust := marker(feet(), Color("#f2e9d8"), 1.05)
 	var dtw := create_tween()
 	dtw.tween_property(dust, "scale", Vector3(2.0, 1.0, 2.0), 0.24)
@@ -1836,6 +1856,8 @@ func perform_sword_attack() -> void:
 	if combo_step == 3:
 		attack_cooldown = 0.36
 		PrologueState.play_sfx("whirl")
+		if mixamo_rig:
+			mixamo_rig.play_state("spin", true)
 		var wring := marker(player.position, GOLD, 2.4)
 		var wtw := create_tween()
 		wtw.tween_property(wring, "scale", Vector3(1.65, 1.0, 1.65), 0.24)
@@ -1852,6 +1874,8 @@ func perform_sword_attack() -> void:
 	else:
 		attack_cooldown = 0.26
 		PrologueState.play_sfx("slash")
+		if mixamo_rig:
+			mixamo_rig.play_state("slash", true)
 		spawn_slash_arc(player.position, player.rotation.y + (0.35 if combo_step == 2 else 0.0), GOLD if PrologueState.has_sword else Color("#e6f4ff"))
 		var lunge_dir := Vector3(sin(player.rotation.y), 0.0, cos(player.rotation.y)).normalized()
 		move_body(player, lunge_dir, 4.2)

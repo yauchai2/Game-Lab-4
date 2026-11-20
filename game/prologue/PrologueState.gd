@@ -42,6 +42,17 @@ var _fade_rect: ColorRect
 var _zone_banner: Label
 var _sfx_player: AudioStreamPlayer
 var _sfx_gen: AudioStreamGenerator
+var _bgm_player: AudioStreamPlayer
+var _bgm_synth_player: AudioStreamPlayer
+var _bgm_synth_gen: AudioStreamGenerator
+var current_bgm_zone := ""
+var bgm_muted := false
+var _bgm_using_file := false
+var _bgm_note_timer := 0.0
+var _bgm_step_idx := 0
+var _bgm_phase := 0.0
+var _bgm_cur_freq := 261.63
+var _bgm_note_env := 0.0
 
 const AFFIX_POOL := [
 	{"name": "鋒利 (+1 攻擊)", "stat": "atk", "val": 1},
@@ -85,6 +96,96 @@ func _ready() -> void:
 	_sfx_player.volume_db = -8.0
 	add_child(_sfx_player)
 	_sfx_player.play()
+
+	# Per-Zone Crossfading BGM Player (loads res://assets/audio/bgm/{zone}.mp3 or .ogg)
+	_bgm_player = AudioStreamPlayer.new()
+	_bgm_player.volume_db = -12.0
+	add_child(_bgm_player)
+
+	# Cozy procedural music-box fallback when external MP3/OGG tracks are not yet placed
+	_bgm_synth_gen = AudioStreamGenerator.new()
+	_bgm_synth_gen.mix_rate = 22050.0
+	_bgm_synth_gen.buffer_length = 0.25
+	_bgm_synth_player = AudioStreamPlayer.new()
+	_bgm_synth_player.stream = _bgm_synth_gen
+	_bgm_synth_player.volume_db = -18.0
+	add_child(_bgm_synth_player)
+	_bgm_synth_player.play()
+
+func play_bgm(zone: String) -> void:
+	if zone == current_bgm_zone:
+		return
+	current_bgm_zone = zone
+	_bgm_step_idx = 0
+	var stream: AudioStream = null
+	for ext in [".mp3", ".ogg", ".wav"]:
+		var p := "res://assets/audio/bgm/%s%s" % [zone, ext]
+		if ResourceLoader.exists(p):
+			stream = ResourceLoader.load(p) as AudioStream
+			if stream:
+				break
+	if stream:
+		_bgm_using_file = true
+		if stream is AudioStreamMP3:
+			(stream as AudioStreamMP3).loop = true
+		elif stream is AudioStreamOggVorbis:
+			(stream as AudioStreamOggVorbis).loop = true
+		var tw := create_tween()
+		if _bgm_player.playing:
+			tw.tween_property(_bgm_player, "volume_db", -36.0, 0.35)
+		tw.tween_callback(func() -> void:
+			_bgm_player.stream = stream
+			_bgm_player.volume_db = -80.0 if bgm_muted else -36.0
+			_bgm_player.play()
+		)
+		if not bgm_muted:
+			tw.tween_property(_bgm_player, "volume_db", -12.0, 0.55)
+	else:
+		_bgm_using_file = false
+		if _bgm_player.playing:
+			_bgm_player.stop()
+
+func toggle_bgm_mute() -> bool:
+	bgm_muted = not bgm_muted
+	if _bgm_player:
+		_bgm_player.volume_db = -80.0 if bgm_muted else -12.0
+	if _bgm_synth_player:
+		_bgm_synth_player.volume_db = -80.0 if bgm_muted else -18.0
+	return bgm_muted
+
+func _process(delta: float) -> void:
+	if bgm_muted or _bgm_using_file or current_bgm_zone.is_empty():
+		return
+	if not _bgm_synth_player or not _bgm_synth_player.playing:
+		return
+	var pb := _bgm_synth_player.get_stream_playback() as AudioStreamGeneratorPlayback
+	if pb == null:
+		return
+	var notes: Array[float] = [261.63, 293.66, 329.63, 392.00, 440.00, 392.00, 329.63, 293.66]
+	var step_dur := 0.62
+	match current_bgm_zone:
+		"town":
+			notes = [329.63, 392.00, 440.00, 523.25, 440.00, 392.00, 329.63, 293.66]
+			step_dur = 0.42
+		"road":
+			notes = [293.66, 349.23, 440.00, 523.25, 440.00, 349.23, 329.63, 293.66]
+			step_dur = 0.48
+		"boss":
+			notes = [220.00, 261.63, 329.63, 293.66, 220.00, 329.63, 392.00, 329.63]
+			step_dur = 0.28
+	_bgm_note_timer -= delta
+	if _bgm_note_timer <= 0.0:
+		_bgm_note_timer = step_dur
+		_bgm_cur_freq = notes[_bgm_step_idx % notes.size()]
+		_bgm_step_idx += 1
+		_bgm_note_env = 1.0
+	var avail := pb.get_frames_available()
+	var sr := 22050.0
+	for _i in range(mini(avail, 512)):
+		_bgm_phase += TAU * _bgm_cur_freq / sr
+		_bgm_note_env = maxf(0.0, _bgm_note_env - 1.6 / sr)
+		var s := (sin(_bgm_phase) * 0.7 + sin(_bgm_phase * 2.0) * 0.2) * _bgm_note_env * 0.14
+		pb.push_frame(Vector2(s, s))
 
 func play_sfx(kind: String) -> void:
 	if not _sfx_player or not _sfx_player.playing:

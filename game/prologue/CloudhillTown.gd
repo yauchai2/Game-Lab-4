@@ -38,6 +38,7 @@ func _ready() -> void:
 	setup_core_trio(spawn)
 	setup_camera_and_lighting(20.5, Color("#73e4f5"), Color("#eef3fc"), 0.88, Color("#ffe4ba"), 1.15, Color("#2b9cf0"), Color("#aef2ff"), Color("#2282d6"))
 	setup_hud()
+	PrologueState.play_bgm("town")
 
 	if not PrologueState.has_sword:
 		_goblin_say("早安！百年戰爭結束啦，武器全場 -50¢！", 5.5)
