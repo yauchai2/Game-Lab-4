@@ -33,7 +33,7 @@ func _ready() -> void:
 		_goblin_say("早安早安！百年戰爭早打完了，魔王軍滯銷武器全場五折！快來拿把短劍！", 6.5)
 		show_subtitle("（史詩配樂瞬間卡帶，迎面是熱鬧非凡的雲丘小鎮清倉大特賣！）", 3.5)
 	elif PrologueState.boss_retired:
-		_goblin_say("聽說你幫稻草人哨長辦完退休了？歡迎隨時回來逛清倉行！", 5.0)
+		_goblin_say("聽說你幫稻草人哨長辦完退休了？按 [I] 可以用通貨洗詞綴，或找波波吞廢裝！", 5.5)
 	_update_ui()
 
 func _build_town() -> void:
@@ -56,7 +56,6 @@ func _build_town() -> void:
 	for p in [Vector3(-16.2, 0, -6.5), Vector3(-16.5, 0, -3.0), Vector3(-16.2, 0, 6.2), Vector3(-14.5, 0, 9.0)]:
 		pine_tree(p, 1.15, PINE_DARK)
 
-	# NW: Goblin Clearance Pavilion
 	box(self, SHOP_POS + Vector3(0, 1.6, -1.6), Vector3(7.4, 3.2, 0.35), TIMBER, true)
 	box(self, SHOP_POS + Vector3(-3.5, 1.6, 0.0), Vector3(0.35, 3.2, 3.2), TIMBER, true)
 	box(self, SHOP_POS + Vector3(3.5, 1.6, 0.0), Vector3(0.35, 3.2, 3.2), TIMBER, true)
@@ -75,7 +74,6 @@ func _build_town() -> void:
 	sphere(gob, Vector3(0, 2.18, 0.08), Vector3(1.02, 0.58, 0.95), Color("#f6f4ef"))
 	goblin_bubble = label_at(gob, Vector3(0, 3.35, 0), "", Color("#fff7c2"), 34)
 
-	# North-Center: Enterable Monster Tavern & Guild Hall
 	var tav := Vector3(5.6, 0.0, -8.0)
 	box(self, tav + Vector3(0, 2.5, 0), Vector3(8.2, 5.0, 5.2), WHITE_WALL, true)
 	box(self, tav + Vector3(0, 5.4, 0), Vector3(8.8, 0.85, 5.8), CORAL_ROOF)
@@ -86,17 +84,15 @@ func _build_town() -> void:
 	label_at(self, tav + Vector3(0, 6.4, 1.5), "退休魔物大酒館／勸退公會（可進大廳）", Color("#ffe099"), 34)
 	marker(TAVERN_DOOR, Color("#69c5ed"), 0.72)
 
-	# Center Waypoint
 	cylinder(self, WAYPOINT_POS + Vector3(0, 1.25, 0), 0.38, 0.46, 2.5, TIMBER_LIGHT, false)
 	box(self, WAYPOINT_POS + Vector3(0, 1.85, 0), Vector3(1.6, 0.35, 0.35), TIMBER_LIGHT)
 	sphere(self, WAYPOINT_POS + Vector3(0, 2.65, 0), Vector3(0.52, 0.45, 0.52), GOLD)
 	for bx in [-1.05, 1.05]:
 		cylinder(self, WAYPOINT_POS + Vector3(bx, 0.38, 0.75), 0.35, 0.32, 0.76, TIMBER)
 		sphere(self, WAYPOINT_POS + Vector3(bx, 0.85, 0.75), Vector3(0.62, 0.45, 0.62), Color("#9d7ae8"))
-	label_at(self, WAYPOINT_POS + Vector3(0, 3.45, 0), "信使鳥驛站（Waypoint）", GOLD, 32)
+	label_at(self, WAYPOINT_POS + Vector3(0, 3.45, 0), "信使鳥驛站（Waypoint／重置刷圖）", GOLD, 32)
 	marker(WAYPOINT_POS + Vector3(0, 0, 1.5), GOLD, 0.72)
 
-	# South Lawn: Water Troughs, Dummies, Stash, Auto-Salvage Slime Bobo
 	for tz in [6.4, 8.6]:
 		box(self, Vector3(-8.5, 0.38, tz), Vector3(3.4, 0.76, 1.0), TIMBER, true)
 		box(self, Vector3(-8.5, 0.72, tz), Vector3(3.0, 0.12, 0.72), Color("#69c5ed"), false, true)
@@ -110,7 +106,7 @@ func _build_town() -> void:
 		box(d, Vector3(0, 1.15, 0), Vector3(1.3, 0.25, 0.25), TIMBER_LIGHT)
 		sphere(d, Vector3(0, 1.65, 0), Vector3(0.48, 0.48, 0.48), Color("#e5c285"))
 		dummies.append(d)
-	label_at(self, Vector3(4.4, 2.35, 8.0), "試刀木樁（揮劍測試手感）", Color("#fff2b2"), 30)
+	label_at(self, Vector3(4.4, 2.35, 8.0), "試刀木樁（實測配裝傷害）", Color("#fff2b2"), 30)
 
 	box(self, STASH_POS + Vector3(0, 0.48, 0), Vector3(1.3, 0.96, 0.9), GOLD, true)
 	box(self, STASH_POS + Vector3(1.6, 0.55, 0.2), Vector3(1.1, 1.1, 1.1), TIMBER_LIGHT, true)
@@ -121,10 +117,9 @@ func _build_town() -> void:
 	slime_node.position = SLIME_HOME
 	add_child(slime_node)
 	sphere(slime_node, Vector3(0, 0.38, 0), Vector3(0.85, 0.68, 0.85), Color("#58d6d6"))
-	slime_bubble = label_at(slime_node, Vector3(0, 1.25, 0), "回收史萊姆・波波（一鍵吞廢裝）", Color("#b8ffff"), 28)
+	slime_bubble = label_at(slime_node, Vector3(0, 1.25, 0), "回收史萊姆・波波（一鍵吞白裝換通貨）", Color("#b8ffff"), 28)
 
-	# West & East Exits
-	transition_signpost(WEST_EXIT, "返回：林間營火空地（按 E）", Color("#b8f5ff"))
+	transition_signpost(WEST_EXIT, "返回：私人營火基地（按 E）", Color("#b8f5ff"))
 	box(self, EAST_EXIT + Vector3(0, 2.1, -2.4), Vector3(0.45, 4.2, 0.45), TIMBER, true)
 	box(self, EAST_EXIT + Vector3(0, 2.1, 2.4), Vector3(0.45, 4.2, 0.45), TIMBER, true)
 	box(self, EAST_EXIT + Vector3(0, 4.0, 0.0), Vector3(0.55, 0.55, 5.4), TIMBER_LIGHT)
@@ -146,87 +141,99 @@ func _physics_process(delta: float) -> void:
 func on_interact() -> void:
 	if near(SHOP_INTERACT, 2.8):
 		if not PrologueState.has_sword:
+			PrologueState.coins = maxi(0, PrologueState.coins - 50)
+			var starter := PrologueState.make_item("五折庫存短劍", "weapon", "magic", 1)
+			PrologueState.equipped_weapon = starter
 			PrologueState.has_sword = true
 			player_sword.show()
+			# Give a spare normal base weapon so player can test Crafting or Bobo right away!
+			PrologueState.add_item_to_inventory(PrologueState.make_item("生鏽步兵短劍", "weapon", "normal", 1))
 			show_player_emote("💰", 1.5)
-			_goblin_say("爽快！這把前魔王軍庫存短劍原價一百、算你五十銅幣！快走東邊出發拱門去幫稻草人哨長辦退休吧！", 6.5)
+			_goblin_say("爽快！額外送你一把生鏽白裝胚子，按 [I] 可以點藍印章造裝，或餵給波波換通貨！", 6.5)
 			create_tween().tween_property(player, "rotation:y", player.rotation.y + TAU, 0.45)
 		else:
 			show_player_emote("?", 1.3)
-			_goblin_say("玻璃櫃裡的骷髏王冠現在改裝成夜間小夜燈，特價 30¢！", 4.0)
+			_goblin_say("玻璃櫃裡的骷髏王冠改裝成小夜燈特價 30¢！按 [I] 打開背包點裝造裝吧！", 4.5)
 		return
 
 	if near(TAVERN_DOOR, 2.6):
 		show_player_emote("✨", 1.5)
-		show_subtitle("退休魔物大酒館大門（獨立室內場景預留：企鵝侍應生、角魔與史萊姆正在裡面開派對！）", 4.5)
+		show_subtitle("退休魔物大酒館大門（獨立室內場景預留：企鵝侍應生、角魔與史萊姆正在開派對！）", 4.5)
 		return
 
 	if near(SLIME_HOME, 2.2):
-		show_player_emote("✨", 1.4)
-		slime_bubble.text = "咕嚕！✨（已吞掉背包廢裝 → 吐出銅幣與改裝碎片）"
-		show_subtitle("回收史萊姆波波一口吞掉低階白裝，吐出閃亮銅幣與詞綴改裝碎片！", 4.0)
+		var res := PrologueState.salvage_normal_items()
+		if int(res["count"]) > 0:
+			show_player_emote("✨", 1.5)
+			slime_bubble.text = "咕嚕！吞掉 %d 件白裝 → +%d¢、藍印章+%d" % [int(res["count"]), int(res["coins"]), int(res["blue"])]
+			show_subtitle("波波一口吞掉 %d 件白裝！獲得 %d¢、改裝藍印章 x%d、洗白劑 x%d。" % [int(res["count"]), int(res["coins"]), int(res["blue"]), int(res["chaos"])], 4.5)
+		else:
+			show_player_emote("?", 1.2)
+			slime_bubble.text = "咕啾？（背包裡沒有多餘的白裝喔）"
+			show_subtitle("背包目前沒有低階白裝可回收；去地圖三刷怪噴裝再來餵波波吧！", 3.5)
 		return
 
 	if near(STASH_POS + Vector3(0, 0, -1.2), 2.5):
-		show_player_emote("!", 1.2)
-		show_subtitle("百年軍需儲物箱（Stash）：可存放跨角色共用裝備與舊時代鞍具零件。", 3.5)
+		toggle_inventory()
 		return
 
 	if near(WAYPOINT_POS + Vector3(0, 0, 1.5), 2.6):
 		if PrologueState.waypoint_road_unlocked:
-			PrologueState.transition_to("res://prologue/CloudhillRoad.tscn", "from_waypoint", "雲海瞭望台")
+			PrologueState.transition_to("res://prologue/CloudhillRoad.tscn", "from_waypoint", "雲海瞭望台（重置刷怪）")
 		else:
 			show_player_emote("?", 1.2)
-			show_subtitle("信使鳥驛站：尚未解鎖其他傳送點。先往東側出發拱門前往「雲海古道與石橋」吧！", 4.0)
+			show_subtitle("信使鳥驛站：先由東側出發拱門前往「雲海古道與石橋」解鎖傳送點！", 4.0)
 		return
 
 	if near(WEST_EXIT, 2.8):
-		PrologueState.transition_to("res://prologue/CampfireClearing.tscn", "from_town", "林間營火空地")
+		PrologueState.transition_to("res://prologue/CampfireClearing.tscn", "from_town", "私人營火基地")
 		return
 
 	if near(EAST_EXIT, 2.8):
 		if not PrologueState.has_sword:
 			show_player_emote("💦", 1.5)
-			_goblin_say("喂！空手出去會被稻草人哨長敲暈的，先來買把五折短劍吧！", 4.5)
+			_goblin_say("喂！空手出去會被小兵和哨長敲暈的，先來買把五折短劍吧！", 4.5)
 			return
 		PrologueState.transition_to("res://prologue/CloudhillRoad.tscn", "from_town", "雲海古道與石橋")
 
 func on_sword_hit() -> void:
 	for d in dummies:
 		if flat(player.position - d.position).length() < 2.3:
+			var is_crit := randi() % 100 < PrologueState.get_total_crit()
+			var dmg := PrologueState.get_total_atk() * (2 if is_crit else 1)
 			hitstop_frames = 3
 			shake_time = 0.08
 			var tw := create_tween()
 			tw.tween_property(d, "rotation:z", 0.35, 0.07)
 			tw.tween_property(d, "rotation:z", 0.0, 0.16)
 			show_player_emote("✨", 0.9)
-			show_subtitle("命中試刀木樁！（60 FPS 整數幀打擊停頓驗證）", 1.8)
+			show_subtitle("命中木樁：造成 %d 傷害%s！" % [dmg, "（暴擊 CRIT!）" if is_crit else ""], 2.0)
 
 func _goblin_say(words: String, duration := 4.5) -> void:
 	goblin_bubble.text = words
 	goblin_talk_timer = duration
 
 func _update_ui() -> void:
-	var step := "向西北側骨盔哥布林購入五折短劍" if not PrologueState.has_sword else "準備好後由東側出發拱門前往「雲海古道與石橋」"
+	var step := "向西北側骨盔哥布林購入五折短劍" if not PrologueState.has_sword else "按 [I] 體驗造裝，或由東側出發拱門前往「雲海古道與石橋」刷怪！"
 	if PrologueState.boss_retired:
-		step = "已勸退稻草人哨長！可由中央驛站快速傳送回雲海瞭望台"
+		step = "可找波波一鍵吞白裝換通貨，或從東側出發拱門／驛站重刷地圖三精英怪"
 	set_zone_objective("地圖二：雲丘小鎮 Hub", step)
 	update_status_line()
 
 	if near(SHOP_INTERACT, 2.8):
-		set_prompt("[ E ] 以 50¢ 購入五折發光短劍" if not PrologueState.has_sword else "[ E ] 偷看玻璃櫃奇葩文創品")
+		set_prompt("[ E ] 以 50¢ 購入五折短劍（附贈造裝白裝胚子）" if not PrologueState.has_sword else "[ E ] 偷看玻璃櫃奇葩文創品")
 	elif near(TAVERN_DOOR, 2.6):
 		set_prompt("[ E ] 進入：退休魔物大酒館（室內預留）")
 	elif near(SLIME_HOME, 2.2):
-		set_prompt("[ E ] 一鍵餵波波回收低階廢裝")
+		set_prompt("[ E ] 一鍵餵波波吞白裝 → 換銅幣與造裝通貨")
 	elif near(STASH_POS + Vector3(0, 0, -1.2), 2.5):
-		set_prompt("[ E ] 開啟百年軍需儲物箱（Stash）")
+		set_prompt("[ E ] 開啟背包與造裝工坊 [I]")
 	elif near(WAYPOINT_POS + Vector3(0, 0, 1.5), 2.6):
-		set_prompt("[ E ] 信使鳥驛站：快傳至「雲海瞭望台」" if PrologueState.waypoint_road_unlocked else "[ E ] 檢視信使鳥驛站（Waypoint）")
+		set_prompt("[ E ] 信使鳥驛站：重置並快傳至「雲海古道」" if PrologueState.waypoint_road_unlocked else "[ E ] 檢視信使鳥驛站（Waypoint）")
 	elif near(WEST_EXIT, 2.8):
-		set_prompt("[ E ] 返回：林間營火空地（地圖一）")
+		set_prompt("[ E ] 返回：私人營火基地（地圖一）")
 	elif near(EAST_EXIT, 2.8):
-		set_prompt("[ E ] 出城前往：雲海古道與石橋（地圖三）")
+		set_prompt("[ E ] 出城前往：雲海古道與石橋（地圖三・刷怪區）")
 	elif not PrologueState.mounted and near(wolf.position, 2.7):
 		set_prompt("[ F ] 騎上巨狼拍檔")
 	else:

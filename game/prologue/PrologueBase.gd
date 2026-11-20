@@ -30,7 +30,7 @@ const STAMP_RED := Color("#e03c3c")
 const UI_PARCHMENT := Color("#fbf2df")
 const UI_WOOD_BORDER := Color("#6b4a35")
 const UI_INK := Color("#2e211b")
-const UI_DARK_BG := Color(0.10, 0.13, 0.22, 0.86)
+const UI_DARK_BG := Color(0.10, 0.13, 0.22, 0.88)
 const UI_ACCENT_GOLD := Color("#f5c65b")
 const UI_HP_RED := Color("#e0534f")
 const UI_HP_BG := Color("#3d2d29")
@@ -51,6 +51,8 @@ var emote_timer := 0.0
 var subtitle_timer := 0.0
 var input_locked := false
 var can_attack := true
+var inv_open := false
+var selected_inv_idx := -1
 
 var player := CharacterBody3D.new()
 var wolf := CharacterBody3D.new()
@@ -77,20 +79,29 @@ var subtitle_label: Label
 var prompt_panel: PanelContainer
 var prompt_label: Label
 
-# Boss HP Bar (Top-Center, shown only during Boss combat)
+# Boss HP Bar (Top-Center)
 var boss_panel: PanelContainer
 var boss_name_label: Label
 var boss_hp_bar: ProgressBar
 var boss_state_badge: Label
 
-# 4-Slot Bottom ARPG Hotbar
+# 5-Slot Bottom ARPG Hotbar
 var slot_attack: PanelContainer
 var slot_attack_cd: ColorRect
 var slot_mount: PanelContainer
 var slot_mount_sub: Label
 var slot_wolf: PanelContainer
 var slot_wolf_cd: ColorRect
+var slot_bag: PanelContainer
 var slot_reset: PanelContainer
+
+# PoE 2 Inventory & Currency Crafting Modal (press I)
+var inv_panel: PanelContainer
+var inv_stats_label: Label
+var inv_equipped_label: Label
+var inv_currency_label: Label
+var inv_list_box: VBoxContainer
+var inv_feedback_label: Label
 
 # --- Procedural matte gouache geometry helpers ---
 func box(parent: Node3D, pos: Vector3, size: Vector3, color: Color, solid := false, unshaded := false) -> MeshInstance3D:
@@ -251,7 +262,7 @@ func position_camera(target: Vector3, lerp_weight: float) -> void:
 	camera.position = camera.position.lerp(desired, lerp_weight) if lerp_weight < 1.0 else desired
 	camera.look_at(camera.position - offset)
 
-# --- Storybook UI/UX HUD System ---
+# --- Storybook UI/UX + PoE 2 Crafting HUD ---
 func make_panel_style(bg: Color, border: Color, radius := 12, border_w := 2, pad_x := 14, pad_y := 10) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = bg
@@ -275,10 +286,10 @@ func setup_hud() -> void:
 	hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_layer.add_child(hud_root)
 
-	# 1. Top-Left: Vitals & Active Gear Card (Storybook Parchment)
+	# 1. Top-Left: Vitals & Active Gear Card
 	var vitals_card := PanelContainer.new()
 	vitals_card.position = Vector2(20, 18)
-	vitals_card.custom_minimum_size = Vector2(280, 72)
+	vitals_card.custom_minimum_size = Vector2(310, 74)
 	vitals_card.add_theme_stylebox_override("panel", make_panel_style(UI_PARCHMENT, UI_WOOD_BORDER, 14, 3, 14, 10))
 	vitals_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_root.add_child(vitals_card)
@@ -290,7 +301,6 @@ func setup_hud() -> void:
 	var hp_row := HBoxContainer.new()
 	hp_row.add_theme_constant_override("separation", 10)
 	v_box.add_child(hp_row)
-
 	hp_hearts_label = _styled_label("旅人  ♥ ♥ ♥ ♥ ♥", 15, UI_INK, false)
 	hp_row.add_child(hp_hearts_label)
 
@@ -305,7 +315,7 @@ func setup_hud() -> void:
 	hp_bar.add_theme_stylebox_override("fill", make_panel_style(UI_HP_RED, Color.TRANSPARENT, 7, 0, 0, 0))
 	hp_row.add_child(hp_bar)
 
-	gear_tags_label = _styled_label("裝備：空手  ｜  巨狼待命", 13, Color("#6b4a35"), false)
+	gear_tags_label = _styled_label("", 13, Color("#6b4a35"), false)
 	v_box.add_child(gear_tags_label)
 
 	# 2. Top-Right: Zone Badge & Objective Card
@@ -328,7 +338,7 @@ func setup_hud() -> void:
 	objective_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	o_box.add_child(objective_label)
 
-	# 3. Top-Center: Boss HP & Stagger State Bar (hidden until Boss fight)
+	# 3. Top-Center: Boss HP Bar
 	boss_panel = PanelContainer.new()
 	boss_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 	boss_panel.offset_left = -220
@@ -342,7 +352,6 @@ func setup_hud() -> void:
 	var b_box := VBoxContainer.new()
 	b_box.add_theme_constant_override("separation", 5)
 	boss_panel.add_child(b_box)
-
 	var b_top := HBoxContainer.new()
 	b_box.add_child(b_top)
 	boss_name_label = _styled_label("稻草人哨長", 16, Color("#fff2cc"), false)
@@ -350,7 +359,6 @@ func setup_hud() -> void:
 	b_top.add_child(boss_name_label)
 	boss_state_badge = _styled_label("", 14, GOLD, false)
 	b_top.add_child(boss_state_badge)
-
 	boss_hp_bar = ProgressBar.new()
 	boss_hp_bar.min_value = 0
 	boss_hp_bar.max_value = 6
@@ -361,11 +369,11 @@ func setup_hud() -> void:
 	boss_hp_bar.add_theme_stylebox_override("fill", make_panel_style(Color("#f06b4f"), Color.TRANSPARENT, 8, 0, 0, 0))
 	b_box.add_child(boss_hp_bar)
 
-	# 4. Bottom-Center Stack: Subtitle Banner -> Contextual Action Pill -> 4-Slot ARPG Hotbar
+	# 4. Bottom-Center Stack
 	var bottom_stack := VBoxContainer.new()
 	bottom_stack.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
-	bottom_stack.offset_left = -360
-	bottom_stack.offset_right = 360
+	bottom_stack.offset_left = -380
+	bottom_stack.offset_right = 380
 	bottom_stack.offset_top = -205
 	bottom_stack.offset_bottom = -16
 	bottom_stack.alignment = BoxContainer.ALIGNMENT_END
@@ -398,21 +406,148 @@ func setup_hud() -> void:
 	var atk_pair := _make_hotbar_slot(hotbar, "左鍵 / J", "揮劍", Color("#4da1e8"))
 	slot_attack = atk_pair[0]
 	slot_attack_cd = atk_pair[1]
-
 	var mnt_pair := _make_hotbar_slot(hotbar, "F", "上鞍騎乘", Color("#498e62"))
 	slot_mount = mnt_pair[0]
 	slot_mount_sub = mnt_pair[2]
-
 	var wlf_pair := _make_hotbar_slot(hotbar, "Q", "巨狼破防", Color("#d97836"))
 	slot_wolf = wlf_pair[0]
 	slot_wolf_cd = wlf_pair[1]
-
+	var bag_pair := _make_hotbar_slot(hotbar, "I", "背包造裝", Color("#c99438"))
+	slot_bag = bag_pair[0]
 	var rst_pair := _make_hotbar_slot(hotbar, "R", "重置序章", Color("#7d8597"))
 	slot_reset = rst_pair[0]
 
+	_build_inventory_modal()
+
+func _build_inventory_modal() -> void:
+	inv_panel = PanelContainer.new()
+	inv_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	inv_panel.offset_left = -360
+	inv_panel.offset_right = 360
+	inv_panel.offset_top = -235
+	inv_panel.offset_bottom = 225
+	inv_panel.add_theme_stylebox_override("panel", make_panel_style(UI_PARCHMENT, UI_WOOD_BORDER, 18, 4, 22, 16))
+	inv_panel.hide()
+	hud_layer.add_child(inv_panel)
+
+	var root_v := VBoxContainer.new()
+	root_v.add_theme_constant_override("separation", 10)
+	inv_panel.add_child(root_v)
+
+	var header := HBoxContainer.new()
+	root_v.add_child(header)
+	var h_title := _styled_label("🎒 旅人背包 × PoE 2 退休魔物通貨造裝（按 I 關閉）", 20, UI_INK, false)
+	h_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(h_title)
+	var close_btn := Button.new()
+	close_btn.text = "關閉 [I]"
+	close_btn.pressed.connect(toggle_inventory)
+	header.add_child(close_btn)
+
+	inv_stats_label = _styled_label("", 15, Color("#5a3b28"), false)
+	root_v.add_child(inv_stats_label)
+	inv_equipped_label = _styled_label("", 14, Color("#244a75"), false)
+	root_v.add_child(inv_equipped_label)
+	inv_currency_label = _styled_label("", 15, Color("#8a4b16"), false)
+	root_v.add_child(inv_currency_label)
+
+	# Currency Crafting Action Buttons
+	var craft_row := HBoxContainer.new()
+	craft_row.add_theme_constant_override("separation", 8)
+	root_v.add_child(craft_row)
+
+	var btn_equip := Button.new()
+	btn_equip.text = "穿戴所選裝備"
+	btn_equip.pressed.connect(func() -> void:
+		var msg := PrologueState.equip_from_inventory(selected_inv_idx)
+		if not msg.is_empty():
+			selected_inv_idx = -1
+			player_sword.visible = PrologueState.has_sword
+			wolf_spring_pad.visible = PrologueState.has_spring_saddle
+			_refresh_inventory_ui(msg)
+	)
+	craft_row.add_child(btn_equip)
+
+	var btn_blue := Button.new()
+	btn_blue.text = "用【改裝藍印章】(白→藍)"
+	btn_blue.pressed.connect(func() -> void:
+		_refresh_inventory_ui(PrologueState.craft_blue(selected_inv_idx))
+	)
+	craft_row.add_child(btn_blue)
+
+	var btn_gold := Button.new()
+	btn_gold.text = "用【百年金漆罐】(升黃/加詞綴)"
+	btn_gold.pressed.connect(func() -> void:
+		_refresh_inventory_ui(PrologueState.craft_gold(selected_inv_idx))
+	)
+	craft_row.add_child(btn_gold)
+
+	var btn_chaos := Button.new()
+	btn_chaos.text = "用【史萊姆洗白劑】(重洗黃裝)"
+	btn_chaos.pressed.connect(func() -> void:
+		_refresh_inventory_ui(PrologueState.craft_chaos(selected_inv_idx))
+	)
+	craft_row.add_child(btn_chaos)
+
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(670, 185)
+	root_v.add_child(scroll)
+	inv_list_box = VBoxContainer.new()
+	inv_list_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	inv_list_box.add_theme_constant_override("separation", 6)
+	scroll.add_child(inv_list_box)
+
+	inv_feedback_label = _styled_label("點選下方一件背包裝備後，即可穿戴或點擊通貨造裝！", 14, Color("#8a2f2f"), false)
+	root_v.add_child(inv_feedback_label)
+
+func toggle_inventory() -> void:
+	if input_locked and not inv_open:
+		return
+	inv_open = not inv_open
+	inv_panel.visible = inv_open
+	if inv_open:
+		_refresh_inventory_ui("點選下方裝備即可穿戴，或使用造裝通貨即時洗詞綴！")
+
+func _refresh_inventory_ui(msg := "") -> void:
+	if not msg.is_empty():
+		inv_feedback_label.text = msg
+	inv_stats_label.text = "總屬性：攻擊 %d　｜　暴擊 %d%%　｜　破防增傷 +%d　｜　移速 %d%%　｜　銅幣 %d¢" % [
+		PrologueState.get_total_atk(),
+		PrologueState.get_total_crit(),
+		PrologueState.get_stagger_bonus(),
+		int(round(PrologueState.get_speed_multiplier() * 100.0)),
+		PrologueState.coins
+	]
+	var w_txt := PrologueState.format_item_details(PrologueState.equipped_weapon) if not PrologueState.equipped_weapon.is_empty() else "（空）"
+	var s_txt := PrologueState.format_item_details(PrologueState.equipped_saddle) if not PrologueState.equipped_saddle.is_empty() else "（標準皮鞍）"
+	inv_equipped_label.text = "已裝備武器：%s\n已裝備狼鞍：%s" % [w_txt, s_txt]
+	inv_currency_label.text = "造裝通貨：改裝藍印章 x%d　｜　百年金漆罐 x%d　｜　史萊姆洗白劑 x%d" % [
+		PrologueState.orb_blue, PrologueState.orb_gold, PrologueState.orb_chaos
+	]
+
+	for c in inv_list_box.get_children():
+		c.queue_free()
+	if PrologueState.inventory.is_empty():
+		inv_list_box.add_child(_styled_label("背包目前為空。去地圖三擊敗小怪或精英班長就能噴出裝備與通貨！", 14, Color("#6b4a35"), false))
+	else:
+		for i in range(PrologueState.inventory.size()):
+			var item: Dictionary = PrologueState.inventory[i]
+			var btn := Button.new()
+			var prefix := "▶ " if i == selected_inv_idx else "   "
+			btn.text = prefix + PrologueState.format_item_details(item)
+			btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+			btn.add_theme_color_override("font_color", PrologueState.rarity_color(item["rarity"]))
+			var cap_idx := i
+			btn.pressed.connect(func() -> void:
+				selected_inv_idx = cap_idx
+				_refresh_inventory_ui("已選取：" + PrologueState.format_item_title(item))
+			)
+			inv_list_box.add_child(btn)
+	update_status_line()
+
 func _make_hotbar_slot(parent: HBoxContainer, key_txt: String, title_txt: String, accent: Color) -> Array:
 	var slot := PanelContainer.new()
-	slot.custom_minimum_size = Vector2(114, 58)
+	slot.custom_minimum_size = Vector2(108, 58)
 	slot.add_theme_stylebox_override("panel", make_panel_style(UI_DARK_BG, accent, 12, 2, 8, 6))
 	parent.add_child(slot)
 
@@ -431,11 +566,9 @@ func _make_hotbar_slot(parent: HBoxContainer, key_txt: String, title_txt: String
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	vbox.add_theme_constant_override("separation", 2)
 	slot.add_child(vbox)
-
 	var k := _styled_label(key_txt, 12, accent.lightened(0.25), false)
 	k.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(k)
-
 	var t := _styled_label(title_txt, 14, Color("#fff8e8"), false)
 	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(t)
@@ -522,7 +655,7 @@ func step_shared_physics(delta: float, cam_override_target := Vector3.INF) -> bo
 
 	_update_hotbar_visuals()
 
-	if input_locked or PrologueState.is_transitioning:
+	if input_locked or inv_open or PrologueState.is_transitioning:
 		bird.position = player.position + Vector3(0.0, 1.45 + sin(Time.get_ticks_msec() * 0.006) * 0.05, 0.0)
 		return true
 
@@ -531,22 +664,22 @@ func step_shared_physics(delta: float, cam_override_target := Vector3.INF) -> bo
 	var right := flat(camera.transform.basis.x).normalized()
 	var fwd := flat(camera.transform.basis.z).normalized()
 	var dir := (right * h + fwd * v).limit_length()
-	var buff_mult := 1.15 if PrologueState.slime_buff_active else 1.0
+	var spd_mult := PrologueState.get_speed_multiplier()
 
 	if air_slam_active:
 		vertical_vel -= 28.0 * delta
 		player.position.y += vertical_vel * delta
-		move_body(player, dir, 5.4 * buff_mult)
+		move_body(player, dir, 5.6 * spd_mult)
 		if player.position.y <= 0.0:
 			player.position.y = 0.0
 			_finish_air_slam()
 	elif PrologueState.mounted:
-		var spd := (12.0 if wolf_charge_timer > 0.0 else 7.6) * buff_mult
+		var spd := (12.0 if wolf_charge_timer > 0.0 else 7.6) * spd_mult
 		move_body(wolf, dir if dir.length() > 0.05 else (Vector3.RIGHT if wolf_charge_timer > 0.0 else Vector3.ZERO), spd)
 		player.position = wolf.position + Vector3.UP * 1.38
 		player.rotation.y = wolf.rotation.y
 	else:
-		move_body(player, dir, 5.2 * buff_mult)
+		move_body(player, dir, 5.2 * spd_mult)
 		update_wolf_follow(delta)
 
 	var bird_target := (wolf.position + Vector3(0, 1.56, 0.85)) if PrologueState.mounted else (player.position + Vector3(0, 1.45, 0))
@@ -580,7 +713,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if on_map_input(event):
 		return
-	if input_locked:
+	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_I:
+		toggle_inventory()
+		return
+	if input_locked or inv_open:
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.physical_keycode:
@@ -608,6 +744,9 @@ func on_wolf_action() -> void:
 func on_sword_hit() -> void:
 	pass
 
+func on_air_slam_land() -> void:
+	pass
+
 func perform_sword_attack() -> void:
 	if not can_attack or not PrologueState.has_sword or PrologueState.mounted or attack_cooldown > 0.0:
 		return
@@ -625,7 +764,7 @@ func toggle_mount() -> void:
 		if PrologueState.has_spring_saddle:
 			player.position = wolf.position + Vector3(0, 1.55, 0)
 			air_slam_active = true
-			vertical_vel = 11.2
+			vertical_vel = 11.4
 			show_player_emote("✨", 1.2)
 			return
 		var shape := SphereShape3D.new()
@@ -648,12 +787,13 @@ func toggle_mount() -> void:
 func _finish_air_slam() -> void:
 	air_slam_active = false
 	shake_time = 0.22
-	var ring := marker(player.position, GOLD, 2.5)
+	var ring := marker(player.position, GOLD, 2.6)
 	var tw := create_tween()
 	tw.tween_property(ring, "scale", Vector3(1.6, 1.0, 1.6), 0.25)
 	tw.tween_callback(ring.queue_free)
 	show_player_emote("✨", 1.3)
 	show_subtitle("彈簧試驗鞍座・飛天暴擊下劈！(200% CRIT)", 2.2)
+	on_air_slam_land()
 
 func update_status_line() -> void:
 	var hearts := ""
@@ -662,12 +802,12 @@ func update_status_line() -> void:
 	hp_hearts_label.text = "旅人  " + hearts.strip_edges()
 	hp_bar.value = PrologueState.player_hp
 
-	var tags: Array[String] = []
-	tags.append("⚔ 五折短劍" if PrologueState.has_sword else "無武器")
+	var tags: Array[String] = ["攻%d" % PrologueState.get_total_atk()]
+	tags.append("包%d" % PrologueState.inventory.size())
+	if not PrologueState.campfire_dish.is_empty():
+		tags.append("🍲" + PrologueState.campfire_dish)
 	if PrologueState.has_spring_saddle:
-		tags.append("🌀 彈簧鞍座")
+		tags.append("🌀彈簧鞍")
 	if PrologueState.mounted:
-		tags.append("🐺 騎乘中")
-	if PrologueState.slime_buff_active:
-		tags.append("✨ 移速+15%")
-	gear_tags_label.text = "  ｜  ".join(tags)
+		tags.append("🐺騎乘")
+	gear_tags_label.text = " ｜ ".join(tags)
