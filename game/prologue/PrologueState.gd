@@ -5,6 +5,7 @@ var has_started := false
 var has_sword := false
 var has_spring_saddle := false
 var campfire_dish := ""
+var flask_charges := 2
 var skull_gift_claimed := false
 var road_intro_played := false
 var timber_broken := false
@@ -32,6 +33,8 @@ var is_transitioning := false
 var _fade_layer: CanvasLayer
 var _fade_rect: ColorRect
 var _zone_banner: Label
+var _sfx_player: AudioStreamPlayer
+var _sfx_gen: AudioStreamGenerator
 
 const AFFIX_POOL := [
 	{"name": "鋒利 (+1 攻擊)", "stat": "atk", "val": 1},
@@ -66,11 +69,94 @@ func _ready() -> void:
 	_zone_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fade_layer.add_child(_zone_banner)
 
+	# Procedural zero-dependency storybook SFX player
+	_sfx_gen = AudioStreamGenerator.new()
+	_sfx_gen.mix_rate = 22050.0
+	_sfx_gen.buffer_length = 0.35
+	_sfx_player = AudioStreamPlayer.new()
+	_sfx_player.stream = _sfx_gen
+	_sfx_player.volume_db = -8.0
+	add_child(_sfx_player)
+	_sfx_player.play()
+
+func play_sfx(kind: String) -> void:
+	if not _sfx_player or not _sfx_player.playing:
+		return
+	var pb := _sfx_player.get_stream_playback() as AudioStreamGeneratorPlayback
+	if pb == null:
+		return
+	var sr := 22050.0
+	var frames := 0
+	var f0 := 440.0
+	var f1 := 440.0
+	var amp := 0.22
+	var noise_mix := 0.0
+	match kind:
+		"slash":
+			frames = int(sr * 0.09)
+			f0 = 520.0
+			f1 = 190.0
+			noise_mix = 0.35
+		"slingshot":
+			frames = int(sr * 0.11)
+			f0 = 310.0
+			f1 = 760.0
+			amp = 0.25
+		"hit":
+			frames = int(sr * 0.08)
+			f0 = 210.0
+			f1 = 75.0
+			amp = 0.32
+			noise_mix = 0.25
+		"coin":
+			frames = int(sr * 0.14)
+			f0 = 880.0
+			f1 = 1320.0
+			amp = 0.20
+		"stamp":
+			frames = int(sr * 0.22)
+			f0 = 160.0
+			f1 = 52.0
+			amp = 0.42
+			noise_mix = 0.30
+		"craft":
+			frames = int(sr * 0.18)
+			f0 = 523.25
+			f1 = 1046.5
+			amp = 0.24
+		"heal":
+			frames = int(sr * 0.20)
+			f0 = 440.0
+			f1 = 659.25
+			amp = 0.22
+		"wood":
+			frames = int(sr * 0.14)
+			f0 = 180.0
+			f1 = 65.0
+			amp = 0.36
+			noise_mix = 0.55
+		_:
+			return
+	var avail := pb.get_frames_available()
+	var count := mini(frames, avail)
+	if count <= 0:
+		return
+	var phase := 0.0
+	for i in range(count):
+		var t := float(i) / float(count)
+		var freq := lerpf(f0, f1, t)
+		phase += TAU * freq / sr
+		var env := (1.0 - t) * (1.0 - t)
+		var sig := sin(phase) * (1.0 - noise_mix) + randf_range(-1.0, 1.0) * noise_mix
+		var s := sig * env * amp
+		pb.push_frame(Vector2(s, s))
+
 func reset_all() -> void:
 	has_started = false
 	has_sword = false
 	has_spring_saddle = false
 	campfire_dish = ""
+	flask_charges = 2
 	skull_gift_claimed = false
 	road_intro_played = false
 	timber_broken = false
@@ -88,7 +174,7 @@ func reset_all() -> void:
 	equipped_saddle = {}
 	inventory.clear()
 	spawn_tag = "default"
-	transition_to("res://prologue/CampfireClearing.tscn", "default", "林間營火空地")
+	transition_to("res://prologue/CampfireClearing.tscn", "default", "湖畔營火窩")
 
 func transition_to(scene_path: String, target_spawn := "default", destination_title := "") -> void:
 	if is_transitioning:
@@ -126,9 +212,12 @@ func make_item(item_name: String, slot: String, rarity: String, base_atk := 0, s
 		"slot": slot, # "weapon" or "saddle"
 		"rarity": rarity, # "normal", "magic", "rare", "unique"
 		"base_atk": base_atk,
-		"special": special,
+		"special": special, # "", "spring_slam", "slingshot"
 		"affixes": affixes,
 	}
+
+func is_slingshot() -> bool:
+	return not equipped_weapon.is_empty() and String(equipped_weapon.get("special", "")) == "slingshot"
 
 func _pick_random_affix(existing: Array) -> Dictionary:
 	var candidates: Array = []
@@ -162,6 +251,7 @@ func equip_from_inventory(idx: int) -> String:
 			inventory.append(equipped_saddle)
 		equipped_saddle = item
 		has_spring_saddle = item["special"] == "spring_slam"
+	play_sfx("craft")
 	return "已裝備：" + format_item_title(item)
 
 func craft_blue(idx: int) -> String:
@@ -176,6 +266,7 @@ func craft_blue(idx: int) -> String:
 	item["rarity"] = "magic"
 	var affixes: Array = item["affixes"]
 	affixes.append(_pick_random_affix(affixes))
+	play_sfx("craft")
 	return "造裝成功！" + format_item_title(item) + " 獲得新詞綴！"
 
 func craft_gold(idx: int) -> String:
@@ -192,6 +283,7 @@ func craft_gold(idx: int) -> String:
 	orb_gold -= 1
 	item["rarity"] = "rare"
 	affixes.append(_pick_random_affix(affixes))
+	play_sfx("craft")
 	return "金漆升階成功！" + format_item_title(item) + " 新增一條詞綴！"
 
 func craft_chaos(idx: int) -> String:
@@ -207,6 +299,7 @@ func craft_chaos(idx: int) -> String:
 	for _i in range(3):
 		new_affixes.append(_pick_random_affix(new_affixes))
 	item["affixes"] = new_affixes
+	play_sfx("craft")
 	return "洗白重鑄完成！" + format_item_title(item) + " 詞綴已刷新！"
 
 func salvage_normal_items() -> Dictionary:
@@ -224,6 +317,8 @@ func salvage_normal_items() -> Dictionary:
 	coins += gained_coins
 	orb_blue += gained_blue
 	orb_chaos += gained_chaos
+	if count > 0:
+		play_sfx("coin")
 	return {"count": count, "coins": gained_coins, "blue": gained_blue, "chaos": gained_chaos}
 
 func get_total_atk() -> int:
@@ -289,8 +384,11 @@ func format_item_details(item: Dictionary) -> String:
 	var parts: Array[String] = [format_item_title(item)]
 	if int(item["base_atk"]) > 0:
 		parts.append("基礎攻+%d" % int(item["base_atk"]))
-	if not String(item["special"]).is_empty():
+	var sp := String(item.get("special", ""))
+	if sp == "spring_slam":
 		parts.append("特效:下騎彈飛200%暴擊")
+	elif sp == "slingshot":
+		parts.append("職業:弱點狙擊手(支援騎射!)")
 	for a in item["affixes"]:
 		parts.append(String(a["name"]))
 	return " · ".join(parts)

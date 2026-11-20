@@ -81,6 +81,9 @@ var living_npcs: Array[Dictionary] = []
 var bouncing_coins: Array[Dictionary] = []
 var water_ripples: Array[Dictionary] = []
 var cloud_puffs: Array[Dictionary] = []
+var projectiles: Array[Dictionary] = []
+var destructibles: Array[Dictionary] = []
+var bird_alert_target := Vector3.INF
 var _walk_phase := 0.0
 var _wolf_phase := 0.0
 
@@ -105,10 +108,13 @@ var boss_state_badge: Label
 # Compact Bottom Hotbar Pills
 var slot_attack: PanelContainer
 var slot_attack_cd: ColorRect
+var slot_attack_sub: Label
 var slot_mount: PanelContainer
 var slot_mount_sub: Label
 var slot_wolf: PanelContainer
 var slot_wolf_cd: ColorRect
+var slot_flask: PanelContainer
+var slot_flask_sub: Label
 var slot_bag: PanelContainer
 var slot_coop: PanelContainer
 var slot_reset: PanelContainer
@@ -476,6 +482,7 @@ func spawn_bouncing_coins(origin: Vector3, count: int, coin_val := 5) -> void:
 		})
 
 func spawn_wood_burst(origin: Vector3, col := TIMBER_LIGHT, pieces := 8) -> void:
+	PrologueState.play_sfx("wood")
 	for i in range(pieces):
 		var p := box(self, origin + Vector3(randf_range(-0.6, 0.6), 0.8, randf_range(-1.8, 1.8)), Vector3(0.42, 0.22, 0.22), col)
 		var dest := p.position + Vector3(randf_range(1.6, 4.2), randf_range(0.8, 2.2), randf_range(-2.2, 2.2))
@@ -484,6 +491,33 @@ func spawn_wood_burst(origin: Vector3, col := TIMBER_LIGHT, pieces := 8) -> void
 		tw.tween_property(p, "rotation_degrees", Vector3(randf_range(-240, 240), randf_range(-240, 240), randf_range(-240, 240)), 0.42)
 		tw.tween_property(p, "scale", Vector3(0.05, 0.05, 0.05), 0.42)
 		tw.chain().tween_callback(p.queue_free)
+
+func spawn_destructible_crate(pos: Vector3, coin_count := 3) -> void:
+	var crate := Node3D.new()
+	crate.position = pos
+	crate.rotation_degrees.y = randf_range(-22.0, 22.0)
+	add_child(crate)
+	box(crate, Vector3(0, 0.46, 0), Vector3(0.92, 0.92, 0.92), TIMBER_LIGHT)
+	box(crate, Vector3(0, 0.46, 0), Vector3(0.96, 0.16, 0.96), TIMBER)
+	destructibles.append({"node": crate, "pos": pos, "coins": coin_count, "broken": false})
+
+func _damage_destructibles(origin: Vector3, radius := 2.6) -> bool:
+	var hit_any := false
+	for d in destructibles:
+		if bool(d["broken"]):
+			continue
+		var dn: Node3D = d["node"]
+		if not is_instance_valid(dn):
+			continue
+		if flat(origin - dn.position).length() <= radius:
+			d["broken"] = true
+			hit_any = true
+			var p := dn.position
+			dn.queue_free()
+			spawn_wood_burst(p, TIMBER_LIGHT, 7)
+			spawn_bouncing_coins(p, int(d["coins"]), 5)
+			spawn_damage_pop(p, "+%d¢" % (int(d["coins"]) * 5), GOLD, false)
+	return hit_any
 
 func play_giant_retirement_stamp(target_pos: Vector3) -> void:
 	# The signature 3-Second Visual Hook: Giant 3D Red Stamp slams from the sky!
@@ -498,6 +532,7 @@ func play_giant_retirement_stamp(target_pos: Vector3) -> void:
 	var tw := create_tween()
 	tw.tween_property(stamp, "position:y", 0.35, 0.22).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
 	tw.tween_callback(func() -> void:
+		PrologueState.play_sfx("stamp")
 		hitstop_frames = 6
 		shake_time = 0.28
 		shake_strength = 0.26
@@ -763,12 +798,16 @@ func setup_hud() -> void:
 	var atk_pair := _make_hotbar_slot(hotbar, "J / 左鍵", "揮劍", Color("#4da1e8"))
 	slot_attack = atk_pair[0]
 	slot_attack_cd = atk_pair[1]
+	slot_attack_sub = atk_pair[2]
 	var mnt_pair := _make_hotbar_slot(hotbar, "F", "上鞍", Color("#498e62"))
 	slot_mount = mnt_pair[0]
 	slot_mount_sub = mnt_pair[2]
 	var wlf_pair := _make_hotbar_slot(hotbar, "Q", "巨狼撞", Color("#d97836"))
 	slot_wolf = wlf_pair[0]
 	slot_wolf_cd = wlf_pair[1]
+	var flk_pair := _make_hotbar_slot(hotbar, "1", "水壺 x2", Color("#e0534f"))
+	slot_flask = flk_pair[0]
+	slot_flask_sub = flk_pair[2]
 	var bag_pair := _make_hotbar_slot(hotbar, "I", "造裝", Color("#c99438"))
 	slot_bag = bag_pair[0]
 	var coop_pair := _make_hotbar_slot(hotbar, "C", "拉隊友", Color("#58b9ff"))
@@ -1044,8 +1083,26 @@ func _animate_living_world(delta: float) -> void:
 			cn.position += to_p.normalized() * 11.5 * delta
 			if to_p.length() < 0.75:
 				PrologueState.coins += int(c["val"])
+				PrologueState.play_sfx("coin")
 				cn.queue_free()
 				bouncing_coins.remove_at(i)
+
+	# Slingshot projectile physics
+	for i in range(projectiles.size() - 1, -1, -1):
+		var pr: Dictionary = projectiles[i]
+		if not is_instance_valid(pr["node"]):
+			projectiles.remove_at(i)
+			continue
+		var pn: Node3D = pr["node"]
+		pr["age"] = float(pr["age"]) + delta
+		pn.position += (pr["vel"] as Vector3) * delta
+		pn.rotation.y += delta * 14.0
+		var hit := _damage_destructibles(pn.position, 1.3)
+		if not hit:
+			hit = on_projectile_hit(pn.position)
+		if hit or float(pr["age"]) > 0.72:
+			pn.queue_free()
+			projectiles.remove_at(i)
 
 	var p_speed := flat(player.velocity).length()
 	if p_speed > 0.4 and not PrologueState.mounted and not air_slam_active:
@@ -1118,9 +1175,16 @@ func step_shared_physics(delta: float, cam_override_target := Vector3.INF) -> bo
 		update_wolf_follow(delta)
 
 	var t_bird := Time.get_ticks_msec() * 0.007
-	var bird_hover := Vector3(sin(t_bird * 0.6) * 0.16, 1.48 + absf(sin(t_bird)) * 0.10, cos(t_bird * 0.6) * 0.12)
-	var bird_target := (wolf.position + Vector3(0, 1.60 + absf(sin(t_bird)) * 0.06, 0.85)) if PrologueState.mounted else (player.position + bird_hover)
-	bird.position = bird.position.lerp(bird_target, clampf(delta * 10.0, 0.0, 1.0))
+	var bird_speed := 10.0
+	var bird_target := Vector3.ZERO
+	if bird_alert_target != Vector3.INF and flat(feet() - bird_alert_target).length() < 9.5:
+		var to_alert := flat(bird_alert_target - feet()).normalized()
+		bird_target = feet() + to_alert * 1.45 + Vector3(0, 1.95 + absf(sin(t_bird * 2.2)) * 0.25, 0)
+		bird_speed = 7.0
+	else:
+		var bird_hover := Vector3(sin(t_bird * 0.6) * 0.16, 1.48 + absf(sin(t_bird)) * 0.10, cos(t_bird * 0.6) * 0.12)
+		bird_target = (wolf.position + Vector3(0, 1.60 + absf(sin(t_bird)) * 0.06, 0.85)) if PrologueState.mounted else (player.position + bird_hover)
+	bird.position = bird.position.lerp(bird_target, clampf(delta * bird_speed, 0.0, 1.0))
 
 	var target := cam_override_target if cam_override_target != Vector3.INF else feet()
 	position_camera(target, clampf(delta * 4.8, 0.0, 1.0))
@@ -1131,7 +1195,10 @@ func step_shared_physics(delta: float, cam_override_target := Vector3.INF) -> bo
 func _update_hotbar_visuals() -> void:
 	if not slot_attack:
 		return
-	slot_attack.modulate = Color.WHITE if (can_attack and not PrologueState.mounted) else Color(0.55, 0.55, 0.62, 0.85)
+	var can_use_atk := can_attack and (not PrologueState.mounted or PrologueState.is_slingshot())
+	slot_attack.modulate = Color.WHITE if can_use_atk else Color(0.55, 0.55, 0.62, 0.85)
+	if slot_attack_sub:
+		slot_attack_sub.text = "彈弓" if PrologueState.is_slingshot() else "揮劍"
 	slot_attack_cd.visible = attack_cooldown > 0.0
 	if PrologueState.mounted:
 		slot_mount_sub.text = "彈飛劈!" if PrologueState.has_spring_saddle else "下鞍"
@@ -1140,6 +1207,9 @@ func _update_hotbar_visuals() -> void:
 	slot_wolf_cd.visible = wolf_charge_cooldown > 0.0
 	if wolf_charge_cooldown > 0.0:
 		slot_wolf_cd.scale.y = clampf(wolf_charge_cooldown / wolf_charge_max, 0.0, 1.0)
+	if slot_flask and slot_flask_sub:
+		slot_flask_sub.text = "水壺 x%d" % PrologueState.flask_charges
+		slot_flask.modulate = Color.WHITE if PrologueState.flask_charges > 0 else Color(0.55, 0.55, 0.62, 0.85)
 
 func update_wolf_follow(_delta: float) -> void:
 	var diff := flat(player.position - wolf.position)
@@ -1157,6 +1227,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.physical_keycode:
+			KEY_1: drink_flask()
 			KEY_E: on_interact()
 			KEY_F: toggle_mount()
 			KEY_Q: on_wolf_action()
@@ -1165,6 +1236,26 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_R: PrologueState.reset_all()
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		perform_sword_attack()
+
+func drink_flask() -> void:
+	if PrologueState.flask_charges <= 0:
+		show_player_emote("?", 0.9)
+		show_subtitle("隨身水壺空了，回到營火即可免費補滿！", 2.6)
+		return
+	if PrologueState.player_hp >= 5:
+		show_player_emote("♥", 0.9)
+		show_subtitle("目前滿血中，水壺還剩 %d 口！" % PrologueState.flask_charges, 2.2)
+		return
+	PrologueState.flask_charges -= 1
+	PrologueState.player_hp = mini(5, PrologueState.player_hp + 2)
+	PrologueState.play_sfx("heal")
+	var ring := marker(feet(), FIRE_ORANGE, 1.8)
+	var tw := create_tween()
+	tw.tween_property(ring, "scale", Vector3(1.6, 1.0, 1.6), 0.35)
+	tw.tween_callback(ring.queue_free)
+	spawn_damage_pop(feet(), "+2 ♥", Color("#98ffbd"), true)
+	show_player_emote("🍵", 1.2)
+	update_status_line()
 
 func on_map_input(_event: InputEvent) -> bool:
 	return false
@@ -1181,22 +1272,39 @@ func on_wolf_action() -> void:
 		return
 	wolf_charge_cooldown = wolf_charge_max
 	wolf_charge_timer = 0.45
+	_damage_destructibles(feet(), 3.0)
 	show_player_emote("!", 0.7)
 
 func on_sword_hit() -> void:
 	pass
 
+func on_projectile_hit(_pos: Vector3) -> bool:
+	return false
+
 func on_air_slam_land() -> void:
 	pass
 
 func perform_sword_attack() -> void:
-	if not can_attack or PrologueState.mounted or attack_cooldown > 0.0:
+	if not can_attack or attack_cooldown > 0.0:
+		return
+	if PrologueState.is_slingshot():
+		attack_cooldown = 0.24
+		PrologueState.play_sfx("slingshot")
+		var origin := feet() + Vector3(0, 1.05 if PrologueState.mounted else 0.75, 0)
+		var yaw := wolf.rotation.y if PrologueState.mounted else player.rotation.y
+		var forward := Vector3(sin(yaw), 0.0, cos(yaw)).normalized()
+		var shot := sphere(self, origin + forward * 0.65, Vector3(0.28, 0.28, 0.28), GOLD, true)
+		projectiles.append({"node": shot, "vel": forward * 21.0, "age": 0.0})
+		return
+	if PrologueState.mounted:
 		return
 	attack_cooldown = 0.28
+	PrologueState.play_sfx("slash")
 	spawn_slash_arc(player.position, player.rotation.y, GOLD if PrologueState.has_sword else Color("#e6f4ff"))
 	var tw := create_tween()
 	tw.tween_property(player_sword, "rotation:y", -1.55, 0.09)
 	tw.tween_property(player_sword, "rotation:y", 0.0, 0.14)
+	_damage_destructibles(player.position, 2.6)
 	on_sword_hit()
 
 func toggle_mount() -> void:

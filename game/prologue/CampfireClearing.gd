@@ -73,6 +73,20 @@ func _build_map() -> void:
 	wooden_footbridge(Vector3(9.0, 0.0, -0.2), 4.2, 2.2, 12.0, 0.44)
 	wooden_footbridge(Vector3(3.2, 0.0, 7.1), 3.6, 1.9, 95.0, 0.36)
 
+	# Cozy lakeside fishing pier + rod & bucket
+	var pier := Node3D.new()
+	pier.position = Vector3(-2.6, 0.16, 4.9)
+	pier.rotation_degrees.y = -12.0
+	add_child(pier)
+	box(pier, Vector3(0, 0, 0.55), Vector3(1.5, 0.14, 2.2), BOARDWALK)
+	cylinder(pier, Vector3(-0.6, -0.2, 1.4), 0.08, 0.09, 0.7, TIMBER)
+	cylinder(pier, Vector3(0.6, -0.2, 1.4), 0.08, 0.09, 0.7, TIMBER)
+	var rod := cylinder(pier, Vector3(0.35, 0.65, 1.35), 0.02, 0.04, 1.85, TIMBER_LIGHT)
+	rod.rotation_degrees = Vector3(52.0, 0.0, -8.0)
+	cylinder(pier, Vector3(-0.35, 0.22, 0.9), 0.18, 0.15, 0.34, STONE_LIGHT)
+	spawn_destructible_crate(Vector3(-3.8, 0.0, 2.2), 3)
+	spawn_destructible_crate(Vector3(6.2, 0.0, 3.8), 3)
+
 	# Cliff outcrops & dense perimeter pine/rounded tree grove
 	cliff_outcrop(Vector3(-14.5, 0.0, 3.2), 2.8, 2.4, 2.6, STONE, NIGHT_GRASS_LIGHT, 20.0)
 	cliff_outcrop(Vector3(-13.8, 0.0, -7.2), 3.2, 2.6, 2.8, STONE_LIGHT, NIGHT_GRASS, -15.0)
@@ -242,8 +256,15 @@ func _physics_process(delta: float) -> void:
 	campfire_smoke.position.x = sin(t * 2.2) * 0.22
 	if start_pill and is_instance_valid(start_pill):
 		start_pill.modulate.a = 0.78 + sin(t * 4.5) * 0.22
-	if not step_shared_physics(delta):
+	var cam_t := (feet() + Vector3(sin(t * 0.45) * 0.65, 0.0, cos(t * 0.35) * 0.45)) if not PrologueState.has_started else Vector3.INF
+	if not step_shared_physics(delta, cam_t):
 		return
+	if camp_loot_node and is_instance_valid(camp_loot_node):
+		bird_alert_target = camp_loot_node.position
+	elif PrologueState.boss_retired and not PrologueState.skull_gift_claimed:
+		bird_alert_target = SKULL_CAVE_POS
+	else:
+		bird_alert_target = Vector3.INF
 	_update_ui()
 
 func _retire_camp_grunt() -> void:
@@ -267,6 +288,7 @@ func _retire_camp_grunt() -> void:
 	grunt_bubble.modulate = Color("#b8ffd0")
 	PrologueState.campfire_dish = "烤魚"
 	PrologueState.player_hp = 5
+	PrologueState.flask_charges = 2
 	get_tree().create_timer(0.65).timeout.connect(func() -> void:
 		if is_instance_valid(grunt_helmet):
 			grunt_helmet.hide()
@@ -283,12 +305,24 @@ func on_sword_hit() -> void:
 		hitstop_frames = 3
 		shake_time = 0.09
 		shake_strength = 0.14
+		PrologueState.play_sfx("hit")
 		flash_hit(lost_grunt)
 		spawn_damage_pop(lost_grunt.position, "-%d" % PrologueState.get_total_atk(), GOLD, grunt_hp <= 0)
 		var push := flat(lost_grunt.position - player.position).normalized() * 0.45
 		lost_grunt.position += push
 		if grunt_hp <= 0:
 			_retire_camp_grunt()
+
+func on_projectile_hit(pos: Vector3) -> bool:
+	if not grunt_retired and is_instance_valid(lost_grunt) and flat(pos - lost_grunt.position).length() < 1.3:
+		grunt_hp = maxi(0, grunt_hp - PrologueState.get_total_atk())
+		PrologueState.play_sfx("hit")
+		flash_hit(lost_grunt)
+		spawn_damage_pop(lost_grunt.position, "-%d" % PrologueState.get_total_atk(), GOLD, grunt_hp <= 0)
+		if grunt_hp <= 0:
+			_retire_camp_grunt()
+		return true
+	return false
 
 func on_wolf_action() -> void:
 	super.on_wolf_action()
@@ -308,9 +342,11 @@ func on_interact() -> void:
 		PrologueState.transition_to("res://prologue/CloudhillTown.tscn", "from_campfire", "雲丘市集")
 	elif near(CAMPFIRE_POS, 2.1):
 		PrologueState.player_hp = 5
+		PrologueState.flask_charges = 2
 		PrologueState.campfire_dish = "烤魚"
+		PrologueState.play_sfx("heal")
 		show_player_emote("✨", 1.4)
-		show_subtitle("烤魚水壺已裝滿！（滿血＋攻擊 +1）", 2.8)
+		show_subtitle("烤魚水壺已裝滿！（滿血＋水壺 x2＋攻擊 +1）", 2.8)
 	elif near(LOG_JOURNAL_POS, 2.0):
 		show_player_emote("✨", 1.2)
 		show_subtitle("繪本旅記：已勸退 1 名迷路小兵" + ("、稻草人哨長" if PrologueState.boss_retired else ""), 3.2)

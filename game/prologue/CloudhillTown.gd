@@ -19,6 +19,7 @@ var slime_bubble: Label3D
 var dummies: Array[Node3D] = []
 var ambient_chatter_timer := 3.5
 var patron_bubble: Label3D
+var waterwheel_node: Node3D
 var town_travelers: Array[Dictionary] = []
 
 func _ready() -> void:
@@ -61,6 +62,16 @@ func _build_town() -> void:
 	waterfall_cascade(Vector3(-19.5, 0.0, 9.2), 2.6, 3.8, 42.0, Color("#52b8ff"), Color("#eefbff"))
 	wooden_footbridge(Vector3(18.5, 0.0, 1.2), 4.4, 2.4, 4.0, 0.44)
 	wooden_footbridge(Vector3(-1.5, 0.0, 12.4), 3.8, 2.0, 92.0, 0.36)
+
+	# Spinning wooden waterwheel by the eastern creek (Little Joy craftsmanship)
+	waterwheel_node = Node3D.new()
+	waterwheel_node.position = Vector3(16.9, 0.65, -2.8)
+	add_child(waterwheel_node)
+	cylinder(waterwheel_node, Vector3(0, 0, 0), 1.35, 1.35, 0.36, TIMBER_LIGHT)
+	for wi in range(6):
+		var paddle := box(waterwheel_node, Vector3(0, 0, 0), Vector3(0.22, 3.1, 0.52), TIMBER)
+		paddle.rotation_degrees.z = float(wi) * 30.0
+	cylinder(self, Vector3(16.2, 0.35, -2.8), 0.14, 0.18, 1.4, TIMBER)
 
 	curved_path([WEST_EXIT, Vector3(-16.5, 0, 2.4), Vector3(-9.5, 0, 1.8), Vector3(-2.0, 0, 0.6)], 2.6, TRAIL, TRAIL_STONE)
 	curved_path([Vector3(2.2, 0, 0.5), Vector3(9.5, 0, 2.2), Vector3(16.5, 0, 1.5), EAST_EXIT], 2.6, TRAIL, TRAIL_STONE)
@@ -154,6 +165,22 @@ func _build_town() -> void:
 	sphere(peng, Vector3(0, 0.42, 0), Vector3(0.55, 0.68, 0.52), Color("#3b64a8"))
 	sphere(peng, Vector3(0.36, 0.56, 0.15), Vector3(0.32, 0.24, 0.32), Color("#d4d8e2"))
 	register_living_npc(peng, 0.28, 0.08, 4.4)
+	# @amelicart-inspired Oni sipping from a mug & stacked tiny blue Slimes
+	var oni := Node3D.new()
+	oni.position = Vector3(2.55, 0.28, 2.45)
+	tav.add_child(oni)
+	cylinder(oni, Vector3(0, 0.55, 0), 0.38, 0.42, 0.95, Color("#d95f52"))
+	sphere(oni, Vector3(0, 1.25, 0), Vector3(0.60, 0.56, 0.58), Color("#e36d5e"))
+	cylinder(oni, Vector3(-0.18, 1.60, 0.10), 0.03, 0.09, 0.28, WHITE_WALL)
+	cylinder(oni, Vector3(0.18, 1.60, 0.10), 0.03, 0.09, 0.28, WHITE_WALL)
+	cylinder(oni, Vector3(0.42, 0.72, 0.25), 0.14, 0.14, 0.26, GOLD)
+	register_living_npc(oni, 0.28, 0.04, 2.2)
+	var slime_stack := Node3D.new()
+	slime_stack.position = Vector3(6.15, 0.28, 1.25)
+	tav.add_child(slime_stack)
+	sphere(slime_stack, Vector3(0, 0.28, 0), Vector3(0.56, 0.44, 0.56), Color("#58b9ff"))
+	sphere(slime_stack, Vector3(0, 0.64, 0), Vector3(0.38, 0.32, 0.38), Color("#7dd0ff"))
+	register_living_npc(slime_stack, 0.28, 0.09, 5.0)
 	patron_bubble = label_at(pig, Vector3(-0.3, 2.05, 0), "豚骨麵真香♪", Color("#ffe4b5"), 26)
 	marker(TAVERN_DOOR, Color("#69c5ed"), 0.64)
 
@@ -285,6 +312,8 @@ func _physics_process(delta: float) -> void:
 
 	slime_node.position.y = absf(sin(t * 4.8)) * 0.18
 	slime_node.scale = Vector3(1.0 + sin(t * 9.6) * 0.06, 1.0 - sin(t * 9.6) * 0.06, 1.0 + sin(t * 9.6) * 0.06)
+	if waterwheel_node and is_instance_valid(waterwheel_node):
+		waterwheel_node.rotation.z -= delta * 1.15
 	if not step_shared_physics(delta):
 		return
 	_update_ui()
@@ -298,8 +327,10 @@ func on_interact() -> void:
 			PrologueState.has_sword = true
 			player_sword.show()
 			PrologueState.add_item_to_inventory(PrologueState.make_item("生鏽步兵短劍", "weapon", "normal", 1))
+			PrologueState.add_item_to_inventory(PrologueState.make_item("旅人橡木彈弓", "weapon", "magic", 1, "slingshot"))
+			PrologueState.play_sfx("coin")
 			show_player_emote("💰", 1.4)
-			_goblin_say("爽快！再送你一把白裝胚子，按 [I] 造裝或餵波波！", 5.5)
+			_goblin_say("爽快！再送你《旅人彈弓》（支援騎射！）與白裝胚子！", 5.5)
 			create_tween().tween_property(player, "rotation:y", player.rotation.y + TAU, 0.45)
 		else:
 			show_player_emote("?", 1.2)
@@ -350,16 +381,27 @@ func on_interact() -> void:
 func on_sword_hit() -> void:
 	for d in dummies:
 		if flat(player.position - d.position).length() < 2.3:
-			var is_crit := randi() % 100 < PrologueState.get_total_crit()
-			var dmg := PrologueState.get_total_atk() * (2 if is_crit else 1)
-			hitstop_frames = 3
-			shake_time = 0.08
-			shake_strength = 0.14
-			flash_hit(d)
-			spawn_damage_pop(d.position, ("CRIT! %d" % dmg) if is_crit else "-%d" % dmg, GOLD if is_crit else Color.WHITE, is_crit)
-			var tw := create_tween()
-			tw.tween_property(d, "rotation:z", 0.38, 0.07)
-			tw.tween_property(d, "rotation:z", 0.0, 0.16)
+			_hit_dummy(d)
+
+func on_projectile_hit(pos: Vector3) -> bool:
+	for d in dummies:
+		if flat(pos - d.position).length() < 1.25:
+			_hit_dummy(d)
+			return true
+	return false
+
+func _hit_dummy(d: Node3D) -> void:
+	var is_crit := randi() % 100 < PrologueState.get_total_crit()
+	var dmg := PrologueState.get_total_atk() * (2 if is_crit else 1)
+	hitstop_frames = 3
+	shake_time = 0.08
+	shake_strength = 0.14
+	PrologueState.play_sfx("hit")
+	flash_hit(d)
+	spawn_damage_pop(d.position, ("CRIT! %d" % dmg) if is_crit else "-%d" % dmg, GOLD if is_crit else Color.WHITE, is_crit)
+	var tw := create_tween()
+	tw.tween_property(d, "rotation:z", 0.38, 0.07)
+	tw.tween_property(d, "rotation:z", 0.0, 0.16)
 
 func _goblin_say(words: String, duration := 4.5) -> void:
 	goblin_bubble.text = words

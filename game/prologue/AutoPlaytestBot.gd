@@ -109,7 +109,11 @@ func _run_town(scene: Node, _delta: float) -> void:
 				step = 2
 		2:
 			scene.toggle_inventory()
-			var target_idx := PrologueState.inventory.size() - 1
+			var target_idx := 0
+			for i in range(PrologueState.inventory.size()):
+				if String(PrologueState.inventory[i]["rarity"]) == "normal":
+					target_idx = i
+					break
 			scene.selected_inv_idx = target_idx
 			scene._refresh_inventory_ui("選取白裝胚子準備造裝")
 			print("AUTOPLAY_M2: 開啟簡約造裝工坊 (idx=%d)" % target_idx)
@@ -145,7 +149,22 @@ func _run_town(scene: Node, _delta: float) -> void:
 				timer = 0.45
 				step = 8
 		8:
+			# Test Slingshot mounted ranged combat on training dummy!
+			var prev_weapon := PrologueState.equipped_weapon
+			for i in range(PrologueState.inventory.size()):
+				if String(PrologueState.inventory[i].get("special", "")) == "slingshot":
+					PrologueState.equip_from_inventory(i)
+					break
+			if not PrologueState.mounted:
+				PrologueState.mounted = true
+			scene.wolf.look_at(Vector3(3.2, 0.0, 8.6), Vector3.UP, true)
 			scene.perform_sword_attack()
+			print("AUTOPLAY_M2: 切換《旅人橡木彈弓》並進行狼背騎射！(is_slingshot=%s)" % str(PrologueState.is_slingshot()))
+			PrologueState.mounted = false
+			for i in range(PrologueState.inventory.size()):
+				if PrologueState.inventory[i] == prev_weapon:
+					PrologueState.equip_from_inventory(i)
+					break
 			timer = 0.6
 			step = 9
 		9:
@@ -285,7 +304,11 @@ func _run_road(scene: Node, _delta: float) -> void:
 				if not PrologueState.high_chest_claimed and scene.high_chest.visible:
 					if _walk_to(scene, Vector3(25.5, 0.0, 4.5), 1.8):
 						scene.on_interact()
-				print("AUTOPLAY_M3: 高台秘寶箱領取狀態 (high_chest_claimed=%s)" % str(PrologueState.high_chest_claimed))
+				# Verify [1] Flask healing & destructible crate smashing
+				PrologueState.player_hp = 3
+				scene.drink_flask()
+				scene._damage_destructibles(Vector3(-19.0, 0.0, -1.8), 3.0)
+				print("AUTOPLAY_M3: 高台秘寶箱領取狀態 (high_chest_claimed=%s, HP=%d, Flask=%d)" % [str(PrologueState.high_chest_claimed), PrologueState.player_hp, PrologueState.flask_charges])
 				timer = 1.5
 				step = 15
 		15:

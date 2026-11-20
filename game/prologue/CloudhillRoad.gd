@@ -263,6 +263,10 @@ func _build_road_map() -> void:
 		distant_riders.append(rider)
 
 	spawn_ambient_motes(Vector3(4.0, 2.0, 0.0), Vector3(52.0, 3.4, 18.0), 30, Color("#fff5dc"), 0.10)
+	spawn_ambient_motes(Vector3(11.5, 1.8, 0.0), Vector3(16.0, 2.4, 7.5), 18, Color("#ffb085"), 0.11)
+	spawn_destructible_crate(Vector3(-19.0, 0.0, -1.8), 3)
+	spawn_destructible_crate(Vector3(-9.5, 0.0, 4.2), 3)
+	spawn_destructible_crate(Vector3(22.5, 0.0, -3.2), 4)
 
 func _spawn_public_travelers() -> void:
 	lantern_post(Vector3(3.8, 0.0, 3.6), 2.2, Color("#69c5ed"), -20.0)
@@ -456,6 +460,12 @@ func _physics_process(delta: float) -> void:
 		_clear_fog(fog_vista)
 		create_tween().tween_property(camera, "size", 24.0, 2.0)
 		show_player_emote("✨", 2.5)
+	if PrologueState.boss_retired and high_chest.visible:
+		bird_alert_target = high_chest.position
+	elif chest.visible:
+		bird_alert_target = chest.position
+	else:
+		bird_alert_target = Vector3.INF
 	_update_ui()
 
 func update_wolf_follow(_delta: float) -> void:
@@ -666,6 +676,44 @@ func on_sword_hit() -> void:
 			boss_cue.text = "[ E ] 蓋退休章！"
 			boss_cue.modulate = GOLD
 			_boss_say("等等……那封停戰信是真的？", 3.5)
+
+func on_projectile_hit(pos: Vector3) -> bool:
+	var is_crit := randi() % 100 < PrologueState.get_total_crit()
+	var dmg := PrologueState.get_total_atk() * (2 if is_crit else 1)
+	for m in mobs:
+		if not m["alive"]:
+			continue
+		var m_node: Node3D = m["node"]
+		if flat(pos - m_node.position).length() < 1.35:
+			m["hp"] = maxi(0, int(m["hp"]) - dmg)
+			PrologueState.play_sfx("hit")
+			flash_hit(m_node)
+			spawn_damage_pop(m_node.position, ("CRIT! %d" % dmg) if is_crit else "-%d" % dmg, GOLD if is_crit else Color.WHITE, is_crit)
+			var lbl: Label3D = m["label"]
+			lbl.text = "%s (%d/%d)" % [String(m["name"]), int(m["hp"]), int(m["max_hp"])]
+			if int(m["hp"]) <= 0:
+				m["alive"] = false
+				var drop_pos := m_node.position
+				m_node.queue_free()
+				_drop_loot(drop_pos, bool(m["rare"]))
+			return true
+	if boss_active and flat(pos - boss.position).length() < 1.65:
+		var total_dmg := dmg + (PrologueState.get_stagger_bonus() if boss_state == BossState.STAGGERED else 0)
+		boss_hp = maxi(0, boss_hp - total_dmg)
+		PrologueState.play_sfx("hit")
+		flash_hit(boss)
+		spawn_damage_pop(boss.position, ("CRIT! %d" % total_dmg) if is_crit else "-%d" % total_dmg, GOLD if (is_crit or boss_state == BossState.STAGGERED) else Color.WHITE, is_crit)
+		if boss_hp <= 0:
+			boss_active = false
+			boss_state = BossState.KNEELED
+			attack_ring.hide()
+			boss.rotation.z = 0.0
+			boss.position.y = -0.35
+			boss_cue.text = "[ E ] 蓋退休章！"
+			boss_cue.modulate = GOLD
+			_boss_say("等等……那封停戰信是真的？", 3.5)
+		return true
+	return false
 
 func _retire_boss() -> void:
 	PrologueState.boss_retired = true
