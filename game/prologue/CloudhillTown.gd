@@ -19,6 +19,7 @@ var slime_bubble: Label3D
 var dummies: Array[Node3D] = []
 var ambient_chatter_timer := 3.5
 var patron_bubble: Label3D
+var town_travelers: Array[Dictionary] = []
 
 func _ready() -> void:
 	can_attack = true
@@ -236,8 +237,41 @@ func _build_town() -> void:
 	bunting_line(EAST_EXIT + Vector3(0, 3.8, -2.2), EAST_EXIT + Vector3(0, 3.8, 2.2), 0.55, [BUNTING_BLUE, GOLD, CORAL_ROOF], 5)
 	marker(EAST_EXIT, GOLD, 1.0)
 	label_at(self, EAST_EXIT + Vector3(0, 4.85, 0), "出發拱門 → 前往：雲海古道與石橋（按 E）", GOLD, 34)
+	_spawn_town_travelers()
+
+func _spawn_town_travelers() -> void:
+	var t1 := build_fellow_rider(Vector3(-4.5, 0, 2.2), Color("#e8735a"), Color("#7a5440"), Vector3(1.45, 1.15, 1.75), "線上旅人・蜜熊（重甲巨熊）")
+	t1["waypoints"] = [Vector3(-4.5, 0, 2.2), Vector3(1.8, 0, 2.8), Vector3(5.2, 0, -1.5), Vector3(-1.5, 0, -1.2)]
+	t1["wp_idx"] = 0
+	t1["lines"] = ["波波把我的白裝全吃光了✨", "有人要一起打稻草人哨長嗎？", "哥布林的五折短劍真香！"]
+	t1["chat_t"] = 2.0
+	town_travelers.append(t1)
+
+	var t2 := build_fellow_rider(Vector3(7.5, 0, 3.2), Color("#6ec29a"), Color("#e3dccf"), Vector3(1.05, 1.05, 1.65), "線上旅人・白鹿（雲海巨鹿）")
+	t2["waypoints"] = [Vector3(7.5, 0, 3.2), Vector3(11.0, 0, 1.4), Vector3(3.5, 0, 0.2), Vector3(6.2, 0, 4.5)]
+	t2["wp_idx"] = 0
+	t2["lines"] = ["剛在公共古道噴出黃裝長劍！", "酒館的豚骨麵超補血♪", "組隊按 C 隨時可以拉我助拳喔！"]
+	t2["chat_t"] = 3.8
+	town_travelers.append(t2)
 
 func _physics_process(delta: float) -> void:
+	for tr in town_travelers:
+		var n: Node3D = tr["node"]
+		var wps: Array = tr["waypoints"]
+		var idx: int = int(tr["wp_idx"])
+		var tgt: Vector3 = wps[idx]
+		var diff := flat(tgt - n.position)
+		if diff.length() < 0.5:
+			tr["wp_idx"] = (idx + 1) % wps.size()
+		else:
+			n.position += diff.normalized() * 2.4 * delta
+			n.rotation.y = atan2(diff.x, diff.z)
+			n.position.y = absf(sin(Time.get_ticks_msec() * 0.008 + float(idx))) * 0.10
+		tr["chat_t"] = float(tr["chat_t"]) - delta
+		if float(tr["chat_t"]) <= 0.0:
+			tr["chat_t"] = 5.5
+			var lines: Array = tr["lines"]
+			(tr["bubble"] as Label3D).text = String(lines[randi() % lines.size()])
 	var t := Time.get_ticks_msec() * 0.001
 	if goblin_talk_timer > 0.0:
 		goblin_talk_timer -= delta

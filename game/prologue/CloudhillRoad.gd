@@ -48,12 +48,17 @@ var drifting_clouds: Array[Dictionary] = []
 # PoE 2 Mob Pack + Rare Elite + Ground Loot Drops
 var mobs: Array[Dictionary] = []
 var loot_drops: Array[Dictionary] = []
+# L3 Public Field Simulated Online Travelers + L4 Co-op Story Ally
+var public_travelers: Array[Dictionary] = []
+var coop_ally: Dictionary = {}
+var coop_attack_cd := 0.0
 
 func _ready() -> void:
 	can_attack = true
 	_build_road_map()
 	_build_boss_and_chest()
 	_spawn_poe_mobs()
+	_spawn_public_travelers()
 
 	var spawn := Vector3(-14.2, 0.0, 0.2)
 	if PrologueState.spawn_tag == "from_waypoint":
@@ -269,6 +274,81 @@ func _build_road_map() -> void:
 
 	spawn_ambient_motes(Vector3(4.0, 1.8, 0.0), Vector3(34.0, 3.0, 10.0), 22, Color("#fff5dc"), 0.10)
 
+func _spawn_public_travelers() -> void:
+	# Bridge entrance Co-op SOS Bell indicator
+	lantern_post(Vector3(3.4, 0.0, 3.3), 2.2, Color("#69c5ed"), -20.0)
+	label_at(self, Vector3(3.4, 3.05, 3.3), "副本組隊鈴：按 [C] 拉隊友助拳", Color("#a8e6ff"), 26)
+
+	var p1 := build_fellow_rider(Vector3(-12.6, 0, -2.6), Color("#58b9ff"), Color("#464b59"), Vector3(1.15, 0.90, 1.75), "線上旅人・阿狼（公共區刷怪）")
+	p1["waypoints"] = [Vector3(-12.6, 0, -2.6), Vector3(-11.8, 0, 1.8), Vector3(-14.0, 0, 2.2)]
+	p1["wp_idx"] = 0
+	p1["chat_t"] = 1.6
+	p1["atk_t"] = 1.8
+	p1["lines"] = ["公共區共享光柱，一起刷！✨", "我幫你摸這隻發條兵！", "打完一起按 C 打哨長吧！"]
+	public_travelers.append(p1)
+
+	var p2 := build_fellow_rider(Vector3(-7.4, 0, -3.0), Color("#f28c5a"), Color("#7a5440"), Vector3(1.42, 1.12, 1.72), "線上旅人・蜜熊（重甲巨熊）")
+	p2["waypoints"] = [Vector3(-7.4, 0, -3.0), Vector3(-5.8, 0, 1.4), Vector3(-7.6, 0, 3.2)]
+	p2["wp_idx"] = 0
+	p2["chat_t"] = 2.8
+	p2["atk_t"] = 2.2
+	p2["lines"] = ["這邊有金色加班班長！", "哇！噴金光柱了！✨", "重甲熊坦住，快輸出！🛡️"]
+	public_travelers.append(p2)
+
+func on_coop_summon() -> void:
+	if not coop_ally.is_empty():
+		(coop_ally["bubble"] as Label3D).text = "我已經在你身邊啦！一起衝！🛡️"
+		show_subtitle("資深補簽員・阿熊已在副本中與你並肩作戰！", 2.5)
+		return
+	var spawn_p := feet() + Vector3(-1.8, 0.0, 1.4)
+	# Dramatic cloud mist arrival puff
+	var puff := sphere(self, spawn_p + Vector3(0, 1.0, 0), Vector3(2.8, 2.2, 2.8), CLOUD_WHITE, true)
+	var tw := create_tween()
+	tw.tween_property(puff, "scale", Vector3(0.1, 0.1, 0.1), 0.55)
+	tw.tween_callback(puff.queue_free)
+	coop_ally = build_fellow_rider(spawn_p, Color("#ffd659"), Color("#8a5a3c"), Vector3(1.48, 1.18, 1.80), "★ 助拳隊友・資深補簽員阿熊", GOLD)
+	(coop_ally["bubble"] as Label3D).text = "收到胖黃鳥求救信！我來幫你扛！🛡️"
+	show_player_emote("✉️", 1.6)
+	show_subtitle("【房主副本拉人】資深補簽員・阿熊已空降助拳！將協助輸出並在勸退後贈送見證幣！", 4.5)
+
+func _update_fellow_travelers(delta: float) -> void:
+	var t := Time.get_ticks_msec() * 0.001
+	for tr in public_travelers:
+		var n: Node3D = tr["node"]
+		var wps: Array = tr["waypoints"]
+		var idx: int = int(tr["wp_idx"])
+		var tgt: Vector3 = wps[idx]
+		var diff := flat(tgt - n.position)
+		if diff.length() < 0.6:
+			tr["wp_idx"] = (idx + 1) % wps.size()
+		else:
+			n.position += diff.normalized() * 2.5 * delta
+			n.rotation.y = atan2(diff.x, diff.z)
+			n.position.y = absf(sin(t * 7.5 + float(idx))) * 0.10
+		tr["chat_t"] = float(tr["chat_t"]) - delta
+		if float(tr["chat_t"]) <= 0.0:
+			tr["chat_t"] = 4.8
+			var lines: Array = tr["lines"]
+			(tr["bubble"] as Label3D).text = String(lines[randi() % lines.size()])
+
+	# Co-op Ally follows player & helps fight Scarecrow Boss
+	if not coop_ally.is_empty():
+		var an: Node3D = coop_ally["node"]
+		var target_p := (boss.position + Vector3(-2.1, 0, 1.6)) if boss_active else (feet() + Vector3(-2.2, 0, 1.6))
+		var d := flat(target_p - an.position)
+		if d.length() > 0.7:
+			an.position += d.normalized() * 6.2 * delta
+			an.rotation.y = atan2(d.x, d.z)
+			an.position.y = absf(sin(t * 9.0)) * 0.12
+		else:
+			an.position.y = sin(t * 2.5) * 0.03
+		if boss_active:
+			coop_attack_cd -= delta
+			if coop_attack_cd <= 0.0 and flat(an.position - boss.position).length() < 3.5:
+				coop_attack_cd = 2.1
+				boss_hp = maxi(1, boss_hp - 1)
+				(coop_ally["bubble"] as Label3D).text = "重甲巨熊拍擊！(-1) 快趁機輸出！🛡️"
+
 func _spawn_poe_mobs() -> void:
 	var spawns := [
 		{"pos": Vector3(-12.2, 0.0, 2.6), "name": "發條巡邏兵", "hp": 3, "rare": false},
@@ -372,6 +452,7 @@ func _clear_fog(fog_node: Node3D) -> void:
 
 func _physics_process(delta: float) -> void:
 	var t := Time.get_ticks_msec() * 0.001
+	_update_fellow_travelers(delta)
 	if boss_talk_timer > 0.0:
 		boss_talk_timer -= delta
 		if boss_talk_timer <= 0.0:
@@ -608,6 +689,9 @@ func _retire_boss() -> void:
 	PrologueState.boss_retired = true
 	boss_state = BossState.RETIRED
 	boss_stamp.show()
+	if not coop_ally.is_empty():
+		PrologueState.coins += 30
+		(coop_ally["bubble"] as Label3D).text = "恭喜勸退成功！送你熱心助拳見證幣 +30¢！🎉"
 	hitstop_frames = 5
 	shake_time = 0.2
 	show_player_emote("✨", 2.0)

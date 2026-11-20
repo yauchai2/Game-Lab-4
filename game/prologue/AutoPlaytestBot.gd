@@ -225,10 +225,11 @@ func _run_road(scene: Node, _delta: float) -> void:
 				timer = 1.2
 				step = 9
 		9:
-			# Wait briefly for wolf to cross open gate, then cross stone bridge to trigger Boss
+			# Wait briefly for wolf to cross open gate, then cross stone bridge to trigger Boss & summon Co-op Ally!
 			if _walk_to(scene, Vector3(6.2, 0.0, 0.8), 1.0):
 				if scene.wolf.position.x > 0.5:
-					print("AUTOPLAY_M3: 巨狼會合，跨上石橋觸發稻草人哨長 Boss 戰")
+					scene.on_coop_summon()
+					print("AUTOPLAY_M3: 巨狼會合並召喚【資深補簽員・阿熊】進副本助拳，跨上石橋開戰！")
 					step = 10
 		10:
 			# Boss combat: interrupt on WINDUP (1), attack otherwise, retire on KNEELED (3)

@@ -107,6 +107,7 @@ var slot_mount_sub: Label
 var slot_wolf: PanelContainer
 var slot_wolf_cd: ColorRect
 var slot_bag: PanelContainer
+var slot_coop: PanelContainer
 var slot_reset: PanelContainer
 
 # PoE 2 Inventory & Currency Crafting Modal (press I)
@@ -304,6 +305,20 @@ func spawn_ambient_motes(center: Vector3, span: Vector3, count: int, col: Color,
 
 func register_living_npc(node: Node3D, base_y := 0.0, bob_amp := 0.06, speed := 3.2) -> void:
 	living_npcs.append({"node": node, "base_y": base_y, "amp": bob_amp, "speed": speed, "phase": randf_range(0.0, TAU)})
+
+func build_fellow_rider(pos: Vector3, rider_tunic: Color, beast_col: Color, beast_scale: Vector3, title_txt: String, badge_col := Color("#d6f0ff")) -> Dictionary:
+	var root := Node3D.new()
+	root.position = pos
+	add_child(root)
+	sphere(root, Vector3(0, 0.72, 0), beast_scale, beast_col)
+	sphere(root, Vector3(0, 1.05, beast_scale.z * 0.48), Vector3(0.66, 0.60, 0.66), beast_col.lightened(0.08))
+	cylinder(root, Vector3(0, 1.48, 0), 0.22, 0.25, 0.45, rider_tunic)
+	sphere(root, Vector3(0, 1.88, 0), Vector3(0.46, 0.44, 0.44), Color("#f4c9a8"))
+	cylinder(root, Vector3(0, 2.12, 0), 0.07, 0.30, 0.26, rider_tunic.darkened(0.18))
+	sphere(root, Vector3(0.28, 2.38, 0.1), Vector3(0.26, 0.22, 0.26), Color("#ffbf3c"))
+	var name_lbl := label_at(root, Vector3(0, 2.72, 0), title_txt, badge_col, 26)
+	var bubble_lbl := label_at(root, Vector3(0, 3.22, 0), "", Color("#fff7c2"), 28)
+	return {"node": root, "name_lbl": name_lbl, "bubble": bubble_lbl, "bubble_t": 0.0}
 
 func invisible_boundary_wall(pos: Vector3, size: Vector3, rot_deg := 0.0) -> void:
 	var body := StaticBody3D.new()
@@ -578,6 +593,8 @@ func setup_hud() -> void:
 	slot_wolf_cd = wlf_pair[1]
 	var bag_pair := _make_hotbar_slot(hotbar, "I", "背包造裝", Color("#c99438"))
 	slot_bag = bag_pair[0]
+	var coop_pair := _make_hotbar_slot(hotbar, "C", "拉人助拳", Color("#58b9ff"))
+	slot_coop = coop_pair[0]
 	var rst_pair := _make_hotbar_slot(hotbar, "R", "重置序章", Color("#7d8597"))
 	slot_reset = rst_pair[0]
 
@@ -934,6 +951,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_F: toggle_mount()
 			KEY_Q: on_wolf_action()
 			KEY_J: perform_sword_attack()
+			KEY_C: on_coop_summon()
 			KEY_R: PrologueState.reset_all()
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		perform_sword_attack()
@@ -943,6 +961,10 @@ func on_map_input(_event: InputEvent) -> bool:
 
 func on_interact() -> void:
 	pass
+
+func on_coop_summon() -> void:
+	show_player_emote("✉️", 1.2)
+	show_subtitle("胖黃鳥：在「地圖三：雲海石橋」按 [C] 即可寄出求救信封，拉隊友進副本一起打 Boss！", 3.8)
 
 func on_wolf_action() -> void:
 	if wolf_charge_cooldown > 0.0:
