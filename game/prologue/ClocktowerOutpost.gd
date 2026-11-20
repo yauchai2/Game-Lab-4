@@ -9,9 +9,13 @@ enum ClockBossState { IDLE, WINDUP, STAGGERED, KNEELED, RETIRED }
 const MAX_BOSS_HP := 32
 const WEST_EXIT := Vector3(-68.0, 0.0, 0.0)
 const WAYPOINT_POS := Vector3(-58.0, 0.0, -4.5)
-const BOSS_HOME := Vector3(62.0, 0.0, 0.0)
-const CAFE_POS := Vector3(55.0, 0.0, -7.5)
-const EAST_EXIT := Vector3(80.0, 0.0, 0.0)
+
+var layout_variant := 0
+var layout_title := ""
+var entry_spawn_pos := Vector3(-64.0, 0.0, 0.0)
+var boss_home_pos := Vector3(62.0, 0.0, 0.0)
+var cafe_pos := Vector3(55.0, 0.0, -7.5)
+var east_exit_pos := Vector3(80.0, 0.0, 0.0)
 
 var boss_state := ClockBossState.IDLE
 var boss_hp := MAX_BOSS_HP
@@ -34,16 +38,39 @@ var mobs: Array[Dictionary] = []
 var checkpoints: Array[Dictionary] = []
 var loot_drops: Array[Dictionary] = []
 
+func _configure_random_layout() -> void:
+	layout_variant = randi() % 3
+	if layout_variant == 0:
+		layout_title = "西南登城 → 東北鐘樓"
+		entry_spawn_pos = Vector3(-56.0, 0.0, 26.0)
+		boss_home_pos = Vector3(52.0, 0.0, -28.0)
+		cafe_pos = Vector3(44.0, 0.0, -34.0)
+		east_exit_pos = Vector3(68.0, 0.0, -34.0)
+	elif layout_variant == 1:
+		layout_title = "西北登城 → 東南鐘樓"
+		entry_spawn_pos = Vector3(-56.0, 0.0, -26.0)
+		boss_home_pos = Vector3(52.0, 0.0, 28.0)
+		cafe_pos = Vector3(44.0, 0.0, 34.0)
+		east_exit_pos = Vector3(68.0, 0.0, 34.0)
+	else:
+		layout_title = "雙翼包抄（中路封鎖）"
+		entry_spawn_pos = Vector3(-64.0, 0.0, 0.0)
+		boss_home_pos = Vector3(62.0, 0.0, 0.0)
+		cafe_pos = Vector3(55.0, 0.0, -7.5)
+		east_exit_pos = Vector3(80.0, 0.0, 0.0)
+
 func _ready() -> void:
 	can_attack = true
 	scene_world_key = "clocktower"
 	scene_shadow_tint = Color("#4a416e")
 	set_wind_profile(Vector2(0.92, -0.38), 1.5, 0.38, 0.12)
+	_configure_random_layout()
+	var mod_txt := roll_zone_modifier()
 	_build_clocktower_outpost()
 	_build_bell_knight_boss()
 	_spawn_clocktower_mobs()
 
-	var spawn := Vector3(-64.0, 0.0, 0.0)
+	var spawn := entry_spawn_pos
 	if PrologueState.spawn_tag == "from_waypoint":
 		spawn = WAYPOINT_POS + Vector3(0.0, 0.0, 2.8)
 	setup_core_trio(spawn)
@@ -53,7 +80,7 @@ func _ready() -> void:
 		minimap_overlay.configure_bounds(Rect2(-76.0, -53.0, 164.0, 106.0))
 	PrologueState.play_bgm("road")
 	_apply_persisted_state()
-	show_subtitle("《舊軍鐘樓哨所》── 整點鐘聲仍在迴盪，鐵鐘騎士還在堅守百年鐘樓……", 3.8)
+	show_subtitle("《舊軍鐘樓哨所・%s》｜%s" % [layout_title, mod_txt], 4.0)
 	_update_ui()
 
 func _spawn_brass_gear(pos: Vector3, radius := 3.2, speed := 0.45) -> void:
@@ -107,17 +134,18 @@ func _build_clocktower_outpost() -> void:
 
 	# Sub-region 4: Central Bell-Chime Plaza (-12..+34, -15..+15)
 	organic_mound(self, Vector3(10.0, -0.50, 0.0), 24.0, 16.0, 1.06, Color("#d4bc94"), 0.0)
-	curved_path([WEST_EXIT, Vector3(-42.0, 0, 0.0), Vector3(-14.0, 0, 1.5), Vector3(14.0, 0, -1.5), Vector3(38.0, 0, 0.0), BOSS_HOME, EAST_EXIT], 2.6, TRAIL_STONE, STONE_LIGHT)
+	curved_path([entry_spawn_pos, Vector3(-14.0, 0, 1.5), Vector3(14.0, 0, -1.5), boss_home_pos, east_exit_pos], 2.6, TRAIL_STONE, STONE_LIGHT)
 	_spawn_brass_gear(Vector3(10.0, 0.0, 0.0), 4.8, 0.30)
-	_add_checkpoint(Vector3(36.0, 0.0, 0.0), "鐘樓大門前")
+	if layout_variant == 2:
+		box(self, Vector3(10.0, 1.6, 0.0), Vector3(1.6, 3.2, 11.0), Color("#c99b42"), true)
+		label_at(self, Vector3(10.0, 3.8, 0.0), "⚠ 巨齒輪封道（請由北／南側繞道）", GOLD, 26)
+	_add_checkpoint(boss_home_pos.lerp(Vector3(0.0, 0.0, 0.0), 0.36), "鐘樓大門前")
 
-	# Sub-region 5: East Ruined Clocktower Sanctum (46..80, -24..+24)
-	organic_mound(self, Vector3(62.0, -0.46, 0.0), 19.5, 19.5, 1.12, Color("#c9b69e"), 0.0)
-	organic_mound(self, Vector3(62.0, 0.02, 0.0), 12.0, 12.0, 0.04, Color("#e8dcc4"), 0.0)
-	stone_archway(Vector3(45.0, 0.0, 0.0), 90.0, 1.5, true)
-	# Iconic Ruined Clocktower Monument rising on the North-East rim of the Boss Arena!
+	# Dynamic Ruined Clocktower Sanctum (NE, SE, or East!)
+	organic_mound(self, boss_home_pos + Vector3(0.0, -0.46, 0.0), 19.5, 19.5, 1.12, Color("#c9b69e"), 0.0)
+	organic_mound(self, boss_home_pos + Vector3(0.0, 0.02, 0.0), 12.0, 12.0, 0.04, Color("#e8dcc4"), 0.0)
 	var tower := Node3D.new()
-	tower.position = Vector3(68.0, 0.0, -14.5)
+	tower.position = boss_home_pos + Vector3(6.0, 0.0, -14.5)
 	tower.rotation_degrees.y = -24.0
 	add_child(tower)
 	box(tower, Vector3(0, 4.5, 0), Vector3(5.6, 9.0, 5.6), STONE_LIGHT, true)
@@ -128,10 +156,10 @@ func _build_clocktower_outpost() -> void:
 	cylinder(tower, Vector3(0, 12.2, 0), 0.35, 3.6, 3.4, CORAL_ROOF)
 	for ai in range(8):
 		var ang := float(ai) * TAU / 8.0
-		var lp := BOSS_HOME + Vector3(cos(ang) * 14.8, 0.0, sin(ang) * 14.8)
-		if absf(lp.z) > 3.5:
+		var lp := boss_home_pos + Vector3(cos(ang) * 14.8, 0.0, sin(ang) * 14.8)
+		if flat(lp - east_exit_pos).length() > 4.5:
 			lantern_post(lp, 3.0, GOLD, rad_to_deg(ang))
-	transition_signpost(EAST_EXIT, "→ 沉霧燈塔港", Color("#a8e6ff"), -14.0)
+	transition_signpost(east_exit_pos, "→ 沉霧燈塔港", Color("#a8e6ff"), -14.0)
 
 	# Trees, Sunbeams, Crates & Wind-Blown Autumn Grass (~1,600 tufts)
 	for tp in [
@@ -210,32 +238,45 @@ func get_minimap_markers() -> Array[Dictionary]:
 	for cp in checkpoints:
 		list.append({"pos": cp["pos"], "kind": "checkpoint", "label": String(cp["title"])})
 	list.append({"pos": WEST_EXIT, "kind": "exit", "label": "翡翠天梯古林"})
-	list.append({"pos": EAST_EXIT, "kind": "exit", "label": "沉霧燈塔港"})
+	list.append({"pos": east_exit_pos, "kind": "exit", "label": "沉霧燈塔港"})
 	return list
 
 func _spawn_clocktower_mobs() -> void:
+	var raw_pool: Array[Vector3] = [
+		Vector3(-34.0, 0.0, -40.0),
+		Vector3(-6.0, 0.0, -28.0),
+		Vector3(14.0, 0.0, 40.5),
+		Vector3(-32.0, 0.0, 34.0),
+		Vector3(54.0, 0.0, -26.0),
+		Vector3(54.0, 0.0, 26.0),
+		Vector3(62.0, 0.0, 0.0),
+		Vector3(26.0, 0.0, -18.0),
+		Vector3(26.0, 0.0, 18.0),
+	]
+	var valid_pool: Array[Vector3] = []
+	for p in raw_pool:
+		if flat(p - boss_home_pos).length() > 16.0 and flat(p - entry_spawn_pos).length() > 14.0:
+			valid_pool.append(p)
+	var chosen := pick_shuffled_positions(valid_pool, 8)
 	var spawns := [
-		# West Entry Packs
-		{"pos": Vector3(-44.0, 0.0, 4.5), "name": "鐘樓發條兵", "hp": 8, "tier": "normal"},
 		{"pos": Vector3(-40.0, 0.0, -5.0), "name": "鐘樓發條兵", "hp": 8, "tier": "normal"},
-		{"pos": Vector3(-28.0, 0.0, 2.5), "name": "鐘樓發條兵", "hp": 8, "tier": "normal"},
-		# North Brass Gear Workshop + Rare + Hidden Unique #1
 		{"pos": Vector3(-32.0, 0.0, -23.0), "name": "齒輪技工兵", "hp": 9, "tier": "normal"},
-		{"pos": Vector3(-14.0, 0.0, -31.0), "name": "齒輪技工兵", "hp": 9, "tier": "normal"},
-		{"pos": Vector3(-6.0, 0.0, -28.0), "name": "★ 齒輪維修長", "hp": 18, "tier": "rare"},
-		{"pos": Vector3(-34.0, 0.0, -40.0), "name": "❖【傳奇】發條報時官", "hp": 36, "tier": "unique", "uid": "clockwork_herald"},
-		# South Artillery Trenches + Rare + Hidden Unique #2
 		{"pos": Vector3(-28.0, 0.0, 23.0), "name": "舊軍砲手", "hp": 9, "tier": "normal"},
-		{"pos": Vector3(-6.0, 0.0, 32.0), "name": "舊軍砲手", "hp": 9, "tier": "normal"},
-		{"pos": Vector3(2.0, 0.0, 28.0), "name": "★ 鐵甲砲兵長", "hp": 18, "tier": "rare"},
-		{"pos": Vector3(14.0, 0.0, 40.5), "name": "❖【傳奇】失控重型攻城機兵", "hp": 38, "tier": "unique", "uid": "siege_automaton"},
-		# Central Bell-Chime Plaza + Rare
 		{"pos": Vector3(4.0, 0.0, -6.5), "name": "鐘樓禁衛", "hp": 9, "tier": "normal"},
 		{"pos": Vector3(12.0, 0.0, 6.5), "name": "鐘樓禁衛", "hp": 9, "tier": "normal"},
-		{"pos": Vector3(20.0, 0.0, -1.0), "name": "★ 鐘樓禁衛隊長", "hp": 20, "tier": "rare"},
-		{"pos": Vector3(27.0, 0.0, 5.5), "name": "鐘樓禁衛", "hp": 9, "tier": "normal"},
-		{"pos": Vector3(29.0, 0.0, -6.5), "name": "鐘樓禁衛", "hp": 9, "tier": "normal"},
+		{"pos": chosen[0], "name": "❖【傳奇】發條報時官", "hp": 36, "tier": "unique", "uid": "clockwork_herald"},
+		{"pos": chosen[1], "name": "❖【傳奇】失控重型攻城機兵", "hp": 38, "tier": "unique", "uid": "siege_automaton"},
+		{"pos": chosen[2], "name": "★ 齒輪維修長", "hp": 18, "tier": "rare"},
+		{"pos": chosen[3], "name": "★ 鐵甲砲兵長", "hp": 18, "tier": "rare"},
+		{"pos": chosen[4], "name": "★ 鐘樓禁衛隊長", "hp": 20, "tier": "rare"},
 	]
+	lantern_post(chosen[0] + Vector3(2.4, 0.0, 2.0), 2.9, Color("#ff7b3b"), 20.0)
+	lantern_post(chosen[1] + Vector3(-2.4, 0.0, 2.0), 2.9, Color("#ff7b3b"), -20.0)
+	var ev_spots: Array[Vector3] = []
+	for ei in range(5, chosen.size()):
+		ev_spots.append(chosen[ei])
+	ev_spots.append(Vector3(-22.0, 0.0, 0.0))
+	spawn_random_wilderness_events(ev_spots)
 	for sp in spawns:
 		var node := Node3D.new()
 		node.position = sp["pos"]
@@ -297,7 +338,7 @@ func _drop_loot(pos: Vector3, is_rare: bool, tier := "normal", uid := "") -> voi
 
 func _build_bell_knight_boss() -> void:
 	add_child(boss)
-	boss.position = BOSS_HOME
+	boss.position = boss_home_pos
 	cylinder(boss, Vector3(0, 1.45, 0), 0.72, 1.05, 2.9, Color("#606c82"))
 	sphere(boss, Vector3(0, 2.45, 0), Vector3(1.55, 1.25, 1.45), Color("#7d899e"))
 	boss_bell_helm = cylinder(boss, Vector3(0, 3.35, 0), 0.42, 0.92, 1.05, GOLD)
@@ -306,11 +347,11 @@ func _build_bell_knight_boss() -> void:
 	boss_mace = cylinder(boss, Vector3(-1.35, 1.85, 0.65), 0.22, 0.16, 2.7, Color("#c99b42"))
 	boss_bubble = label_at(boss, Vector3(0, 4.85, 0), "", Color("#fff2cc"), 34)
 	boss_cue = label_at(boss, Vector3(0, 4.30, 0), "重裝鐵鐘騎士", GOLD, 30)
-	attack_ring = marker(BOSS_HOME, STAMP_RED, 3.6)
+	attack_ring = marker(boss_home_pos, STAMP_RED, 3.6)
 	attack_ring.hide()
 
 	clock_cafe = Node3D.new()
-	clock_cafe.position = CAFE_POS
+	clock_cafe.position = cafe_pos
 	add_child(clock_cafe)
 	box(clock_cafe, Vector3(0, 0.52, 0), Vector3(2.8, 1.0, 1.25), TIMBER_LIGHT)
 	box(clock_cafe, Vector3(0, 2.25, 0), Vector3(3.3, 0.25, 2.0), CORAL_ROOF)
@@ -318,7 +359,7 @@ func _build_bell_knight_boss() -> void:
 	clock_cafe.hide()
 
 	add_child(clock_chest)
-	clock_chest.position = BOSS_HOME + Vector3(-2.5, 0.0, 2.0)
+	clock_chest.position = boss_home_pos + Vector3(-2.5, 0.0, 2.0)
 	box(clock_chest, Vector3(0, 0.42, 0), Vector3(1.15, 0.80, 0.80), GOLD)
 	box(clock_chest, Vector3(0, 0.84, 0), Vector3(1.22, 0.18, 0.86), CORAL_ROOF)
 	label_at(clock_chest, Vector3(0, 1.42, 0), "鐘樓金庫寶箱", GOLD, 28)
@@ -330,7 +371,7 @@ func _apply_persisted_state() -> void:
 		boss_bell_helm.hide()
 		boss_chef_hat.show()
 		boss_mace.hide()
-		boss.position = CAFE_POS + Vector3(0, 0, -1.2)
+		boss.position = cafe_pos + Vector3(0, 0, -1.2)
 		boss_cue.text = "鐵鐘咖啡師"
 		clock_cafe.show()
 		clock_chest.visible = not PrologueState.clocktower_chest_claimed
@@ -348,7 +389,7 @@ func _physics_process(delta: float) -> void:
 			boss_bubble.text = ""
 	if not step_shared_physics(delta):
 		return
-	if not boss_active and boss_state == ClockBossState.IDLE and not PrologueState.clocktower_boss_retired and flat(feet() - BOSS_HOME).length() < 14.5:
+	if not boss_active and boss_state == ClockBossState.IDLE and not PrologueState.clocktower_boss_retired and flat(feet() - boss_home_pos).length() < 14.5:
 		boss_active = true
 		boss_timer = 1.25
 		PrologueState.play_bgm("boss")
@@ -567,7 +608,7 @@ func on_interact() -> void:
 			boss_bell_helm.hide()
 			boss_chef_hat.show()
 			boss_mace.hide()
-			boss.position = CAFE_POS + Vector3(0, 0, -1.2)
+			boss.position = cafe_pos + Vector3(0, 0, -1.2)
 			boss_cue.text = "鐵鐘咖啡師"
 			pop_in_node(clock_cafe)
 			pop_in_node(clock_chest)
@@ -582,7 +623,7 @@ func on_interact() -> void:
 		show_player_emote("✨", 2.0)
 		show_subtitle("開啟鐘樓金庫寶箱！獲【傳奇】百年鐘聲傳奇巨刃＋金漆罐 x3＋60¢！", 4.5)
 		return
-	if near(EAST_EXIT, 3.0):
+	if near(east_exit_pos, 3.2):
 		PrologueState.transition_to("res://prologue/MistyHarbor.tscn", "default", "沉霧燈塔港")
 
 func _boss_say(words: String, duration := 3.2) -> void:
@@ -623,7 +664,7 @@ func _update_ui() -> void:
 		set_prompt("[ E ] 砸下【正式退休】紅章！")
 	elif clock_chest.visible and near(clock_chest.position, 2.8):
 		set_prompt("[ E ] 開啟鐘樓金庫寶箱")
-	elif near(EAST_EXIT, 3.0):
+	elif near(east_exit_pos, 3.2):
 		set_prompt("[ E ] 前往：沉霧燈塔港")
 	elif not PrologueState.mounted and near(wolf.position, 2.7):
 		set_prompt("[ F ] 騎上巨狼")

@@ -9,9 +9,12 @@ enum ForestBossState { IDLE, WINDUP, STAGGERED, KNEELED, RETIRED }
 const MAX_BOSS_HP := 28
 const WEST_EXIT := Vector3(-66.0, 0.0, 0.0)
 const WAYPOINT_POS := Vector3(-56.0, 0.0, -4.0)
-const BOSS_HOME := Vector3(60.0, 0.0, 0.0)
-const LOUNGE_POS := Vector3(54.0, 0.0, -7.0)
-const EAST_EXIT := Vector3(78.0, 0.0, 0.0)
+
+var layout_variant := 0
+var layout_title := ""
+var boss_home_pos := Vector3(60.0, 0.0, 0.0)
+var lounge_pos := Vector3(54.0, 0.0, -7.0)
+var east_exit_pos := Vector3(78.0, 0.0, 0.0)
 
 var boss_state := ForestBossState.IDLE
 var boss_hp := MAX_BOSS_HP
@@ -33,11 +36,31 @@ var mobs: Array[Dictionary] = []
 var checkpoints: Array[Dictionary] = []
 var loot_drops: Array[Dictionary] = []
 
+func _configure_random_layout() -> void:
+	layout_variant = randi() % 3
+	if layout_variant == 0:
+		layout_title = "北行秘林"
+		boss_home_pos = Vector3(12.0, 0.0, -34.0)
+		lounge_pos = Vector3(4.0, 0.0, -39.0)
+		east_exit_pos = Vector3(12.0, 0.0, -45.0)
+	elif layout_variant == 1:
+		layout_title = "南灣古樹"
+		boss_home_pos = Vector3(12.0, 0.0, 34.0)
+		lounge_pos = Vector3(4.0, 0.0, 39.0)
+		east_exit_pos = Vector3(12.0, 0.0, 45.0)
+	else:
+		layout_title = "東境環道"
+		boss_home_pos = Vector3(60.0, 0.0, 0.0)
+		lounge_pos = Vector3(54.0, 0.0, -7.0)
+		east_exit_pos = Vector3(78.0, 0.0, 0.0)
+
 func _ready() -> void:
 	can_attack = true
 	scene_world_key = "forest"
 	scene_shadow_tint = Color("#3d4f6e")
 	set_wind_profile(Vector2(0.82, 0.57), 1.35, 0.36, 0.13)
+	_configure_random_layout()
+	var mod_txt := roll_zone_modifier()
 	_build_emerald_forest()
 	_build_tree_king_boss()
 	_spawn_forest_mobs()
@@ -52,7 +75,7 @@ func _ready() -> void:
 		minimap_overlay.configure_bounds(Rect2(-74.0, -52.0, 160.0, 104.0))
 	PrologueState.play_bgm("road")
 	_apply_persisted_state()
-	show_subtitle("《翡翠天梯古林》── 傳說翡翠樹王仍在密林深處備戰百年攻城……", 3.6)
+	show_subtitle("《翡翠天梯古林・%s》｜%s" % [layout_title, mod_txt], 4.0)
 	_update_ui()
 
 func _build_emerald_forest() -> void:
@@ -100,19 +123,22 @@ func _build_emerald_forest() -> void:
 
 	# Sub-region 4: Central Sunlit Canopy Terrace (-12..+32, -14..+14)
 	organic_mound(self, Vector3(10.0, -0.50, 0.0), 24.0, 16.0, 1.06, Color("#76bf62"), 4.0)
-	curved_path([WEST_EXIT, Vector3(-42.0, 0, 0.0), Vector3(-16.0, 0, 2.0), Vector3(12.0, 0, -2.0), Vector3(38.0, 0, 0.0), BOSS_HOME, EAST_EXIT], 2.6, TRAIL, TRAIL_STONE)
-	_add_checkpoint(Vector3(36.0, 0.0, 0.0), "樹王聖壇前")
+	curved_path([WEST_EXIT, Vector3(-42.0, 0, 0.0), Vector3(-16.0, 0, 2.0), Vector3(12.0, 0, -2.0), boss_home_pos, east_exit_pos], 2.6, TRAIL, TRAIL_STONE)
+	if layout_variant == 2:
+		# Block the straight center road to force a North or South flanking route!
+		boulder_cluster(Vector3(10.0, 0.0, 0.0), 2.4, STONE, true, true, 15.0)
+		label_at(self, Vector3(10.0, 2.8, 0.0), "⚠ 巨根封路（請由北／南側繞道）", GOLD, 26)
+	_add_checkpoint(boss_home_pos.lerp(Vector3(0.0, 0.0, 0.0), 0.36), "樹王聖壇前")
 
-	# Sub-region 5: East Emerald Tree-King Sanctum (46..78, -24..+24)
-	organic_mound(self, Vector3(60.0, -0.46, 0.0), 19.0, 19.0, 1.10, Color("#88cc6c"), 0.0)
-	organic_mound(self, Vector3(60.0, 0.02, 0.0), 11.5, 11.5, 0.04, Color("#e8d49c"), 0.0)
-	stone_archway(Vector3(44.0, 0.0, 0.0), 90.0, 1.45, true)
+	# Dynamic Emerald Tree-King Sanctum (North, South, or East!)
+	organic_mound(self, boss_home_pos + Vector3(0.0, -0.46, 0.0), 19.0, 19.0, 1.10, Color("#88cc6c"), 0.0)
+	organic_mound(self, boss_home_pos + Vector3(0.0, 0.02, 0.0), 11.5, 11.5, 0.04, Color("#e8d49c"), 0.0)
 	for ai in range(8):
 		var ang := float(ai) * TAU / 8.0
-		var lp := BOSS_HOME + Vector3(cos(ang) * 14.5, 0.0, sin(ang) * 14.5)
-		if absf(lp.z) > 3.5:
+		var lp := boss_home_pos + Vector3(cos(ang) * 14.5, 0.0, sin(ang) * 14.5)
+		if flat(lp - east_exit_pos).length() > 4.5:
 			lantern_post(lp, 3.0, Color("#98ffbd"), rad_to_deg(ang))
-	transition_signpost(EAST_EXIT, "→ 舊軍鐘樓哨所", Color("#a8e6ff"), -14.0)
+	transition_signpost(east_exit_pos, "→ 舊軍鐘樓哨所", Color("#a8e6ff"), -14.0)
 
 	# Lush emerald pines, golden sunbeams, wildflowers & crates
 	for tp in [
@@ -200,32 +226,46 @@ func get_minimap_markers() -> Array[Dictionary]:
 	for cp in checkpoints:
 		list.append({"pos": cp["pos"], "kind": "checkpoint", "label": String(cp["title"])})
 	list.append({"pos": WEST_EXIT, "kind": "exit", "label": "雲海古道"})
-	list.append({"pos": EAST_EXIT, "kind": "exit", "label": "舊軍鐘樓哨所"})
+	list.append({"pos": east_exit_pos, "kind": "exit", "label": "舊軍鐘樓哨所"})
 	return list
 
 func _spawn_forest_mobs() -> void:
+	var raw_pool: Array[Vector3] = [
+		Vector3(-34.0, 0.0, -39.0),
+		Vector3(-8.0, 0.0, -28.0),
+		Vector3(12.5, 0.0, 39.5),
+		Vector3(-32.0, 0.0, 34.0),
+		Vector3(56.0, 0.0, -22.0),
+		Vector3(58.0, 0.0, 22.0),
+		Vector3(62.0, 0.0, 0.0),
+		Vector3(28.0, 0.0, -18.0),
+		Vector3(28.0, 0.0, 18.0),
+	]
+	var valid_pool: Array[Vector3] = []
+	for p in raw_pool:
+		if flat(p - boss_home_pos).length() > 16.0:
+			valid_pool.append(p)
+	var chosen := pick_shuffled_positions(valid_pool, 8)
 	var spawns := [
-		# West Entry Packs
 		{"pos": Vector3(-42.0, 0.0, 4.0), "name": "樹精巡邏兵", "hp": 7, "tier": "normal"},
 		{"pos": Vector3(-38.5, 0.0, -4.5), "name": "樹精巡邏兵", "hp": 7, "tier": "normal"},
-		{"pos": Vector3(-28.0, 0.0, 2.5), "name": "樹精巡邏兵", "hp": 7, "tier": "normal"},
-		# North Mossy Root Labyrinth + Rare + Hidden Unique #1
 		{"pos": Vector3(-32.0, 0.0, -22.0), "name": "巨根守衛", "hp": 8, "tier": "normal"},
-		{"pos": Vector3(-16.0, 0.0, -30.0), "name": "巨根守衛", "hp": 8, "tier": "normal"},
-		{"pos": Vector3(-8.0, 0.0, -28.0), "name": "★ 百年樹根隊長", "hp": 16, "tier": "rare"},
-		{"pos": Vector3(-34.0, 0.0, -39.0), "name": "❖【傳奇】苔蘚發條園丁", "hp": 32, "tier": "unique", "uid": "moss_gardener"},
-		# South Firefly Stream Basin + Rare + Hidden Unique #2
 		{"pos": Vector3(-28.0, 0.0, 22.0), "name": "螢火林衛", "hp": 8, "tier": "normal"},
-		{"pos": Vector3(-8.0, 0.0, 32.0), "name": "螢火林衛", "hp": 8, "tier": "normal"},
-		{"pos": Vector3(0.0, 0.0, 28.0), "name": "★ 溪谷翡翠射手", "hp": 16, "tier": "rare"},
-		{"pos": Vector3(12.5, 0.0, 39.5), "name": "❖【傳奇】沉睡琥珀巨偶", "hp": 36, "tier": "unique", "uid": "amber_golem"},
-		# Central Sunlit Canopy Terrace + Rare
 		{"pos": Vector3(4.0, 0.0, -6.0), "name": "翡翠林衛", "hp": 8, "tier": "normal"},
 		{"pos": Vector3(10.0, 0.0, 6.0), "name": "翡翠林衛", "hp": 8, "tier": "normal"},
-		{"pos": Vector3(18.0, 0.0, -1.0), "name": "★ 樹冠巡林長", "hp": 18, "tier": "rare"},
-		{"pos": Vector3(26.0, 0.0, 5.5), "name": "翡翠林衛", "hp": 8, "tier": "normal"},
-		{"pos": Vector3(28.0, 0.0, -6.5), "name": "翡翠林衛", "hp": 8, "tier": "normal"},
+		{"pos": chosen[0], "name": "❖【傳奇】苔蘚發條園丁", "hp": 32, "tier": "unique", "uid": "moss_gardener"},
+		{"pos": chosen[1], "name": "❖【傳奇】沉睡琥珀巨偶", "hp": 36, "tier": "unique", "uid": "amber_golem"},
+		{"pos": chosen[2], "name": "★ 百年樹根隊長", "hp": 16, "tier": "rare"},
+		{"pos": chosen[3], "name": "★ 溪谷翡翠射手", "hp": 16, "tier": "rare"},
+		{"pos": chosen[4], "name": "★ 樹冠巡林長", "hp": 18, "tier": "rare"},
 	]
+	lantern_post(chosen[0] + Vector3(2.4, 0.0, 2.0), 2.9, Color("#ff7b3b"), 20.0)
+	lantern_post(chosen[1] + Vector3(-2.4, 0.0, 2.0), 2.9, Color("#ff7b3b"), -20.0)
+	var ev_spots: Array[Vector3] = []
+	for ei in range(5, chosen.size()):
+		ev_spots.append(chosen[ei])
+	ev_spots.append(Vector3(-22.0, 0.0, 12.0))
+	spawn_random_wilderness_events(ev_spots)
 	for sp in spawns:
 		var node := Node3D.new()
 		node.position = sp["pos"]
@@ -287,7 +327,7 @@ func _drop_loot(pos: Vector3, is_rare: bool, tier := "normal", uid := "") -> voi
 
 func _build_tree_king_boss() -> void:
 	add_child(boss)
-	boss.position = BOSS_HOME
+	boss.position = boss_home_pos
 	cylinder(boss, Vector3(0, 1.5, 0), 0.65, 0.92, 3.0, TIMBER)
 	sphere(boss, Vector3(0, 2.9, 0), Vector3(2.4, 1.9, 2.2), Color("#2f9e66"))
 	sphere(boss, Vector3(0, 2.2, 0.65), Vector3(0.95, 0.88, 0.82), Color("#b58d52"))
@@ -297,11 +337,11 @@ func _build_tree_king_boss() -> void:
 	boss_staff = cylinder(boss, Vector3(-1.35, 1.8, 0.65), 0.14, 0.18, 2.6, TIMBER_LIGHT)
 	boss_bubble = label_at(boss, Vector3(0, 4.85, 0), "", Color("#e8ffdf"), 34)
 	boss_cue = label_at(boss, Vector3(0, 4.32, 0), "翡翠樹王", Color("#98ffbd"), 30)
-	attack_ring = marker(BOSS_HOME, STAMP_RED, 3.4)
+	attack_ring = marker(boss_home_pos, STAMP_RED, 3.4)
 	attack_ring.hide()
 
 	fruit_lounge = Node3D.new()
-	fruit_lounge.position = LOUNGE_POS
+	fruit_lounge.position = lounge_pos
 	add_child(fruit_lounge)
 	box(fruit_lounge, Vector3(0, 0.52, 0), Vector3(2.6, 1.0, 1.2), TIMBER_LIGHT)
 	box(fruit_lounge, Vector3(0, 2.25, 0), Vector3(3.1, 0.25, 1.9), Color("#2f9e66"))
@@ -309,7 +349,7 @@ func _build_tree_king_boss() -> void:
 	fruit_lounge.hide()
 
 	add_child(emerald_chest)
-	emerald_chest.position = BOSS_HOME + Vector3(-2.4, 0.0, 2.0)
+	emerald_chest.position = boss_home_pos + Vector3(-2.4, 0.0, 2.0)
 	box(emerald_chest, Vector3(0, 0.42, 0), Vector3(1.1, 0.78, 0.78), GOLD)
 	box(emerald_chest, Vector3(0, 0.82, 0), Vector3(1.16, 0.18, 0.84), Color("#2f9e66"))
 	label_at(emerald_chest, Vector3(0, 1.4, 0), "翡翠王冠寶箱", GOLD, 28)
@@ -321,7 +361,7 @@ func _apply_persisted_state() -> void:
 		boss_crown.hide()
 		boss_flower_hat.show()
 		boss_staff.hide()
-		boss.position = LOUNGE_POS + Vector3(0, 0, -1.2)
+		boss.position = lounge_pos + Vector3(0, 0, -1.2)
 		boss_cue.text = "果茶樹爺爺"
 		fruit_lounge.show()
 		emerald_chest.visible = not PrologueState.emerald_chest_claimed
@@ -335,7 +375,7 @@ func _physics_process(delta: float) -> void:
 			boss_bubble.text = ""
 	if not step_shared_physics(delta):
 		return
-	if not boss_active and boss_state == ForestBossState.IDLE and not PrologueState.emerald_boss_retired and flat(feet() - BOSS_HOME).length() < 14.0:
+	if not boss_active and boss_state == ForestBossState.IDLE and not PrologueState.emerald_boss_retired and flat(feet() - boss_home_pos).length() < 14.0:
 		boss_active = true
 		boss_timer = 1.3
 		PrologueState.play_bgm("boss")
@@ -554,7 +594,7 @@ func on_interact() -> void:
 			boss_crown.hide()
 			boss_flower_hat.show()
 			boss_staff.hide()
-			boss.position = LOUNGE_POS + Vector3(0, 0, -1.2)
+			boss.position = lounge_pos + Vector3(0, 0, -1.2)
 			boss_cue.text = "果茶樹爺爺"
 			pop_in_node(fruit_lounge)
 			pop_in_node(emerald_chest)
@@ -569,7 +609,7 @@ func on_interact() -> void:
 		show_player_emote("✨", 2.0)
 		show_subtitle("開啟翡翠王冠寶箱！獲【傳奇】翡翠王冠聖劍＋金漆罐 x3＋50¢！", 4.5)
 		return
-	if near(EAST_EXIT, 3.0):
+	if near(east_exit_pos, 3.2):
 		PrologueState.transition_to("res://prologue/ClocktowerOutpost.tscn", "default", "舊軍鐘樓哨所")
 
 func _boss_say(words: String, duration := 3.2) -> void:
@@ -610,7 +650,7 @@ func _update_ui() -> void:
 		set_prompt("[ E ] 砸下【正式退休】紅章！")
 	elif emerald_chest.visible and near(emerald_chest.position, 2.8):
 		set_prompt("[ E ] 開啟翡翠王冠寶箱")
-	elif near(EAST_EXIT, 3.0):
+	elif near(east_exit_pos, 3.2):
 		set_prompt("[ E ] 前往：舊軍鐘樓哨所")
 	elif not PrologueState.mounted and near(wolf.position, 2.7):
 		set_prompt("[ F ] 騎上巨狼")

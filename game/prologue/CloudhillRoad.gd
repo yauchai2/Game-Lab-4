@@ -70,10 +70,13 @@ func _ready() -> void:
 	if minimap_overlay:
 		minimap_overlay.configure_bounds(Rect2(-64.0, -48.0, 152.0, 96.0))
 	PrologueState.play_bgm("road")
+	var mod_txt := roll_zone_modifier()
 	_apply_persisted_state()
 
 	if not PrologueState.road_intro_played and PrologueState.spawn_tag != "from_waypoint":
 		_play_arrival_intro()
+	else:
+		show_subtitle("《雲海古道與高地》｜" + mod_txt, 3.6)
 	_update_ui()
 
 func _play_arrival_intro() -> void:
@@ -482,34 +485,41 @@ func get_minimap_markers() -> Array[Dictionary]:
 
 func _spawn_poe_mobs() -> void:
 	# Keep mobs[0..3] on the main road identical for AutoPlaytestBot compatibility,
-	# and populate the 150m x 96m PoE 2 wilderness with packs, golden Rares & 2 hidden orange Uniques!
+	# while randomizing Hidden Uniques, Golden Rares & World Events across 8 deep-wilderness alcoves every run!
+	var wild_pool: Array[Vector3] = [
+		Vector3(-44.0, 0.0, -30.0),
+		Vector3(-7.5, 0.0, -35.5),
+		Vector3(-42.5, 0.0, 30.5),
+		Vector3(-10.5, 0.0, 33.5),
+		Vector3(63.5, 0.0, -20.5),
+		Vector3(64.0, 0.0, 21.0),
+		Vector3(-48.0, 0.0, -8.0),
+		Vector3(-46.0, 0.0, 14.0),
+	]
+	var chosen := pick_shuffled_positions(wild_pool, 8)
 	var spawns := [
 		# Main Highway (mobs[0..3])
 		{"pos": Vector3(-18.5, 0.0, 2.8), "name": "發條巡邏兵", "hp": 5, "tier": "normal"},
 		{"pos": Vector3(-11.2, 0.0, -3.5), "name": "發條巡邏兵", "hp": 5, "tier": "normal"},
 		{"pos": Vector3(-8.2, 0.0, 2.8), "name": "★ 加班班長", "hp": 10, "tier": "rare"},
 		{"pos": Vector3(-17.8, 0.0, -4.2), "name": "發條巡邏兵", "hp": 5, "tier": "normal"},
-		# Sub-region 1: NW Old-Army Ruins
+		# Sub-region patrol packs
 		{"pos": Vector3(-37.0, 0.0, -24.0), "name": "生鏽步兵", "hp": 6, "tier": "normal"},
-		{"pos": Vector3(-40.5, 0.0, -26.0), "name": "生鏽步兵", "hp": 6, "tier": "normal"},
-		{"pos": Vector3(-44.0, 0.0, -30.0), "name": "★ 舊軍砲兵長", "hp": 15, "tier": "rare"},
-		# Sub-region 2: North Autumn Windmill Ridge -> Hidden Unique #1
 		{"pos": Vector3(-18.0, 0.0, -31.5), "name": "風車守衛", "hp": 7, "tier": "normal"},
-		{"pos": Vector3(-14.5, 0.0, -33.0), "name": "風車守衛", "hp": 7, "tier": "normal"},
-		{"pos": Vector3(-7.5, 0.0, -35.5), "name": "❖【傳奇】失控百年發條巨像", "hp": 28, "tier": "unique"},
-		# Sub-region 3: SW Endless Pink Flower Sea
 		{"pos": Vector3(-34.5, 0.0, 25.5), "name": "花海巡邏兵", "hp": 6, "tier": "normal"},
-		{"pos": Vector3(-38.0, 0.0, 28.0), "name": "花海巡邏兵", "hp": 6, "tier": "normal"},
-		{"pos": Vector3(-42.5, 0.0, 30.5), "name": "★ 粉花海園丁長", "hp": 15, "tier": "rare"},
-		# Sub-region 4: South Waterfall Canyon Basin
 		{"pos": Vector3(-16.5, 0.0, 30.5), "name": "溪谷斥候", "hp": 7, "tier": "normal"},
-		{"pos": Vector3(-10.5, 0.0, 33.5), "name": "★ 溪谷巡邏隊長", "hp": 16, "tier": "rare"},
-		# Sub-region 5: East Emerald Highland -> Hidden Unique #2
 		{"pos": Vector3(53.0, 0.0, -10.5), "name": "翡翠哨兵", "hp": 7, "tier": "normal"},
-		{"pos": Vector3(56.5, 0.0, -14.0), "name": "翡翠哨兵", "hp": 7, "tier": "normal"},
 		{"pos": Vector3(58.5, 0.0, 16.5), "name": "翡翠哨兵", "hp": 7, "tier": "normal"},
-		{"pos": Vector3(63.5, 0.0, -20.5), "name": "❖【傳奇】翡翠樹影守望者", "hp": 32, "tier": "unique"},
+		# Randomized Deep-Wilderness Hidden Uniques & Golden Rares!
+		{"pos": chosen[0], "name": "❖【傳奇】失控百年發條巨像", "hp": 28, "tier": "unique"},
+		{"pos": chosen[1], "name": "❖【傳奇】翡翠樹影守望者", "hp": 32, "tier": "unique"},
+		{"pos": chosen[2], "name": "★ 舊軍砲兵長", "hp": 15, "tier": "rare"},
+		{"pos": chosen[3], "name": "★ 粉花海園丁長", "hp": 15, "tier": "rare"},
+		{"pos": chosen[4], "name": "★ 溪谷巡邏隊長", "hp": 16, "tier": "rare"},
 	]
+	lantern_post(chosen[0] + Vector3(-2.5, 0.0, 2.0), 2.9, Color("#ff7b3b"), 18.0)
+	lantern_post(chosen[1] + Vector3(2.5, 0.0, 2.0), 2.9, Color("#ff7b3b"), -18.0)
+	spawn_random_wilderness_events([chosen[5], chosen[6], chosen[7], Vector3(-24.0, 0.0, -16.0)])
 	for sp in spawns:
 		var node := Node3D.new()
 		node.position = sp["pos"]

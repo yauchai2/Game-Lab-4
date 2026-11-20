@@ -347,59 +347,68 @@ func _run_road(scene: Node, _delta: float) -> void:
 				scene.on_interact()
 				step = 16
 
-# --- Map 4: Emerald Forest (160m x 104m) ---
+# --- Map 4: Emerald Forest (160m x 104m, Randomized Non-Linear Layout!) ---
 func _run_emerald(scene: Node, _delta: float) -> void:
+	var bp: Vector3 = scene.boss_home_pos
+	var ep: Vector3 = scene.east_exit_pos
+	var flank_wp := Vector3(10.0, 0.0, -24.0) if int(scene.layout_variant) == 2 else bp.lerp(Vector3(-20.0, 0.0, 0.0), 0.35)
 	match step:
 		0:
-			timer = 0.8
+			timer = 0.7
 			step = 1
 		1:
-			# Mount wolf to cruise cleanly across the 160m forest highway & trigger checkpoint
 			if not PrologueState.mounted:
 				if _walk_to(scene, scene.wolf.position, 2.2):
 					scene.toggle_mount()
 					timer = 0.25
 			else:
-				if _walk_to(scene, Vector3(36.0, 0.0, 0.0), 2.0):
-					scene.toggle_mount()
-					print("AUTOPLAY_M4: 抵達翡翠樹王聖壇前檢查點，迎戰《翡翠樹王》！")
-					timer = 0.45
+				if _walk_to(scene, flank_wp, 2.5):
 					step = 2
 		2:
+			if _walk_to(scene, bp + Vector3(-5.0, 0.0, 0.0), 2.5):
+				if PrologueState.mounted:
+					scene.toggle_mount()
+				print("AUTOPLAY_M4: [%s] 抵達聖壇迎戰《翡翠樹王》！" % String(scene.layout_title))
+				timer = 0.4
+				step = 3
+		3:
 			if scene.boss_state == 3:
-				if _walk_to(scene, Vector3(58.5, 0.0, 0.0), 2.4):
+				if _walk_to(scene, bp + Vector3(-1.5, 0.0, 0.0), 2.6):
 					scene.on_interact()
 					print("AUTOPLAY_M4: 翡翠樹王正式退休開果茶亭！")
-					timer = 1.6
-					step = 3
+					timer = 1.5
+					step = 4
 			elif scene.boss_state == 1 and scene.wolf_charge_cooldown <= 0.0:
 				scene.on_wolf_action()
 				timer = 0.5
 			else:
-				if _walk_to(scene, Vector3(58.2, 0.0, 0.0), 1.8):
+				if _walk_to(scene, bp + Vector3(-1.5, 0.0, 0.0), 1.9):
 					scene.perform_sword_attack()
 					timer = 0.28
-		3:
+		4:
 			if scene.emerald_chest.visible:
-				if _walk_to(scene, scene.emerald_chest.position, 2.0):
+				if _walk_to(scene, scene.emerald_chest.position, 2.2):
 					scene.on_interact()
 					_equip_strongest_weapon(scene)
 					print("AUTOPLAY_M4: 領取並裝備《翡翠王冠聖劍》(ATK=%d)" % PrologueState.get_total_atk())
-					timer = 0.75
-					step = 4
+					timer = 0.65
+					step = 5
 			else:
-				step = 4
-		4:
-			if _walk_to(scene, Vector3(78.0, 0.0, 0.0), 2.2):
+				step = 5
+		5:
+			if _walk_to(scene, ep, 2.5):
 				scene.on_interact()
 				print("AUTOPLAY_M4: 前往《舊軍鐘樓哨所》！")
-				step = 5
+				step = 6
 
-# --- Map 5: Clocktower Outpost (164m x 106m) ---
+# --- Map 5: Clocktower Outpost (164m x 106m, Randomized Non-Linear Layout!) ---
 func _run_clocktower(scene: Node, _delta: float) -> void:
+	var bp: Vector3 = scene.boss_home_pos
+	var ep: Vector3 = scene.east_exit_pos
+	var flank_wp := Vector3(10.0, 0.0, -24.0) if int(scene.layout_variant) == 2 else bp.lerp(Vector3(0.0, 0.0, 0.0), 0.45)
 	match step:
 		0:
-			timer = 0.8
+			timer = 0.7
 			step = 1
 		1:
 			if not PrologueState.mounted:
@@ -407,46 +416,53 @@ func _run_clocktower(scene: Node, _delta: float) -> void:
 					scene.toggle_mount()
 					timer = 0.25
 			else:
-				if _walk_to(scene, Vector3(36.0, 0.0, 0.0), 2.0):
-					scene.toggle_mount()
-					print("AUTOPLAY_M5: 穿越黃銅巨齒輪廣場，迎戰《重裝鐵鐘騎士》！")
-					timer = 0.45
+				if _walk_to(scene, flank_wp, 2.5):
 					step = 2
 		2:
+			if _walk_to(scene, bp + Vector3(-5.0, 0.0, 0.0), 2.5):
+				if PrologueState.mounted:
+					scene.toggle_mount()
+				print("AUTOPLAY_M5: [%s] 抵達鐘樓迎戰《重裝鐵鐘騎士》！" % String(scene.layout_title))
+				timer = 0.4
+				step = 3
+		3:
 			if scene.boss_state == 3:
-				if _walk_to(scene, Vector3(60.5, 0.0, 0.0), 2.4):
+				if _walk_to(scene, bp + Vector3(-1.5, 0.0, 0.0), 2.6):
 					scene.on_interact()
 					print("AUTOPLAY_M5: 重裝鐵鐘騎士退休改開景觀咖啡座！")
-					timer = 1.6
-					step = 3
+					timer = 1.5
+					step = 4
 			elif scene.boss_state == 1 and scene.wolf_charge_cooldown <= 0.0:
 				scene.on_wolf_action()
 				timer = 0.5
 			else:
-				if _walk_to(scene, Vector3(60.2, 0.0, 0.0), 1.8):
+				if _walk_to(scene, bp + Vector3(-1.5, 0.0, 0.0), 1.9):
 					scene.perform_sword_attack()
 					timer = 0.28
-		3:
+		4:
 			if scene.clock_chest.visible:
-				if _walk_to(scene, scene.clock_chest.position, 2.0):
+				if _walk_to(scene, scene.clock_chest.position, 2.2):
 					scene.on_interact()
 					_equip_strongest_weapon(scene)
 					print("AUTOPLAY_M5: 領取並裝備《百年鐘聲傳奇巨刃》(ATK=%d)" % PrologueState.get_total_atk())
-					timer = 0.75
-					step = 4
+					timer = 0.65
+					step = 5
 			else:
-				step = 4
-		4:
-			if _walk_to(scene, Vector3(80.0, 0.0, 0.0), 2.2):
+				step = 5
+		5:
+			if _walk_to(scene, ep, 2.5):
 				scene.on_interact()
 				print("AUTOPLAY_M5: 前往第一幕終章《沉霧燈塔港》！")
-				step = 5
+				step = 6
 
-# --- Map 6: Misty Lighthouse Harbor (Act 1 Finale, 170m x 110m) ---
+# --- Map 6: Misty Lighthouse Harbor (Act 1 Finale, Randomized Non-Linear Layout!) ---
 func _run_harbor(scene: Node, _delta: float) -> void:
+	var bp: Vector3 = scene.boss_home_pos
+	var sp: Vector3 = scene.ship_pos
+	var flank_wp := Vector3(12.0, 0.0, -24.0) if int(scene.layout_variant) == 2 else bp.lerp(Vector3(0.0, 0.0, 0.0), 0.45)
 	match step:
 		0:
-			timer = 0.85
+			timer = 0.75
 			step = 1
 		1:
 			if not PrologueState.mounted:
@@ -454,48 +470,51 @@ func _run_harbor(scene: Node, _delta: float) -> void:
 					scene.toggle_mount()
 					timer = 0.25
 			else:
-				if _walk_to(scene, Vector3(38.0, 0.0, 0.0), 2.0):
-					scene.toggle_mount()
-					print("AUTOPLAY_M6: 抵達百年大燈塔廣場，迎戰終章 Boss《迷霧大提督・蟹甲將軍》！")
-					timer = 0.45
+				if _walk_to(scene, flank_wp, 2.5):
 					step = 2
 		2:
+			if _walk_to(scene, bp + Vector3(-5.0, 0.0, 0.0), 2.5):
+				if PrologueState.mounted:
+					scene.toggle_mount()
+				print("AUTOPLAY_M6: [%s] 抵達大燈塔迎戰《迷霧大提督》！" % String(scene.layout_title))
+				timer = 0.4
+				step = 3
+		3:
 			if scene.boss_state == 3:
-				if _walk_to(scene, Vector3(62.2, 0.0, 0.0), 2.6):
+				if _walk_to(scene, bp + Vector3(-1.8, 0.0, 0.0), 2.8):
 					scene.on_interact()
-					print("AUTOPLAY_M6: 迷霧大提督正式退休！海霧散開、大燈塔點亮、海鮮燒烤攤開張！")
-					timer = 1.9
-					step = 3
+					print("AUTOPLAY_M6: 迷霧大提督正式退休！海霧散開、大燈塔點亮！")
+					timer = 1.8
+					step = 4
 			elif scene.boss_state == 1 and scene.wolf_charge_cooldown <= 0.0:
 				scene.on_wolf_action()
 				timer = 0.5
 			else:
-				if _walk_to(scene, Vector3(62.0, 0.0, 0.0), 1.9):
+				if _walk_to(scene, bp + Vector3(-1.8, 0.0, 0.0), 2.0):
 					scene.perform_sword_attack()
 					timer = 0.28
-		3:
+		4:
 			if scene.finale_chest.visible:
-				if _walk_to(scene, scene.finale_chest.position, 2.2):
+				if _walk_to(scene, scene.finale_chest.position, 2.3):
 					scene.on_interact()
 					_equip_strongest_weapon(scene)
 					print("AUTOPLAY_M6: 領取終章傳奇武器《百年停戰・燈塔傳奇聖劍》(ATK=%d)" % PrologueState.get_total_atk())
-					timer = 0.85
-					step = 4
+					timer = 0.75
+					step = 5
 			else:
-				step = 4
-		4:
-			if _walk_to(scene, Vector3(82.0, 0.0, 0.0), 2.4):
-				scene.on_interact()
-				print("AUTOPLAY_M6: 登上《遠航號》慶祝第一幕全區通關！")
-				timer = 1.5
 				step = 5
 		5:
-			# Final showcase of the redesigned World Map with all 4 Act 1 Bosses retired (✦)!
-			scene.open_world_map()
-			timer = 2.2
-			step = 6
+			if _walk_to(scene, sp, 2.6):
+				scene.on_interact()
+				print("AUTOPLAY_M6: 登上《遠航號》慶祝第一幕全區通關！")
+				timer = 1.4
+				step = 6
 		6:
-			print("AUTOPLAY_COMPLETE: ALL_6_ACT1_MAPS_VERIFIED | ATK=%d | Coins=%d | Inv=%d | GoldOrbs=%d | BossesRetired=4/4" % [
+			scene.open_world_map()
+			timer = 2.0
+			step = 7
+		7:
+			print("AUTOPLAY_COMPLETE: ALL_6_ACT1_MAPS_RANDOMIZED_VERIFIED | ATK=%d | Coins=%d | Inv=%d | GoldOrbs=%d | BossesRetired=4/4" % [
 				PrologueState.get_total_atk(), PrologueState.coins, PrologueState.inventory.size(), PrologueState.orb_gold
 			])
 			active = false

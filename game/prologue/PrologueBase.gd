@@ -116,6 +116,18 @@ var bird_alert_target := Vector3.INF
 var _walk_phase := 0.0
 var _wolf_phase := 0.0
 
+# Procedural Instance Randomization & World Events (PoE 2 Variety)
+var zone_modifier_id := ""
+var zone_modifier_label := ""
+var zone_speed_bonus := 0.0
+var zone_crit_bonus := 0
+var zone_coin_mult := 1
+var shrine_speed_timer := 0.0
+var shrine_crit_timer := 0.0
+var wild_mimics: Array[Dictionary] = []
+var wild_shrines: Array[Dictionary] = []
+var wild_cages: Array[Dictionary] = []
+
 # Cinematic Camera Director (allows breaking 2.5D ortho for story & dramatic moments)
 var default_cam_size := 16.0
 var cinematic_active := false
@@ -800,6 +812,180 @@ func spawn_destructible_crate(pos: Vector3, coin_count := 3) -> void:
 	box(crate, Vector3(0, 0.46, 0), Vector3(0.96, 0.16, 0.96), TIMBER)
 	destructibles.append({"node": crate, "pos": pos, "coins": coin_count, "broken": false})
 
+func pick_shuffled_positions(pool: Array[Vector3], count: int) -> Array[Vector3]:
+	var arr: Array[Vector3] = []
+	for p in pool:
+		arr.append(p)
+	for i in range(arr.size() - 1, 0, -1):
+		var j := randi() % (i + 1)
+		var tmp := arr[i]
+		arr[i] = arr[j]
+		arr[j] = tmp
+	var out: Array[Vector3] = []
+	for k in range(mini(count, arr.size())):
+		out.append(arr[k])
+	return out
+
+func roll_zone_modifier() -> String:
+	var mods := [
+		{"id": "swift", "label": "🍃 順風疾行（移速 +18%）", "spd": 0.18, "crit": 0, "coin": 1},
+		{"id": "riches", "label": "💰 金幣豐收（掉落金幣加倍）", "spd": 0.0, "crit": 0, "coin": 2},
+		{"id": "lucky", "label": "✦ 星光祝福（暴擊率 +15%）", "spd": 0.0, "crit": 15, "coin": 1},
+		{"id": "ambush", "label": "📦 寶箱怪遷徙（額外逃跑寶箱怪）", "spd": 0.06, "crit": 0, "coin": 1},
+	]
+	var pick: Dictionary = mods[randi() % mods.size()]
+	zone_modifier_id = String(pick["id"])
+	zone_modifier_label = String(pick["label"])
+	zone_speed_bonus = float(pick["spd"])
+	zone_crit_bonus = int(pick["crit"])
+	zone_coin_mult = int(pick["coin"])
+	return zone_modifier_label
+
+func spawn_random_wilderness_events(candidate_spots: Array[Vector3]) -> void:
+	var spots := pick_shuffled_positions(candidate_spots, 4)
+	if spots.size() >= 1:
+		_spawn_walking_mimic(spots[0])
+	if spots.size() >= 2:
+		_spawn_random_shrine(spots[1])
+	if spots.size() >= 3:
+		_spawn_caged_traveler(spots[2])
+	if zone_modifier_id == "ambush" and spots.size() >= 4:
+		_spawn_walking_mimic(spots[3])
+
+func _spawn_walking_mimic(pos: Vector3) -> void:
+	var m := Node3D.new()
+	m.position = pos
+	add_child(m)
+	box(m, Vector3(0, 0.48, 0), Vector3(1.05, 0.72, 0.80), Color("#d99a32"))
+	box(m, Vector3(0, 0.88, 0), Vector3(1.12, 0.22, 0.86), Color("#e35244"))
+	box(m, Vector3(0, 0.55, 0.42), Vector3(0.24, 0.28, 0.08), GOLD, false, true)
+	for lx in [-0.32, 0.32]:
+		cylinder(m, Vector3(lx, 0.14, 0), 0.10, 0.12, 0.28, TIMBER)
+	var lbl := label_at(m, Vector3(0, 1.55, 0), "📦 走路寶箱怪 (快追!)", GOLD, 26)
+	wild_mimics.append({"node": m, "label": lbl, "hp": 12, "max_hp": 12, "alive": true, "fleeing": false, "coin_cd": 0.5})
+
+func _spawn_random_shrine(pos: Vector3) -> void:
+	var kinds := [
+		{"id": "swift", "name": "⛩ 疾風神龕（移速大增）", "col": MIST_CYAN},
+		{"id": "crit", "name": "⛩ 狂暴星龕（暴擊 +50%）", "col": FIRE_ORANGE},
+		{"id": "gold", "name": "⛩ 財富噴泉（金幣雨＋回滿）", "col": GOLD},
+	]
+	var k: Dictionary = kinds[randi() % kinds.size()]
+	var sh := Node3D.new()
+	sh.position = pos
+	add_child(sh)
+	cylinder(sh, Vector3(0, 0.85, 0), 0.42, 0.55, 1.7, STONE_LIGHT)
+	var orb := sphere(sh, Vector3(0, 2.05, 0), Vector3(0.62, 0.78, 0.62), k["col"] as Color, true)
+	float_motes.append({"node": orb, "base": orb.position, "phase": randf() * TAU, "speed": 2.6, "amp": 0.16})
+	marker(pos, k["col"] as Color, 1.65)
+	var lbl := label_at(sh, Vector3(0, 2.95, 0), String(k["name"]), k["col"] as Color, 26)
+	wild_shrines.append({"node": sh, "pos": pos, "kind": String(k["id"]), "name": String(k["name"]), "label": lbl, "used": false})
+
+func _spawn_caged_traveler(pos: Vector3) -> void:
+	var cg := Node3D.new()
+	cg.position = pos
+	add_child(cg)
+	var cage_bars := Node3D.new()
+	cg.add_child(cage_bars)
+	box(cage_bars, Vector3(0, 0.1, 0), Vector3(1.8, 0.18, 1.8), STONE)
+	box(cage_bars, Vector3(0, 2.1, 0), Vector3(1.8, 0.18, 1.8), STONE)
+	for bx in [-0.78, 0.0, 0.78]:
+		for bz in [-0.78, 0.78]:
+			cylinder(cage_bars, Vector3(bx, 1.1, bz), 0.06, 0.06, 2.0, Color("#545c6e"))
+	var npc := Node3D.new()
+	cg.add_child(npc)
+	cylinder(npc, Vector3(0, 0.45, 0), 0.24, 0.28, 0.6, Color("#5ec978"))
+	sphere(npc, Vector3(0, 0.98, 0), Vector3(0.46, 0.44, 0.44), Color("#f4c9a8"))
+	register_living_npc(npc, 0.15, 0.08, 4.8)
+	var lbl := label_at(cg, Vector3(0, 2.65, 0), "🔒 受困旅人（按 [E] 敲鎖救援）", Color("#a8e6ff"), 26)
+	wild_cages.append({"node": cg, "bars": cage_bars, "pos": pos, "label": lbl, "freed": false})
+
+func _update_random_events(delta: float) -> void:
+	shrine_speed_timer = maxf(0.0, shrine_speed_timer - delta)
+	shrine_crit_timer = maxf(0.0, shrine_crit_timer - delta)
+	var p_pos := feet()
+	for m in wild_mimics:
+		if not bool(m["alive"]):
+			continue
+		var mn: Node3D = m["node"]
+		if not is_instance_valid(mn):
+			continue
+		var away := flat(mn.position - p_pos)
+		var dist := away.length()
+		if dist < 8.5:
+			m["fleeing"] = true
+		if bool(m["fleeing"]):
+			if dist < 16.0 and dist > 0.1:
+				var dir := away.normalized()
+				mn.position += dir * 4.4 * delta
+				mn.rotation.y = atan2(dir.x, dir.z)
+				mn.position.y = absf(sin(Time.get_ticks_msec() * 0.016)) * 0.36
+			m["coin_cd"] = float(m["coin_cd"]) - delta
+			if float(m["coin_cd"]) <= 0.0:
+				m["coin_cd"] = 0.75
+				spawn_bouncing_coins(mn.position, 1, 5 * zone_coin_mult)
+
+func try_interact_random_events() -> bool:
+	for sh in wild_shrines:
+		if bool(sh["used"]):
+			continue
+		if near(sh["pos"] as Vector3, 2.8):
+			sh["used"] = true
+			(sh["label"] as Label3D).text = "✦ 已啟動"
+			(sh["label"] as Label3D).modulate = Color("#a8b5c7")
+			PrologueState.play_sfx("checkpoint")
+			var k := String(sh["kind"])
+			if k == "swift":
+				shrine_speed_timer = 18.0
+				show_subtitle("⛩ 啟動疾風神龕！18 秒內移動速度 +45%！", 3.4)
+			elif k == "crit":
+				shrine_crit_timer = 18.0
+				show_subtitle("⛩ 啟動狂暴星龕！18 秒內暴擊率 +50%！", 3.4)
+			else:
+				PrologueState.player_hp = 5
+				PrologueState.flask_charges = 3
+				spawn_bouncing_coins(sh["pos"] as Vector3, 10, 5 * zone_coin_mult)
+				show_subtitle("⛩ 財富噴泉爆發！金幣雨噴發＋體力水壺全滿！", 3.4)
+			show_player_emote("✨", 1.5)
+			return true
+	for cg in wild_cages:
+		if bool(cg["freed"]):
+			continue
+		if near(cg["pos"] as Vector3, 2.8):
+			cg["freed"] = true
+			(cg["bars"] as Node3D).hide()
+			(cg["label"] as Label3D).text = "✦ 謝謝救命！"
+			(cg["label"] as Label3D).modulate = GOLD
+			spawn_wood_burst(cg["pos"] as Vector3, STONE_LIGHT, 8)
+			spawn_bouncing_coins(cg["pos"] as Vector3, 7, 5 * zone_coin_mult)
+			PrologueState.orb_gold += 1
+			PrologueState.flask_charges = mini(3, PrologueState.flask_charges + 1)
+			show_player_emote("✨", 1.5)
+			show_subtitle("🔓 救出受困旅人！獲謝禮 35¢＋金漆罐 x1＋水壺 +1！", 3.6)
+			return true
+	return false
+
+func get_random_event_prompt() -> String:
+	for sh in wild_shrines:
+		if not bool(sh["used"]) and near(sh["pos"] as Vector3, 2.8):
+			return "[ E ] 啟動：" + String(sh["name"])
+	for cg in wild_cages:
+		if not bool(cg["freed"]) and near(cg["pos"] as Vector3, 2.8):
+			return "[ E ] 敲開鐵籠解救旅人"
+	return ""
+
+func _append_random_event_markers(list: Array[Dictionary]) -> Array[Dictionary]:
+	for m in wild_mimics:
+		if bool(m["alive"]) and is_instance_valid(m["node"]):
+			list.append({"pos": (m["node"] as Node3D).position, "kind": "rare", "label": "走路寶箱怪"})
+	for sh in wild_shrines:
+		if not bool(sh["used"]):
+			list.append({"pos": sh["pos"], "kind": "checkpoint", "label": String(sh["name"])})
+	for cg in wild_cages:
+		if not bool(cg["freed"]):
+			list.append({"pos": cg["pos"], "kind": "exit", "label": "受困旅人"})
+	return list
+
 func _damage_destructibles(origin: Vector3, radius := 2.6) -> bool:
 	var hit_any := false
 	for d in destructibles:
@@ -814,8 +1000,32 @@ func _damage_destructibles(origin: Vector3, radius := 2.6) -> bool:
 			var p := dn.position
 			dn.queue_free()
 			spawn_wood_burst(p, TIMBER_LIGHT, 7)
-			spawn_bouncing_coins(p, int(d["coins"]), 5)
-			spawn_damage_pop(p, "+%d¢" % (int(d["coins"]) * 5), GOLD, false)
+			spawn_bouncing_coins(p, int(d["coins"]) * zone_coin_mult, 5)
+			spawn_damage_pop(p, "+%d¢" % (int(d["coins"]) * 5 * zone_coin_mult), GOLD, false)
+	for m in wild_mimics:
+		if not bool(m["alive"]):
+			continue
+		var mn: Node3D = m["node"]
+		if not is_instance_valid(mn):
+			continue
+		if flat(origin - mn.position).length() <= radius + 0.6:
+			hit_any = true
+			m["fleeing"] = true
+			var dmg := maxi(1, PrologueState.get_total_atk())
+			m["hp"] = maxi(0, int(m["hp"]) - dmg)
+			flash_hit(mn)
+			spawn_damage_pop(mn.position, "-%d" % dmg, GOLD, false)
+			spawn_bouncing_coins(mn.position, 2 * zone_coin_mult, 5)
+			(m["label"] as Label3D).text = "📦 寶箱怪 (%d/%d)" % [int(m["hp"]), int(m["max_hp"])]
+			if int(m["hp"]) <= 0:
+				m["alive"] = false
+				var mp := mn.position
+				mn.queue_free()
+				PrologueState.orb_gold += 1
+				var mimic_item := PrologueState.make_item("寶箱怪私房金劍", "weapon", "rare", 3)
+				PrologueState.add_item_to_inventory(mimic_item)
+				spawn_bouncing_coins(mp, 12 * zone_coin_mult, 5)
+				show_subtitle("📦 擊敗走路寶箱怪！狂噴金幣＋金漆罐 x1＋【黃裝】寶箱怪私房金劍！", 4.0)
 	return hit_any
 
 func play_giant_retirement_stamp(target_pos: Vector3) -> void:
@@ -1517,8 +1727,11 @@ func aim_toward_mouse() -> void:
 		player.rotation.y = yaw
 
 func set_prompt(text_val: String) -> void:
-	prompt_label.text = text_val
-	prompt_panel.visible = not text_val.is_empty()
+	var final_txt := text_val
+	if final_txt.is_empty():
+		final_txt = get_random_event_prompt()
+	prompt_label.text = final_txt
+	prompt_panel.visible = not final_txt.is_empty()
 
 func update_boss_bar(visible_flag: bool, boss_title: String, hp_val: int, max_hp_val: int, state_txt := "", badge_col := GOLD) -> void:
 	boss_panel.visible = visible_flag
@@ -1691,6 +1904,7 @@ func _animate_living_world(delta: float) -> void:
 
 func step_shared_physics(delta: float, cam_override_target := Vector3.INF) -> bool:
 	_animate_living_world(delta)
+	_update_random_events(delta)
 	if hitstop_frames > 0:
 		hitstop_frames -= 1
 		return false
@@ -1740,7 +1954,7 @@ func step_shared_physics(delta: float, cam_override_target := Vector3.INF) -> bo
 	var right := flat(camera.transform.basis.x).normalized()
 	var fwd := flat(camera.transform.basis.z).normalized()
 	var dir := (right * h + fwd * v).limit_length()
-	var spd_mult := PrologueState.get_speed_multiplier()
+	var spd_mult := PrologueState.get_speed_multiplier() + zone_speed_bonus + (0.45 if shrine_speed_timer > 0.0 else 0.0)
 
 	if air_slam_active:
 		vertical_vel -= 28.0 * delta
@@ -1785,7 +1999,7 @@ func step_shared_physics(delta: float, cam_override_target := Vector3.INF) -> bo
 	bird.position = bird.position.lerp(bird_target, clampf(delta * bird_speed, 0.0, 1.0))
 
 	if minimap_overlay:
-		minimap_overlay.update_state(feet(), wolf.position, get_minimap_markers())
+		minimap_overlay.update_state(feet(), wolf.position, _append_random_event_markers(get_minimap_markers()))
 	var target := cam_override_target if cam_override_target != Vector3.INF else feet()
 	position_camera(target, clampf(delta * 4.8, 0.0, 1.0))
 	if shake_time > 0.0 and PrologueState.screen_shake_enabled:
@@ -1853,7 +2067,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		match event.physical_keycode:
 			KEY_1: drink_flask()
 			KEY_SPACE: perform_dodge()
-			KEY_E: on_interact()
+			KEY_E:
+				if not try_interact_random_events():
+					on_interact()
 			KEY_F: toggle_mount()
 			KEY_Q:
 				PrologueState.play_sfx("wolf")

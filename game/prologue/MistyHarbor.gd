@@ -9,9 +9,13 @@ enum HarborBossState { IDLE, WINDUP, STAGGERED, KNEELED, RETIRED }
 const MAX_BOSS_HP := 38
 const WEST_EXIT := Vector3(-70.0, 0.0, 0.0)
 const WAYPOINT_POS := Vector3(-60.0, 0.0, -4.5)
-const BOSS_HOME := Vector3(64.0, 0.0, 0.0)
-const GRILL_POS := Vector3(56.0, 0.0, -8.0)
-const SHIP_POS := Vector3(82.0, 0.0, 0.0)
+
+var layout_variant := 0
+var layout_title := ""
+var entry_spawn_pos := Vector3(-66.0, 0.0, 0.0)
+var boss_home_pos := Vector3(64.0, 0.0, 0.0)
+var grill_pos := Vector3(56.0, 0.0, -8.0)
+var ship_pos := Vector3(82.0, 0.0, 0.0)
 
 var boss_state := HarborBossState.IDLE
 var boss_hp := MAX_BOSS_HP
@@ -35,16 +39,39 @@ var mobs: Array[Dictionary] = []
 var checkpoints: Array[Dictionary] = []
 var loot_drops: Array[Dictionary] = []
 
+func _configure_random_layout() -> void:
+	layout_variant = randi() % 3
+	if layout_variant == 0:
+		layout_title = "南岸港門 → 北角大燈塔"
+		entry_spawn_pos = Vector3(-56.0, 0.0, 26.0)
+		boss_home_pos = Vector3(52.0, 0.0, -26.0)
+		grill_pos = Vector3(44.0, 0.0, -32.0)
+		ship_pos = Vector3(70.0, 0.0, -32.0)
+	elif layout_variant == 1:
+		layout_title = "北岸港門 → 南角大燈塔"
+		entry_spawn_pos = Vector3(-56.0, 0.0, -26.0)
+		boss_home_pos = Vector3(52.0, 0.0, 26.0)
+		grill_pos = Vector3(44.0, 0.0, 32.0)
+		ship_pos = Vector3(70.0, 0.0, 32.0)
+	else:
+		layout_title = "海峽礁岩環線（中路沉船）"
+		entry_spawn_pos = Vector3(-66.0, 0.0, 0.0)
+		boss_home_pos = Vector3(64.0, 0.0, 0.0)
+		grill_pos = Vector3(56.0, 0.0, -8.0)
+		ship_pos = Vector3(82.0, 0.0, 0.0)
+
 func _ready() -> void:
 	can_attack = true
 	scene_world_key = "harbor"
 	scene_shadow_tint = Color("#3b5278")
 	set_wind_profile(Vector2(0.88, 0.46), 1.65, 0.44, 0.13)
+	_configure_random_layout()
+	var mod_txt := roll_zone_modifier()
 	_build_misty_harbor()
 	_build_admiral_boss()
 	_spawn_harbor_mobs()
 
-	var spawn := Vector3(-66.0, 0.0, 0.0)
+	var spawn := entry_spawn_pos
 	if PrologueState.spawn_tag == "from_waypoint":
 		spawn = WAYPOINT_POS + Vector3(0.0, 0.0, 2.8)
 	setup_core_trio(spawn)
@@ -54,7 +81,7 @@ func _ready() -> void:
 		minimap_overlay.configure_bounds(Rect2(-78.0, -55.0, 170.0, 110.0))
 	PrologueState.play_bgm("road")
 	_apply_persisted_state()
-	show_subtitle("《沉霧燈塔港》── 第一幕終章：勸退迷霧大提督，點亮百年大燈塔啟航！", 4.0)
+	show_subtitle("《沉霧燈塔港・%s》｜%s" % [layout_title, mod_txt], 4.2)
 	_update_ui()
 
 func _build_misty_harbor() -> void:
@@ -94,17 +121,20 @@ func _build_misty_harbor() -> void:
 
 	# Sub-region 4: Central Sea-Breeze Promenade (-12..+36, -16..+16)
 	organic_mound(self, Vector3(12.0, -0.48, 0.0), 25.0, 16.0, 1.06, Color("#88be68"), 0.0)
-	curved_path([WEST_EXIT, Vector3(-42.0, 0, 0.0), Vector3(-14.0, 0, 1.5), Vector3(14.0, 0, -1.5), Vector3(40.0, 0, 0.0), BOSS_HOME, SHIP_POS], 2.7, TRAIL_STONE, STONE_LIGHT)
-	_add_checkpoint(Vector3(38.0, 0.0, 0.0), "大燈塔前廣場")
+	curved_path([entry_spawn_pos, Vector3(-14.0, 0, 1.5), Vector3(14.0, 0, -1.5), boss_home_pos, ship_pos], 2.7, TRAIL_STONE, STONE_LIGHT)
+	if layout_variant == 2:
+		box(self, Vector3(12.0, 1.2, 0.0), Vector3(2.2, 2.4, 11.5), TIMBER, true)
+		label_at(self, Vector3(12.0, 3.2, 0.0), "⚠ 沉船殘骸封道（請由北／南側繞道）", GOLD, 26)
+	_add_checkpoint(boss_home_pos.lerp(Vector3(0.0, 0.0, 0.0), 0.36), "大燈塔前廣場")
 
-	# Sub-region 5: East Grand Ceasefire Lighthouse Headland (48..84, -26..+26)
-	organic_mound(self, Vector3(64.0, -0.44, 0.0), 20.5, 20.5, 1.12, Color("#dfd1b0"), 0.0)
-	organic_mound(self, Vector3(64.0, 0.02, 0.0), 12.5, 12.5, 0.04, Color("#f2e6ca"), 0.0)
-	stone_archway(Vector3(46.0, 0.0, 0.0), 90.0, 1.5, true)
+	# Dynamic Grand Ceasefire Lighthouse Headland (NE, SE, or East!)
+	organic_mound(self, boss_home_pos + Vector3(0.0, -0.44, 0.0), 20.5, 20.5, 1.12, Color("#dfd1b0"), 0.0)
+	organic_mound(self, boss_home_pos + Vector3(0.0, 0.02, 0.0), 12.5, 12.5, 0.04, Color("#f2e6ca"), 0.0)
 
 	# Towering Red-and-White Grand Ceasefire Lighthouse + Rotating Golden Light Beam!
+	var lh_pos := boss_home_pos + Vector3(6.0, 0.0, -15.5)
 	var lh := Node3D.new()
-	lh.position = Vector3(70.0, 0.0, -16.0)
+	lh.position = lh_pos
 	add_child(lh)
 	for bi in range(6):
 		var col := Color("#e34b3b") if bi % 2 == 0 else WHITE_WALL
@@ -112,7 +142,7 @@ func _build_misty_harbor() -> void:
 	cylinder(lh, Vector3(0, 12.5, 0), 1.45, 1.45, 1.2, Color("#fff5b8"), true)
 	cylinder(lh, Vector3(0, 13.7, 0), 0.2, 1.75, 1.5, Color("#e34b3b"))
 	lighthouse_beam = Node3D.new()
-	lighthouse_beam.position = Vector3(70.0, 12.5, -16.0)
+	lighthouse_beam.position = lh_pos + Vector3(0.0, 12.5, 0.0)
 	add_child(lighthouse_beam)
 	var bmat := StandardMaterial3D.new()
 	bmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -122,24 +152,24 @@ func _build_misty_harbor() -> void:
 	bm.material_override = bmat
 	lighthouse_beam.visible = PrologueState.harbor_boss_retired
 
-	# Act 2 Departure Sailing Ship 《遠航號》 at the East Pier!
+	# Act 2 Departure Sailing Ship 《遠航號》 at the Pier!
 	var ship := Node3D.new()
-	ship.position = SHIP_POS + Vector3(3.2, 0.0, 0.0)
+	ship.position = ship_pos + Vector3(3.2, 0.0, 0.0)
 	add_child(ship)
 	box(ship, Vector3(0, 0.65, 0), Vector3(5.2, 1.3, 2.8), TIMBER_LIGHT, true)
 	cylinder(ship, Vector3(0, 3.2, 0), 0.14, 0.18, 5.2, TIMBER)
 	box(ship, Vector3(0.25, 3.6, 0), Vector3(0.18, 3.2, 3.6), WHITE_WALL)
 	box(ship, Vector3(0.32, 3.6, 0), Vector3(0.22, 0.7, 3.65), CORAL_ROOF)
 	sway_items.append({"node": ship, "base_rot": ship.rotation, "amp": 0.035, "speed": 1.6, "phase": 0.2})
-	marker(SHIP_POS, GOLD, 0.95)
-	label_at(self, SHIP_POS + Vector3(0, 2.8, 0), "⛵ 遠航號 → 第二幕：珊瑚群島", GOLD, 30)
+	marker(ship_pos, GOLD, 0.95)
+	label_at(self, ship_pos + Vector3(0, 2.8, 0), "⛵ 遠航號 → 第二幕：珊瑚群島", GOLD, 30)
 
 	# Clearing Harbor Sea-Fog Clouds (dramatically dissolve when Admiral retires!)
 	fog_harbor = Node3D.new()
 	add_child(fog_harbor)
 	for fp in [
-		Vector3(54.0, 2.4, -10.0), Vector3(64.0, 2.8, 12.0),
-		Vector3(74.0, 2.6, -6.0), Vector3(78.0, 2.4, 8.0),
+		boss_home_pos + Vector3(-10.0, 2.4, -10.0), boss_home_pos + Vector3(0.0, 2.8, 12.0),
+		boss_home_pos + Vector3(10.0, 2.6, -6.0), boss_home_pos + Vector3(14.0, 2.4, 8.0),
 	]:
 		sphere(fog_harbor, fp, Vector3(7.5, 4.6, 7.0), Color("#e6f2fa"), true)
 
@@ -218,32 +248,45 @@ func get_minimap_markers() -> Array[Dictionary]:
 	for cp in checkpoints:
 		list.append({"pos": cp["pos"], "kind": "checkpoint", "label": String(cp["title"])})
 	list.append({"pos": WEST_EXIT, "kind": "exit", "label": "舊軍鐘樓哨所"})
-	list.append({"pos": SHIP_POS, "kind": "exit", "label": "遠航號"})
+	list.append({"pos": ship_pos, "kind": "exit", "label": "遠航號"})
 	return list
 
 func _spawn_harbor_mobs() -> void:
+	var raw_pool: Array[Vector3] = [
+		Vector3(-36.0, 0.0, -42.0),
+		Vector3(-5.0, 0.0, -29.0),
+		Vector3(16.0, 0.0, 42.0),
+		Vector3(-32.0, 0.0, 34.0),
+		Vector3(54.0, 0.0, -26.0),
+		Vector3(54.0, 0.0, 26.0),
+		Vector3(64.0, 0.0, 0.0),
+		Vector3(26.0, 0.0, -18.0),
+		Vector3(26.0, 0.0, 18.0),
+	]
+	var valid_pool: Array[Vector3] = []
+	for p in raw_pool:
+		if flat(p - boss_home_pos).length() > 16.0 and flat(p - entry_spawn_pos).length() > 14.0:
+			valid_pool.append(p)
+	var chosen := pick_shuffled_positions(valid_pool, 8)
 	var spawns := [
-		# West Coastal Gate Packs
-		{"pos": Vector3(-46.0, 0.0, 4.5), "name": "霧港巡邏蟹", "hp": 9, "tier": "normal"},
 		{"pos": Vector3(-42.0, 0.0, -5.0), "name": "霧港巡邏蟹", "hp": 9, "tier": "normal"},
-		{"pos": Vector3(-28.0, 0.0, 2.5), "name": "霧港巡邏蟹", "hp": 9, "tier": "normal"},
-		# North Shipwreck Sandbar Cove + Rare + Hidden Unique #1
 		{"pos": Vector3(-32.0, 0.0, -24.0), "name": "沉船水手兵", "hp": 10, "tier": "normal"},
-		{"pos": Vector3(-14.0, 0.0, -32.0), "name": "沉船水手兵", "hp": 10, "tier": "normal"},
-		{"pos": Vector3(-5.0, 0.0, -29.0), "name": "★ 迷霧水手長", "hp": 20, "tier": "rare"},
-		{"pos": Vector3(-36.0, 0.0, -42.0), "name": "❖【傳奇】深海巨錨蟹王", "hp": 40, "tier": "unique", "uid": "anchor_crab_king"},
-		# South Cargo Docks + Rare + Hidden Unique #2
 		{"pos": Vector3(-28.0, 0.0, 24.0), "name": "碼頭砲艇兵", "hp": 10, "tier": "normal"},
-		{"pos": Vector3(-6.0, 0.0, 33.0), "name": "碼頭砲艇兵", "hp": 10, "tier": "normal"},
-		{"pos": Vector3(3.0, 0.0, 29.0), "name": "★ 港灣砲艇長", "hp": 20, "tier": "rare"},
-		{"pos": Vector3(16.0, 0.0, 42.0), "name": "❖【傳奇】百年霧笛巨像", "hp": 42, "tier": "unique", "uid": "foghorn_colossus"},
-		# Central Sea-Breeze Promenade + Rare
 		{"pos": Vector3(5.0, 0.0, -6.5), "name": "燈塔守衛兵", "hp": 10, "tier": "normal"},
 		{"pos": Vector3(13.0, 0.0, 6.5), "name": "燈塔守衛兵", "hp": 10, "tier": "normal"},
-		{"pos": Vector3(21.0, 0.0, -1.0), "name": "★ 燈塔禁衛長", "hp": 22, "tier": "rare"},
-		{"pos": Vector3(29.0, 0.0, 5.5), "name": "燈塔守衛兵", "hp": 10, "tier": "normal"},
-		{"pos": Vector3(31.0, 0.0, -6.5), "name": "燈塔守衛兵", "hp": 10, "tier": "normal"},
+		{"pos": chosen[0], "name": "❖【傳奇】深海巨錨蟹王", "hp": 40, "tier": "unique", "uid": "anchor_crab_king"},
+		{"pos": chosen[1], "name": "❖【傳奇】百年霧笛巨像", "hp": 42, "tier": "unique", "uid": "foghorn_colossus"},
+		{"pos": chosen[2], "name": "★ 迷霧水手長", "hp": 20, "tier": "rare"},
+		{"pos": chosen[3], "name": "★ 港灣砲艇長", "hp": 20, "tier": "rare"},
+		{"pos": chosen[4], "name": "★ 燈塔禁衛長", "hp": 22, "tier": "rare"},
 	]
+	lantern_post(chosen[0] + Vector3(2.4, 0.0, 2.0), 2.9, Color("#ff7b3b"), 20.0)
+	lantern_post(chosen[1] + Vector3(-2.4, 0.0, 2.0), 2.9, Color("#ff7b3b"), -20.0)
+	var ev_spots: Array[Vector3] = []
+	for ei in range(5, chosen.size()):
+		ev_spots.append(chosen[ei])
+	ev_spots.append(Vector3(-22.0, 0.0, 0.0))
+	spawn_random_wilderness_events(ev_spots)
 	for sp in spawns:
 		var node := Node3D.new()
 		node.position = sp["pos"]
@@ -305,7 +348,7 @@ func _drop_loot(pos: Vector3, is_rare: bool, tier := "normal", uid := "") -> voi
 
 func _build_admiral_boss() -> void:
 	add_child(boss)
-	boss.position = BOSS_HOME
+	boss.position = boss_home_pos
 	sphere(boss, Vector3(0, 1.5, 0), Vector3(2.3, 1.85, 2.0), Color("#d9534f"))
 	sphere(boss, Vector3(0, 2.65, 0.3), Vector3(1.15, 1.0, 1.05), Color("#f28c7e"))
 	boss_admiral_hat = box(boss, Vector3(0, 3.45, 0.2), Vector3(1.9, 0.65, 0.95), Color("#26344d"))
@@ -314,11 +357,11 @@ func _build_admiral_boss() -> void:
 	boss_anchor = box(boss, Vector3(-1.45, 1.8, 0.7), Vector3(0.55, 2.5, 0.55), Color("#4f5d73"))
 	boss_bubble = label_at(boss, Vector3(0, 4.9, 0), "", Color("#e8fbff"), 34)
 	boss_cue = label_at(boss, Vector3(0, 4.35, 0), "迷霧大提督・蟹甲將軍", Color("#ff9f5a"), 30)
-	attack_ring = marker(BOSS_HOME, STAMP_RED, 3.8)
+	attack_ring = marker(boss_home_pos, STAMP_RED, 3.8)
 	attack_ring.hide()
 
 	seafood_grill = Node3D.new()
-	seafood_grill.position = GRILL_POS
+	seafood_grill.position = grill_pos
 	add_child(seafood_grill)
 	box(seafood_grill, Vector3(0, 0.52, 0), Vector3(2.9, 1.0, 1.3), TIMBER_LIGHT)
 	box(seafood_grill, Vector3(0, 2.25, 0), Vector3(3.4, 0.26, 2.0), Color("#3496e8"))
@@ -326,7 +369,7 @@ func _build_admiral_boss() -> void:
 	seafood_grill.hide()
 
 	add_child(finale_chest)
-	finale_chest.position = BOSS_HOME + Vector3(-2.6, 0.0, 2.2)
+	finale_chest.position = boss_home_pos + Vector3(-2.6, 0.0, 2.2)
 	box(finale_chest, Vector3(0, 0.45, 0), Vector3(1.25, 0.86, 0.86), GOLD)
 	box(finale_chest, Vector3(0, 0.88, 0), Vector3(1.32, 0.20, 0.92), Color("#e34b3b"))
 	label_at(finale_chest, Vector3(0, 1.5, 0), "第一幕終章傳奇寶箱", GOLD, 28)
@@ -338,7 +381,7 @@ func _apply_persisted_state() -> void:
 		boss_admiral_hat.hide()
 		boss_straw_hat.show()
 		boss_anchor.hide()
-		boss.position = GRILL_POS + Vector3(0, 0, -1.3)
+		boss.position = grill_pos + Vector3(0, 0, -1.3)
 		boss_cue.text = "海鮮燒烤大廚"
 		seafood_grill.show()
 		fog_harbor.hide()
@@ -356,7 +399,7 @@ func _physics_process(delta: float) -> void:
 			boss_bubble.text = ""
 	if not step_shared_physics(delta):
 		return
-	if not boss_active and boss_state == HarborBossState.IDLE and not PrologueState.harbor_boss_retired and flat(feet() - BOSS_HOME).length() < 15.0:
+	if not boss_active and boss_state == HarborBossState.IDLE and not PrologueState.harbor_boss_retired and flat(feet() - boss_home_pos).length() < 15.0:
 		boss_active = true
 		boss_timer = 1.2
 		PrologueState.play_bgm("boss")
@@ -580,7 +623,7 @@ func on_interact() -> void:
 			boss_admiral_hat.hide()
 			boss_straw_hat.show()
 			boss_anchor.hide()
-			boss.position = GRILL_POS + Vector3(0, 0, -1.3)
+			boss.position = grill_pos + Vector3(0, 0, -1.3)
 			boss_cue.text = "海鮮燒烤大廚"
 			pop_in_node(seafood_grill)
 			pop_in_node(finale_chest)
@@ -595,7 +638,7 @@ func on_interact() -> void:
 		show_player_emote("✨", 2.2)
 		show_subtitle("開啟第一幕終章傳奇寶箱！獲【傳奇】燈塔傳奇聖劍 (ATK+9)＋金漆罐 x5＋100¢！", 4.8)
 		return
-	if near(SHIP_POS, 3.5):
+	if near(ship_pos, 3.5):
 		if PrologueState.harbor_boss_retired:
 			show_player_emote("⛵", 2.0)
 			show_subtitle("✦ 恭喜通關第一幕《雲丘停戰邊境》！《遠航號》已整備完成，準備啟航第二幕《珊瑚群島》！", 5.0)
@@ -640,7 +683,7 @@ func _update_ui() -> void:
 		set_prompt("[ E ] 砸下【正式退休】紅章！（驅散百年海霧）")
 	elif finale_chest.visible and near(finale_chest.position, 2.9):
 		set_prompt("[ E ] 開啟第一幕終章傳奇寶箱")
-	elif near(SHIP_POS, 3.5):
+	elif near(ship_pos, 3.5):
 		set_prompt("[ E ] 登上《遠航號》（啟航第二幕）" if PrologueState.harbor_boss_retired else "[ E ] 遠航號（海霧尚未散去）")
 	elif not PrologueState.mounted and near(wolf.position, 2.7):
 		set_prompt("[ F ] 騎上巨狼")
