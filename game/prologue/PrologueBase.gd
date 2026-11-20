@@ -421,6 +421,139 @@ func fluffy_cloud(pos: Vector3, scl := 1.0, drift_amp := 1.6, col := CLOUD_WHITE
 	cloud_puffs.append({"node": root, "base": pos, "amp": drift_amp, "phase": pos.x * 0.3 + pos.z * 0.2})
 	return root
 
+# --- Expanded Exploration & Zero-Void 360 Panorama Builders ---
+func stone_archway(pos: Vector3, rot_deg := 0.0, scl := 1.0, with_steps := true) -> Node3D:
+	var root := Node3D.new()
+	root.position = pos
+	root.rotation_degrees.y = rot_deg
+	root.scale = Vector3.ONE * scl
+	add_child(root)
+	box(root, Vector3(-1.65, 1.55, 0.0), Vector3(0.85, 3.1, 0.95), STONE_LIGHT, true)
+	box(root, Vector3(1.65, 1.55, 0.0), Vector3(0.85, 3.1, 0.95), STONE_LIGHT, true)
+	box(root, Vector3(0.0, 3.35, 0.0), Vector3(4.5, 0.78, 1.08), STONE)
+	sphere(root, Vector3(-1.55, 3.68, 0.1), Vector3(1.15, 0.45, 0.95), Color("#4e7c48"))
+	sphere(root, Vector3(1.45, 3.65, -0.1), Vector3(1.05, 0.42, 0.90), Color("#5d8f52"))
+	if with_steps:
+		for si in range(4):
+			box(root, Vector3(0.0, 0.08 + float(si) * 0.06, 0.9 + float(si) * 0.65), Vector3(2.8 - float(si) * 0.12, 0.16, 0.58), STONE_LIGHT if si % 2 == 0 else STONE)
+	return root
+
+func cozy_cabin(pos: Vector3, rot_deg := 0.0, roof_col := Color("#d6583a"), wall_col := TIMBER_LIGHT) -> Node3D:
+	var root := Node3D.new()
+	root.position = pos
+	root.rotation_degrees.y = rot_deg
+	add_child(root)
+	box(root, Vector3(0, 1.35, 0), Vector3(3.8, 2.7, 3.2), wall_col, true)
+	var roof := cylinder(root, Vector3(0, 3.35, 0), 0.25, 2.85, 1.75, roof_col)
+	roof.scale = Vector3(1.05, 1.0, 0.92)
+	box(root, Vector3(0, 0.95, 1.65), Vector3(0.95, 1.85, 0.16), TIMBER)
+	box(root, Vector3(-1.1, 1.55, 1.65), Vector3(0.65, 0.65, 0.12), Color("#ffe394"), false, true)
+	box(root, Vector3(1.1, 1.55, 1.65), Vector3(0.65, 0.65, 0.12), Color("#ffe394"), false, true)
+	cylinder(root, Vector3(1.0, 3.9, -0.6), 0.24, 0.28, 1.35, STONE)
+	for si in range(3):
+		var puff := sphere(root, Vector3(1.0 + float(si) * 0.18, 4.8 + float(si) * 0.65, -0.6), Vector3(0.42 + float(si) * 0.14, 0.36 + float(si) * 0.10, 0.42 + float(si) * 0.14), CLOUD_WHITE, true)
+		float_motes.append({"node": puff, "base": puff.position, "phase": float(si) * 1.4, "speed": 1.6, "amp": 0.22})
+	return root
+
+func lighthouse_islet(pos: Vector3, rot_deg := 0.0) -> Node3D:
+	var root := Node3D.new()
+	root.position = pos
+	root.rotation_degrees.y = rot_deg
+	add_child(root)
+	organic_mound(root, Vector3(0, -0.35, 0), 4.6, 4.2, 0.85, Color("#f2d594"), 12.0)
+	organic_mound(root, Vector3(0, 0.05, 0), 3.2, 2.9, 0.28, MEADOW_GREEN, -8.0)
+	# Red & white striped lighthouse (@shoejaat c09084c9)
+	for bi in range(5):
+		var col := Color("#e34b3b") if bi % 2 == 0 else WHITE_WALL
+		var r_bot := 1.02 - float(bi) * 0.11
+		var r_top := 0.91 - float(bi) * 0.11
+		cylinder(root, Vector3(0, 0.65 + float(bi) * 1.05, 0), r_top, r_bot, 1.06, col)
+	cylinder(root, Vector3(0, 6.0, 0), 0.68, 0.68, 0.55, Color("#fff5b8"), true)
+	cylinder(root, Vector3(0, 6.6, 0), 0.12, 0.78, 0.72, Color("#e34b3b"))
+	# Tiny moored wooden boat + orange lifebuoy on the water
+	var boat := box(root, Vector3(3.8, -0.05, 2.2), Vector3(2.2, 0.36, 0.85), Color("#e67347"))
+	boat.rotation_degrees.y = 28.0
+	sway_items.append({"node": boat, "base_rot": boat.rotation, "amp": 0.04, "speed": 1.8, "phase": 0.5})
+	cylinder(root, Vector3(5.2, -0.08, -1.8), 0.48, 0.48, 0.14, Color("#ff6b3d"), true)
+	return root
+
+func build_horizon_panorama(center: Vector3, inner_rx: float, inner_rz: float, theme: String) -> void:
+	# 1. Vast surrounding ocean / lake / cloud-sea plane (zero bare void!)
+	var base_col := Color("#162d4d")
+	var hill_cols: Array[Color] = [Color("#1c3352"), Color("#223f63"), Color("#2b4c73")]
+	var tree_cols: Array[Color] = [PINE_DARK, PINE_TEAL, Color("#254a5c")]
+	var cloud_col := Color("#98b4d9")
+	if theme == "day_island":
+		base_col = Color("#2486db")
+		hill_cols = [Color("#6fb362"), Color("#84c26b"), Color("#5aa06e")]
+		tree_cols = [MEADOW_GREEN, MEADOW_LIGHT, PINE_TEAL]
+		cloud_col = CLOUD_WHITE
+	elif theme == "sunset_clouds":
+		base_col = Color("#d9c5e8")
+		hill_cols = [PINK_PEAK, PURPLE_PEAK, Color("#b29ce0")]
+		tree_cols = [PINE_ORANGE, Color("#d97836"), Color("#4a6b8a")]
+		cloud_col = Color("#fff1f6")
+
+	var sea_plane := cylinder(self, Vector3(center.x, -1.45, center.z), inner_rx + 78.0, inner_rx + 78.0, 0.25, base_col, true)
+	sea_plane.scale.z = (inner_rz + 78.0) / maxf(inner_rx + 78.0, 1.0)
+
+	# 2. Outer ring of lush surrounding islets / forested hills (360 degrees)
+	for i in range(18):
+		var ang := float(i) * TAU / 18.0 + 0.18
+		var dist_x := inner_rx + 12.0 + fmod(float(i * 7), 10.0)
+		var dist_z := inner_rz + 10.0 + fmod(float(i * 5), 9.0)
+		var pos := center + Vector3(cos(ang) * dist_x, -0.75, sin(ang) * dist_z)
+		organic_mound(self, pos, 8.5 + float(i % 4) * 2.2, 7.2 + float(i % 3) * 2.0, 1.8, hill_cols[i % hill_cols.size()], float(i) * 23.0)
+		# Distant lush trees on outer hills (like Little Joy 360 forest)
+		for ti in range(2):
+			var tp := pos + Vector3(cos(ang + float(ti) * 0.9) * 3.2, 0.9, sin(ang + float(ti) * 0.9) * 2.8)
+			if (i + ti) % 2 == 0:
+				pine_tree(tp, 1.35 + float(ti) * 0.25, tree_cols[(i + ti) % tree_cols.size()], false)
+			else:
+				cozy_tree(tp, 1.2 + float(ti) * 0.2, tree_cols[(i + ti) % tree_cols.size()], float((i % 3) - 1) * 6.0, false)
+
+	# 3. Far horizon stylized @amelicart rounded mountain peaks
+	for mi in range(12):
+		var mang := float(mi) * TAU / 12.0 + 0.3
+		var mpos := center + Vector3(cos(mang) * (inner_rx + 46.0), 3.5 + float(mi % 3) * 2.5, sin(mang) * (inner_rz + 42.0))
+		sphere(self, mpos, Vector3(16.0 + float(mi % 4) * 3.5, 20.0 + float(mi % 3) * 6.5, 15.0 + float(mi % 3) * 3.0), hill_cols[mi % hill_cols.size()].lightened(0.08), true)
+
+	# 4. Sky layer of drifting volumetric clouds all around the horizon
+	for ci in range(12):
+		var cang := float(ci) * TAU / 12.0
+		var cpos := center + Vector3(cos(cang) * (inner_rx + 26.0), 7.5 + float(ci % 3) * 2.8, sin(cang) * (inner_rz + 22.0))
+		fluffy_cloud(cpos, 1.65 + float(ci % 3) * 0.35, 2.6, cloud_col)
+
+	# 5. Theme sky landmarks (crescent moon + stars for night; distant skyship/buoys for day/sunset)
+	if theme == "night_forest":
+		# Crescent moon & starry sky
+		sphere(self, center + Vector3(-16.0, 22.0, -48.0), Vector3(4.2, 4.2, 1.2), Color("#fff3b0"), true)
+		sphere(self, center + Vector3(-14.6, 22.6, -47.2), Vector3(3.6, 3.6, 1.2), Color("#122242"), true)
+		for si in range(24):
+			var sang := float(si) * 2.399
+			var spos := center + Vector3(cos(sang) * (inner_rx + 36.0), 14.0 + fmod(float(si * 7), 14.0), sin(sang) * (inner_rz + 34.0))
+			sphere(self, spos, Vector3.ONE * (0.28 + float(si % 3) * 0.12), Color("#fff8d6"), true)
+	elif theme == "day_island":
+		# Cute floating sea buoys around the archipelago
+		for bi in range(4):
+			var bang := float(bi) * TAU / 4.0 + 0.65
+			var bpos := center + Vector3(cos(bang) * (inner_rx + 6.5), -1.15, sin(bang) * (inner_rz + 5.5))
+			var buoy := Node3D.new()
+			buoy.position = bpos
+			add_child(buoy)
+			cylinder(buoy, Vector3(0, 0.3, 0), 0.55, 0.68, 0.55, Color("#e34b3b"), true)
+			cylinder(buoy, Vector3(0, 0.72, 0), 0.28, 0.35, 0.35, WHITE_WALL, true)
+			sway_items.append({"node": buoy, "base_rot": buoy.rotation, "amp": 0.09, "speed": 2.1, "phase": float(bi)})
+	elif theme == "sunset_clouds":
+		# Warm golden sun & whimsical @amelicart distant skyship silhouette
+		sphere(self, center + Vector3(54.0, 20.0, -34.0), Vector3(7.2, 7.2, 2.0), Color("#ffe39e"), true)
+		var ship := Node3D.new()
+		ship.position = center + Vector3(32.0, 13.5, -24.0)
+		add_child(ship)
+		sphere(ship, Vector3(0, 0, 0), Vector3(2.8, 1.2, 1.4), TIMBER_LIGHT, true)
+		box(ship, Vector3(0, 1.5, 0), Vector3(0.18, 2.6, 2.2), Color("#3b6fb6"), false, true)
+		cloud_puffs.append({"node": ship, "base": ship.position, "amp": 4.5, "phase": 0.4})
+
 func register_living_npc(node: Node3D, base_y := 0.0, bob_amp := 0.06, speed := 3.2) -> void:
 	living_npcs.append({"node": node, "base_y": base_y, "amp": bob_amp, "speed": speed, "phase": randf_range(0.0, TAU)})
 
@@ -655,8 +788,8 @@ func _make_body(body: CharacterBody3D, pos: Vector3, radius: float) -> void:
 	add_shape(body, shape, Vector3.UP * radius)
 	body.position = pos
 
-# --- 2.5D Orthographic Camera + Cinematic Break Director ---
-func setup_camera_and_lighting(cam_size: float, bg_col: Color, amb_col: Color, amb_energy: float, sun_col: Color, sun_energy: float) -> void:
+# --- 2.5D Orthographic Camera + Gradient Storybook Sky + Cinematic Break Director ---
+func setup_camera_and_lighting(cam_size: float, bg_col: Color, amb_col: Color, amb_energy: float, sun_col: Color, sun_energy: float, sky_top_col := Color.TRANSPARENT, sky_horizon_col := Color.TRANSPARENT, ground_col := Color.TRANSPARENT) -> void:
 	default_cam_size = cam_size
 	add_child(camera)
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
@@ -664,8 +797,16 @@ func setup_camera_and_lighting(cam_size: float, bg_col: Color, amb_col: Color, a
 	camera.current = true
 	position_camera(feet(), 1.0)
 
-	env.background_mode = Environment.BG_COLOR
-	env.background_color = bg_col
+	var sky := Sky.new()
+	var sky_mat := ProceduralSkyMaterial.new()
+	sky_mat.sky_top_color = sky_top_col if sky_top_col != Color.TRANSPARENT else bg_col.darkened(0.22)
+	sky_mat.sky_horizon_color = sky_horizon_col if sky_horizon_col != Color.TRANSPARENT else bg_col.lightened(0.18)
+	sky_mat.ground_bottom_color = ground_col if ground_col != Color.TRANSPARENT else bg_col.darkened(0.18)
+	sky_mat.ground_horizon_color = sky_mat.sky_horizon_color
+	sky_mat.sun_angle_max = 18.0
+	sky.sky_material = sky_mat
+	env.background_mode = Environment.BG_SKY
+	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = amb_col
 	env.ambient_light_energy = amb_energy

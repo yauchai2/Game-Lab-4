@@ -31,7 +31,7 @@ func _ready() -> void:
 	elif PrologueState.spawn_tag == "from_waypoint":
 		spawn = Vector3(-0.2, 0.0, 3.0)
 	setup_core_trio(spawn)
-	setup_camera_and_lighting(20.5, Color("#73e4f5"), Color("#eef3fc"), 0.88, Color("#ffe4ba"), 1.15)
+	setup_camera_and_lighting(20.5, Color("#73e4f5"), Color("#eef3fc"), 0.88, Color("#ffe4ba"), 1.15, Color("#2b9cf0"), Color("#aef2ff"), Color("#2282d6"))
 	setup_hud()
 
 	if not PrologueState.has_sword:
@@ -80,10 +80,27 @@ func _build_town() -> void:
 	curved_path([Vector3(0.2, 0, 2.8), Vector3(-1.8, 0, 4.2), SLIME_HOME], 1.9, TRAIL, TRAIL_STONE)
 	curved_path([Vector3(2.4, 0, 3.2), Vector3(5.8, 0, 6.2), Vector3(9.8, 0, 7.2)], 1.9, TRAIL, TRAIL_STONE)
 
-	invisible_boundary_wall(Vector3(0.0, 0.8, -15.8), Vector3(52.0, 1.8, 0.8))
-	invisible_boundary_wall(Vector3(0.0, 0.8, 15.8), Vector3(52.0, 1.8, 0.8))
-	invisible_boundary_wall(Vector3(-25.4, 0.8, 0.0), Vector3(0.8, 1.8, 32.0))
-	invisible_boundary_wall(Vector3(25.4, 0.8, 0.0), Vector3(0.8, 1.8, 32.0))
+	# Expanded 72m x 50m Walkable Coastal Village + Lighthouse Islet + Northern Archway Promenade + 360 Ocean Panorama!
+	organic_mound(self, Vector3(0.0, -0.52, -16.5), 18.5, 8.2, 1.04, MEADOW_LIGHT, 6.0)
+	organic_mound(self, Vector3(24.5, -0.52, 11.5), 11.5, 9.2, 1.04, MEADOW_GREEN, -14.0)
+	curved_path([Vector3(-8.0, 0, -10.0), Vector3(-2.5, 0, -16.2), Vector3(6.5, 0, -16.4), Vector3(13.5, 0, -11.5)], 2.2, TRAIL, TRAIL_STONE)
+	curved_path([Vector3(14.5, 0, 6.2), Vector3(21.0, 0, 9.5), Vector3(26.2, 0, 12.2)], 2.0, TRAIL)
+	curved_path([Vector3(-13.5, 0, 8.2), Vector3(-19.5, 0, 12.5), Vector3(-24.0, 0, 14.5)], 2.0, BOARDWALK)
+	wooden_footbridge(Vector3(-21.2, 0.0, 13.2), 5.6, 2.2, 32.0, 0.35)
+	lighthouse_islet(Vector3(-27.2, 0.0, 15.2), 24.0)
+	stone_archway(Vector3(0.5, 0.0, -16.8), 0.0, 1.15, true)
+	cozy_cabin(Vector3(-11.5, 0.0, -17.5), 18.0, CORAL_ROOF, WHITE_WALL)
+	cozy_cabin(Vector3(12.2, 0.0, -17.2), -22.0, Color("#d6583a"), WHITE_WALL)
+	flower_patch(Vector3(24.5, 0, 11.5), 12, [Color("#ff9eb5"), Color("#ffe066"), Color("#87c8ff")], 3.2)
+	spawn_destructible_crate(Vector3(26.5, 0.0, 13.0), 4)
+	spawn_destructible_crate(Vector3(1.5, 0.0, -19.2), 4)
+	spawn_destructible_crate(Vector3(-24.8, 0.0, 13.8), 4)
+	build_horizon_panorama(Vector3(0.0, 0.0, 0.0), 35.5, 24.5, "day_island")
+
+	invisible_boundary_wall(Vector3(0.0, 0.8, -24.2), Vector3(72.0, 1.8, 0.8))
+	invisible_boundary_wall(Vector3(0.0, 0.8, 24.2), Vector3(72.0, 1.8, 0.8))
+	invisible_boundary_wall(Vector3(-35.2, 0.8, 0.0), Vector3(0.8, 1.8, 50.0))
+	invisible_boundary_wall(Vector3(35.2, 0.8, 0.0), Vector3(0.8, 1.8, 50.0))
 
 	# Cliff outcrops & hillside cottages
 	cliff_outcrop(Vector3(-20.5, 0.0, -9.8), 3.6, 2.8, 3.2, STONE_LIGHT, MEADOW_GREEN, 16.0)

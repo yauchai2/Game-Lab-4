@@ -26,7 +26,7 @@ func _ready() -> void:
 	_build_map()
 	var spawn := Vector3(14.0, 0.0, -1.2) if PrologueState.spawn_tag == "from_town" else Vector3(0.8, 0.0, 0.5)
 	setup_core_trio(spawn)
-	setup_camera_and_lighting(15.2, Color("#0e172a"), Color("#3e5d94"), 0.64, Color("#6e94d4"), 0.42)
+	setup_camera_and_lighting(15.2, Color("#0e172a"), Color("#3e5d94"), 0.64, Color("#6e94d4"), 0.42, Color("#08122b"), Color("#244970"), Color("#0e1b33"))
 	setup_hud()
 
 	if not PrologueState.has_started:
@@ -96,10 +96,26 @@ func _build_map() -> void:
 	cliff_outcrop(Vector3(-13.8, 0.0, -7.2), 3.2, 2.6, 2.8, STONE_LIGHT, NIGHT_GRASS, -15.0)
 	cliff_outcrop(Vector3(14.5, 0.0, -6.8), 2.9, 2.2, 2.4, STONE, NIGHT_GRASS_LIGHT, 25.0)
 
-	invisible_boundary_wall(Vector3(-18.2, 0.8, 0.0), Vector3(0.8, 1.8, 24.0))
-	invisible_boundary_wall(Vector3(18.6, 0.8, 0.0), Vector3(0.8, 1.8, 24.0))
-	invisible_boundary_wall(Vector3(0.0, 0.8, -10.8), Vector3(38.0, 1.8, 0.8))
-	invisible_boundary_wall(Vector3(0.0, 0.8, 10.6), Vector3(38.0, 1.8, 0.8))
+	# Expanded 54m x 38m Walkable Forest Camp & Exploration Glades + 360 Night Panorama!
+	organic_mound(self, Vector3(-16.5, -0.52, 2.5), 11.5, 9.8, 1.04, NIGHT_GRASS, -12.0)
+	organic_mound(self, Vector3(-3.5, -0.52, 13.0), 11.2, 7.6, 1.04, NIGHT_GRASS_LIGHT, 8.0)
+	organic_mound(self, Vector3(17.2, -0.52, -8.5), 9.6, 7.8, 1.04, NIGHT_GRASS_LIGHT, -10.0)
+	curved_path([Vector3(-6.2, 0, -2.5), Vector3(-13.5, 0, 0.4), Vector3(-19.5, 0, 1.8)], 1.8, TRAIL_STONE)
+	curved_path([Vector3(3.2, 0, 7.1), Vector3(0.5, 0, 11.4), Vector3(-4.2, 0, 13.0)], 1.8, TRAIL)
+	curved_path([Vector3(12.2, 0, -2.2), Vector3(15.5, 0, -6.2), Vector3(18.5, 0, -10.2)], 1.7, TRAIL_STONE)
+	stone_archway(Vector3(-18.8, 0.0, 1.8), 78.0, 1.05, true)
+	cozy_cabin(Vector3(-5.8, 0.0, 13.2), 26.0, Color("#c9583e"), TIMBER_LIGHT)
+	lantern_post(Vector3(-17.0, 0.0, 3.6), 2.3, MIST_CYAN, 18.0)
+	lantern_post(Vector3(-1.5, 0.0, 11.5), 2.3, FIRE_ORANGE, -14.0)
+	spawn_destructible_crate(Vector3(-20.5, 0.0, 4.2), 4)
+	spawn_destructible_crate(Vector3(-1.2, 0.0, 14.5), 4)
+	spawn_destructible_crate(Vector3(18.0, 0.0, -9.8), 4)
+	build_horizon_panorama(Vector3(0.0, 0.0, 0.0), 27.0, 19.0, "night_forest")
+
+	invisible_boundary_wall(Vector3(-26.5, 0.8, 0.0), Vector3(0.8, 1.8, 38.0))
+	invisible_boundary_wall(Vector3(26.5, 0.8, 0.0), Vector3(0.8, 1.8, 38.0))
+	invisible_boundary_wall(Vector3(0.0, 0.8, -18.2), Vector3(54.0, 1.8, 0.8))
+	invisible_boundary_wall(Vector3(0.0, 0.8, 18.4), Vector3(54.0, 1.8, 0.8))
 
 	for i in range(9):
 		var ang := i * TAU / 9.0 + 0.15

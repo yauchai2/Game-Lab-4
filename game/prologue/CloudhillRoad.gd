@@ -61,7 +61,7 @@ func _ready() -> void:
 		spawn = WAYPOINT_POS + Vector3(-1.5, 0.0, -0.5)
 		vista_zoomed = true
 	setup_core_trio(spawn)
-	setup_camera_and_lighting(24.0 if vista_zoomed else 16.5, Color("#f2c3e0"), Color("#ffe2c2"), 0.88, Color("#ffe0b2"), 1.15)
+	setup_camera_and_lighting(24.0 if vista_zoomed else 16.5, Color("#f2c3e0"), Color("#ffe2c2"), 0.88, Color("#ffe0b2"), 1.15, Color("#667bd4"), Color("#ffd1a6"), Color("#c9a8e0"))
 	setup_hud()
 	_apply_persisted_state()
 
@@ -135,11 +135,26 @@ func _build_road_map() -> void:
 	curved_path([Vector3(-8.2, 0.0, -2.0), Vector3(-5.8, 0.0, -4.2), LEVER_POS], 1.5, GOLD, TRAIL_STONE)
 	curved_path([Vector3(21.0, 0.0, 0.0), Vector3(26.5, 0.0, -0.6), CHAPTER_1_EXIT], 2.3, TRAIL, TRAIL_STONE)
 
-	invisible_boundary_wall(Vector3(-27.8, 0.8, 0.0), Vector3(0.8, 1.8, 24.0))
-	invisible_boundary_wall(Vector3(36.2, 0.8, 0.0), Vector3(0.8, 1.8, 24.0))
-	for z in [-9.6, 9.6]:
-		invisible_boundary_wall(Vector3(-12.5, 0.8, z), Vector3(30.0, 1.8, 0.8))
-		invisible_boundary_wall(Vector3(28.5, 0.8, z), Vector3(15.0, 1.8, 0.8))
+	# Expanded 88m x 44m Walkable Highland Side-Glades + Old-Army Ruins + Eastern Vista Plateau + 360 Sunset Cloud Panorama!
+	organic_mound(self, Vector3(-20.5, -0.52, -11.5), 11.2, 7.6, 1.04, DAY_GRASS_WARM, 12.0)
+	organic_mound(self, Vector3(-16.5, -0.52, 11.8), 11.6, 7.8, 1.04, DAY_GRASS, -10.0)
+	organic_mound(self, Vector3(36.8, -0.50, 0.6), 9.6, 9.8, 1.02, Color("#7bb666"), 8.0)
+	curved_path([Vector3(-20.2, 0, -2.5), Vector3(-21.2, 0, -8.5), Vector3(-22.0, 0, -12.5)], 1.9, TRAIL_STONE)
+	curved_path([Vector3(-18.2, 0, 3.5), Vector3(-17.0, 0, 9.2), Vector3(-16.2, 0, 12.8)], 2.0, TRAIL)
+	stone_archway(Vector3(-21.5, 0.0, -12.2), 14.0, 1.05, true)
+	cozy_cabin(Vector3(-26.8, 0.0, -11.2), 38.0, CORAL_ROOF, TIMBER_LIGHT)
+	stone_archway(Vector3(36.8, 0.0, 0.5), 90.0, 1.25, true)
+	flower_patch(Vector3(-16.5, 0, 12.2), 16, [Color("#ff5c8d"), Color("#ff9eb5"), Color("#ffe066"), Color("#f2796b")], 3.8)
+	spawn_destructible_crate(Vector3(-20.5, 0.0, -14.0), 4)
+	spawn_destructible_crate(Vector3(-15.0, 0.0, 13.5), 4)
+	spawn_destructible_crate(Vector3(35.0, 0.0, -4.5), 5)
+	build_horizon_panorama(Vector3(6.0, 0.0, 0.0), 44.0, 22.0, "sunset_clouds")
+
+	invisible_boundary_wall(Vector3(-34.0, 0.8, 0.0), Vector3(0.8, 1.8, 38.0))
+	invisible_boundary_wall(Vector3(44.0, 0.8, 0.0), Vector3(0.8, 1.8, 38.0))
+	for z in [-17.2, 17.2]:
+		invisible_boundary_wall(Vector3(-14.5, 0.8, z), Vector3(40.0, 1.8, 0.8))
+		invisible_boundary_wall(Vector3(32.5, 0.8, z), Vector3(24.0, 1.8, 0.8))
 
 	# Cliff outcrops, dense autumn trees, flowers & diagonal sunbeams
 	cliff_outcrop(Vector3(-23.5, 0.0, -7.8), 3.4, 2.8, 2.8, STONE_LIGHT, DAY_GRASS, 15.0)
