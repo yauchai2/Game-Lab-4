@@ -281,7 +281,39 @@ const MAPS = [
       { id: "rare_c", x: 20.0, z: -1.0, kind: "rare", name: "★ 鐘樓禁衛隊長" },
       { id: "cp3", x: 36.0, z: 0.0, kind: "checkpoint", name: "◆ 檢查點：鐘樓大門前" },
       { id: "boss", x: 62.0, z: 0.0, kind: "boss", name: "💀 區域 Boss：重裝鐵鐘騎士（退休後開咖啡座）" },
-      { id: "exit_e", x: 80.0, z: 0.0, kind: "exit", name: "→ 沉霧燈塔港（第一幕終章）" },
+      { id: "exit_e", x: 80.0, z: 0.0, kind: "exit", name: "→ 前往沉霧燈塔港" },
+    ]
+  },
+  {
+    id: "harbor", name: "6. 沉霧燈塔港・終章 (170m×110m)", bounds: { minX: -78, maxX: 92, minZ: -55, maxZ: 55 },
+    bg: "#267cb8", land: "#84b868", borderStyle: "海崖木欄、沙洲礁岩與港灣棧道邊界",
+    desc: "第一幕終章超大型海港：5 大連通子區域、百年紅白大燈塔（勸退後散霧點燈）、3 座檢查點、2 隻隱藏傳奇怪、終章 Boss《迷霧大提督・蟹甲將軍》與第二幕啟航船《遠航號》。",
+    regions: [
+      { x: -56, z: 0, rx: 19, rz: 15, color: "rgba(136,184,104,0.65)", label: "1. 西境海崖港門" },
+      { x: -14, z: -33, rx: 27, rz: 15, color: "rgba(235,211,156,0.72)", label: "2. 北境沉船沙洲灣" },
+      { x: -10, z: 32, rx: 27, rz: 15, color: "rgba(201,168,120,0.68)", label: "3. 南境舊軍魚貨碼頭" },
+      { x: 12, z: 0, rx: 23, rz: 15, color: "rgba(136,190,104,0.65)", label: "4. 中境海風燈塔大道" },
+      { x: 64, z: 0, rx: 20, rz: 20, color: "rgba(242,230,202,0.78)", label: "5. 東境百年大燈塔角" },
+    ],
+    paths: [
+      [[-70, 0], [-42, 0], [-14, 1.5], [14, -1.5], [40, 0], [64, 0], [82, 0]],
+      [[-52, -4], [-36, -18], [-20, -29], [-36, -42]], [[-20, -29], [-2, -31], [14, -17]],
+      [[-52, 4], [-34, 19], [-16, 31], [16, 42]], [[-16, 31], [6, 23], [24, 10]]
+    ],
+    streams: [],
+    pois: [
+      { id: "exit_w", x: -70.0, z: 0.0, kind: "exit", name: "← 返回舊軍鐘樓哨所" },
+      { id: "wp", x: -60.0, z: -4.5, kind: "checkpoint", name: "✦ 燈塔港傳送石陣 [U 世界圖]" },
+      { id: "cp1", x: -20.0, z: -26.0, kind: "checkpoint", name: "◆ 檢查點：沉船沙洲灣" },
+      { id: "rare_n", x: -5.0, z: -29.0, kind: "rare", name: "★ 迷霧水手長" },
+      { id: "uniq1", x: -36.0, z: -42.0, kind: "unique", name: "❖ 隱藏傳奇怪 #1：深海巨錨蟹王 (HP 40)" },
+      { id: "cp2", x: -14.0, z: 26.0, kind: "checkpoint", name: "◆ 檢查點：舊軍魚貨碼頭" },
+      { id: "rare_s", x: 3.0, z: 29.0, kind: "rare", name: "★ 港灣砲艇長" },
+      { id: "uniq2", x: 16.0, z: 42.0, kind: "unique", name: "❖ 隱藏傳奇怪 #2：百年霧笛巨像 (HP 42)" },
+      { id: "rare_c", x: 21.0, z: -1.0, kind: "rare", name: "★ 燈塔禁衛長" },
+      { id: "cp3", x: 38.0, z: 0.0, kind: "checkpoint", name: "◆ 檢查點：大燈塔前廣場" },
+      { id: "boss", x: 64.0, z: 0.0, kind: "boss", name: "💀 終章 Boss：迷霧大提督（退休後開海鮮燒烤）" },
+      { id: "ship", x: 82.0, z: 0.0, kind: "exit", name: "⛵ 遠航號 → 第二幕：珊瑚群島" },
     ]
   }
 ];
@@ -289,7 +321,7 @@ const MAPS = [
 let curIdx = 2; // Default to CloudhillRoad
 let selectedPoi = null;
 let draggingPoi = null;
-const customPins = { clearing: [], town: [], road: [], forest: [], clocktower: [] };
+const customPins = { clearing: [], town: [], road: [], forest: [], clocktower: [], harbor: [] };
 const canvas = document.getElementById("mapCanvas");
 const ctx = canvas.getContext("2d");
 

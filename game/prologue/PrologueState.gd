@@ -24,6 +24,9 @@ var emerald_uniques_defeated: Array[String] = []
 var clocktower_boss_retired := false
 var clocktower_chest_claimed := false
 var clocktower_uniques_defeated: Array[String] = []
+var harbor_boss_retired := false
+var harbor_chest_claimed := false
+var harbor_uniques_defeated: Array[String] = []
 var mounted := false
 var player_hp := 5
 var coins := 50
@@ -347,6 +350,9 @@ func reset_all() -> void:
 	clocktower_boss_retired = false
 	clocktower_chest_claimed = false
 	clocktower_uniques_defeated.clear()
+	harbor_boss_retired = false
+	harbor_chest_claimed = false
+	harbor_uniques_defeated.clear()
 	mounted = false
 	player_hp = 5
 	coins = 50
@@ -566,6 +572,12 @@ func record_clocktower_unique_defeated(uid: String) -> bool:
 	clocktower_uniques_defeated.append(uid)
 	return true
 
+func record_harbor_unique_defeated(uid: String) -> bool:
+	if harbor_uniques_defeated.has(uid):
+		return false
+	harbor_uniques_defeated.append(uid)
+	return true
+
 func get_quest_tracker_text() -> String:
 	var main_q := "主線《百年停戰令》：勸退雲海石橋・稻草人哨長"
 	if not has_sword:
@@ -574,12 +586,14 @@ func get_quest_tracker_text() -> String:
 		main_q = "主線《翡翠天梯》：深入古林勸退翡翠樹王"
 	elif emerald_boss_retired and not clocktower_boss_retired:
 		main_q = "主線《百年鐘樓》：進軍鐘樓勸退重裝鐵鐘騎士"
-	elif clocktower_boss_retired:
-		main_q = "主線《百年鐘樓》：✦ 鐘樓已停戰！迎向燈塔港終章"
-	var total_u := uniques_defeated.size() + emerald_uniques_defeated.size() + clocktower_uniques_defeated.size()
-	var side_q := "支線《荒野傳奇怪》：探索全區隱藏傳奇怪 (%d/6)" % total_u
-	if total_u >= 6:
-		side_q = "支線《荒野傳奇怪》：✦ 6/6 全數勸退！"
+	elif clocktower_boss_retired and not harbor_boss_retired:
+		main_q = "主線《終章燈塔》：前往沉霧燈塔港勸退迷霧大提督"
+	elif harbor_boss_retired:
+		main_q = "主線《第一幕通關》：✦ 百年海霧散去！登上遠航號"
+	var total_u := uniques_defeated.size() + emerald_uniques_defeated.size() + clocktower_uniques_defeated.size() + harbor_uniques_defeated.size()
+	var side_q := "支線《荒野傳奇怪》：探索第一幕隱藏傳奇怪 (%d/8)" % total_u
+	if total_u >= 8:
+		side_q = "支線《荒野傳奇怪》：✦ 8/8 全數勸退！"
 	return main_q + "\n" + side_q
 
 func get_seal_title(seal_id: String) -> String:

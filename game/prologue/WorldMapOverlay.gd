@@ -61,12 +61,12 @@ const WORLD_NODES := [
 	{
 		"id": "harbor",
 		"title": "沉霧燈塔港",
-		"subtitle": "第一幕終章 · 驅散百年海霧，啟航第二幕（規劃中）",
-		"scene": "",
-		"spawn": "",
+		"subtitle": "第一幕終章 (170m×110m) · Boss 迷霧大提督 · 隱藏傳奇怪 ×2",
+		"scene": "res://prologue/MistyHarbor.tscn",
+		"spawn": "from_waypoint",
 		"pos_norm": Vector2(0.89, 0.48),
-		"kind": "future",
-		"playable": false,
+		"kind": "boss_zone",
+		"playable": true,
 	},
 ]
 
@@ -240,6 +240,10 @@ func _select_node(n: Dictionary) -> void:
 		var cboss_txt := "✦ 重裝鐵鐘騎士（已退休開咖啡座）" if PrologueState.clocktower_boss_retired else "💀 重裝鐵鐘騎士（仍在整點敲鐘）"
 		var cuniq_cnt := PrologueState.clocktower_uniques_defeated.size()
 		_info_status.text = "%s   |   隱藏傳奇怪進度：%d / 2" % [cboss_txt, cuniq_cnt]
+	elif nid == "harbor":
+		var hboss_txt := "✦ 迷霧大提督（已退休開海鮮燒烤）" if PrologueState.harbor_boss_retired else "💀 迷霧大提督（仍在開造霧機）"
+		var huniq_cnt := PrologueState.harbor_uniques_defeated.size()
+		_info_status.text = "%s   |   隱藏傳奇怪進度：%d / 2" % [hboss_txt, huniq_cnt]
 	elif nid == "town":
 		_info_status.text = "安全主城 · 免費回血泉水 / 造裝工坊 / 商人 / 任務書記官"
 	elif nid == "clearing":
@@ -335,6 +339,8 @@ func _draw_map_canvas() -> void:
 			badge = "✦" if PrologueState.emerald_boss_retired else "💀"
 		elif nid == "clocktower":
 			badge = "✦" if PrologueState.clocktower_boss_retired else "💀"
+		elif nid == "harbor":
+			badge = "✦" if PrologueState.harbor_boss_retired else "💀"
 		elif playable:
 			badge = "★"
 		else:

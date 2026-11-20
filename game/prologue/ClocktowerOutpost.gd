@@ -583,7 +583,7 @@ func on_interact() -> void:
 		show_subtitle("開啟鐘樓金庫寶箱！獲【傳奇】百年鐘聲傳奇巨刃＋金漆罐 x3＋60¢！", 4.5)
 		return
 	if near(EAST_EXIT, 3.0):
-		show_subtitle("前方為第一幕終章《沉霧燈塔港》（已於世界地圖規劃，敬請期待）", 3.5)
+		PrologueState.transition_to("res://prologue/MistyHarbor.tscn", "default", "沉霧燈塔港")
 
 func _boss_say(words: String, duration := 3.2) -> void:
 	boss_bubble.text = words
