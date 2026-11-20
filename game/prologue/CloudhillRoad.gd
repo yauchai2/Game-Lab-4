@@ -52,6 +52,7 @@ var coop_attack_cd := 0.0
 
 func _ready() -> void:
 	can_attack = true
+	scene_world_key = "road"
 	scene_shadow_tint = Color("#5c4578")
 	set_wind_profile(Vector2(0.96, -0.26), 1.65, 0.42, 0.12)
 	_build_road_map()
@@ -544,9 +545,11 @@ func _drop_loot(pos: Vector3, is_rare: bool, tier := "normal") -> void:
 	spawn_bouncing_coins(pos, 10 if is_unique else (6 if is_rare else 3), 6 if is_unique else 5)
 	var item: Dictionary
 	if is_unique:
+		var uid := "emerald_warden" if pos.x > 25.0 else "clockwork_colossus"
+		PrologueState.record_unique_defeated(uid)
 		item = PrologueState.make_item("百年守望傳奇巨刃", "weapon", "unique", 4)
 		PrologueState.orb_gold += 2
-		show_subtitle("❖ 擊敗隱藏傳奇怪！掉落【傳奇】武器與金漆罐 x2！", 4.0)
+		show_subtitle("❖ 擊敗隱藏傳奇怪（%d/2）！掉落【傳奇】武器與金漆罐 x2！" % PrologueState.uniques_defeated.size(), 4.0)
 	elif is_rare:
 		item = PrologueState.make_item("精銳斥候長劍", "weapon", "rare", 2)
 		PrologueState.orb_gold += 1

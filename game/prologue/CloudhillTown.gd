@@ -7,6 +7,8 @@ const SHOP_INTERACT := Vector3(-7.6, 0.0, -3.2)
 const TAVERN_POS := Vector3(7.2, 0.0, -7.8)
 const TAVERN_DOOR := Vector3(6.2, 0.0, -4.0)
 const WAYPOINT_POS := Vector3(-0.2, 0.0, 0.4)
+const WELL_POS := Vector3(-4.8, 0.0, -0.6)
+const SCRIBE_POS := Vector3(4.6, 0.0, 0.2)
 const STASH_POS := Vector3(11.4, 0.0, 7.6)
 const SLIME_HOME := Vector3(-3.4, 0.0, 5.2)
 const DUMMY_1_POS := Vector3(3.2, 0.0, 8.6)
@@ -24,9 +26,11 @@ var patron_bubble: Label3D
 var waterwheel_node: Node3D
 var sandbar_chest_beam: MeshInstance3D
 var town_travelers: Array[Dictionary] = []
+var scribe_quest_mark: Label3D
 
 func _ready() -> void:
 	can_attack = true
+	scene_world_key = "town"
 	scene_shadow_tint = Color("#4a5a8c")
 	set_wind_profile(Vector2(0.95, 0.30), 1.25, 0.30, 0.13)
 	_build_town()
@@ -38,6 +42,8 @@ func _ready() -> void:
 	setup_core_trio(spawn)
 	setup_camera_and_lighting(20.5, Color("#73e4f5"), Color("#eef3fc"), 0.88, Color("#ffe4ba"), 1.15, Color("#2b9cf0"), Color("#aef2ff"), Color("#2282d6"))
 	setup_hud()
+	if minimap_overlay:
+		minimap_overlay.configure_bounds(Rect2(-44.0, -32.0, 88.0, 64.0))
 	PrologueState.play_bgm("town")
 
 	if not PrologueState.has_sword:
@@ -249,19 +255,42 @@ func _build_town() -> void:
 	bunting_line(SHOP_POS + Vector3(2.8, 3.6, 1.5), WAYPOINT_POS + Vector3(0, 2.8, 0), 0.85, [CORAL_ROOF, GOLD, BUNTING_BLUE, WHITE_WALL], 8)
 	bunting_line(WAYPOINT_POS + Vector3(0, 2.8, 0), TAVERN_POS + Vector3(-2.6, 3.8, 2.2), 0.85, [GOLD, BUNTING_BLUE, CORAL_ROOF, WHITE_WALL], 8)
 
-	# 3. Central Waypoint Perch
+	# 3. PoE 2-Style Central Glowing Teal-and-Gold Circular Waypoint Stone Platform
 	var wp := Node3D.new()
 	wp.position = WAYPOINT_POS
-	wp.rotation_degrees.y = 14.0
 	add_child(wp)
-	var wp_post := cylinder(wp, Vector3(0, 1.25, 0), 0.34, 0.44, 2.5, TIMBER_LIGHT)
-	wp_post.rotation_degrees.z = -3.0
-	box(wp, Vector3(0, 1.88, 0), Vector3(1.65, 0.32, 0.32), TIMBER_LIGHT)
-	sphere(wp, Vector3(0, 2.68, 0), Vector3(0.54, 0.46, 0.54), GOLD)
-	for bx in [-1.15, 1.15]:
-		cylinder(wp, Vector3(bx, 0.36, 0.72), 0.34, 0.32, 0.72, TIMBER)
-		sphere(wp, Vector3(bx, 0.82, 0.72), Vector3(0.66, 0.48, 0.66), Color("#a67ee8"))
-	marker(WAYPOINT_POS + Vector3(0, 0, 1.5), GOLD, 0.65)
+	cylinder(wp, Vector3(0, 0.12, 0), 2.15, 2.35, 0.24, STONE_LIGHT)
+	cylinder(wp, Vector3(0, 0.25, 0), 1.65, 1.72, 0.08, MIST_CYAN, true)
+	cylinder(wp, Vector3(0, 0.29, 0), 1.15, 1.15, 0.06, GOLD, true)
+	var wp_crystal := sphere(wp, Vector3(0, 1.35, 0), Vector3(0.55, 0.75, 0.55), MIST_CYAN, true)
+	float_motes.append({"node": wp_crystal, "base": wp_crystal.position, "phase": 0.4, "speed": 2.2, "amp": 0.16})
+	label_at(wp, Vector3(0, 2.55, 0), "✦ 傳送石陣 [世界地圖]", MIST_CYAN, 28)
+	marker(WAYPOINT_POS + Vector3(0, 0, 1.5), MIST_CYAN, 0.72)
+
+	# 3b. PoE 2-Style Town Healing Well (Northwest Plaza — refills HP & Flasks!)
+	var well := Node3D.new()
+	well.position = WELL_POS
+	add_child(well)
+	cylinder(well, Vector3(0, 0.48, 0), 0.92, 1.02, 0.96, STONE_LIGHT, true)
+	cylinder(well, Vector3(0, 0.94, 0), 0.74, 0.74, 0.08, Color("#58e0ff"), true)
+	cylinder(well, Vector3(-0.78, 1.45, 0), 0.08, 0.10, 1.85, TIMBER)
+	cylinder(well, Vector3(0.78, 1.45, 0), 0.08, 0.10, 1.85, TIMBER)
+	box(well, Vector3(0, 2.35, 0), Vector3(2.05, 0.28, 1.25), CORAL_ROOF)
+	label_at(well, Vector3(0, 2.95, 0), "💧 生命清泉", Color("#a8f0ff"), 26)
+	marker(WELL_POS + Vector3(0, 0, 1.2), Color("#58e0ff"), 0.58)
+
+	# 3c. PoE 2-Style Camp Scribe Quest-Giver NPC (East Plaza with ! / ? overhead indicator)
+	var scribe := Node3D.new()
+	scribe.position = SCRIBE_POS
+	scribe.rotation_degrees.y = -25.0
+	add_child(scribe)
+	cylinder(scribe, Vector3(0, 0.62, 0), 0.30, 0.36, 1.10, Color("#3d6299"))
+	sphere(scribe, Vector3(0, 1.38, 0), Vector3(0.55, 0.52, 0.52), Color("#f4c9a8"))
+	cylinder(scribe, Vector3(0, 1.72, 0), 0.08, 0.38, 0.32, Color("#c99438"))
+	register_living_npc(scribe, 0.0, 0.05, 2.8)
+	label_at(scribe, Vector3(0, 2.25, 0), "停戰書記官", Color("#fff2cc"), 24)
+	scribe_quest_mark = label_at(scribe, Vector3(0, 2.85, 0), "！", GOLD, 44)
+	marker(SCRIBE_POS + Vector3(0, 0, 1.1), GOLD, 0.58)
 
 	# 4. Extended Beast Drinking Cove (Southwest)
 	organic_mound(self, Vector3(-11.5, 0.04, 6.8), 4.2, 2.8, 0.12, Color("#62c4ed"), -22.0, true)
@@ -376,9 +405,22 @@ func _physics_process(delta: float) -> void:
 	slime_node.scale = Vector3(1.0 + sin(t * 9.6) * 0.06, 1.0 - sin(t * 9.6) * 0.06, 1.0 + sin(t * 9.6) * 0.06)
 	if waterwheel_node and is_instance_valid(waterwheel_node):
 		waterwheel_node.rotation.z -= delta * 1.15
+	if scribe_quest_mark:
+		scribe_quest_mark.text = "✦" if PrologueState.boss_retired else ("？" if PrologueState.scribe_quest_accepted else "！")
 	if not step_shared_physics(delta):
 		return
 	_update_ui()
+
+func get_minimap_markers() -> Array[Dictionary]:
+	return [
+		{"pos": WAYPOINT_POS, "kind": "checkpoint", "label": "傳送石陣"},
+		{"pos": WELL_POS, "kind": "checkpoint", "label": "生命清泉"},
+		{"pos": SCRIBE_POS, "kind": "rare", "label": "書記官"},
+		{"pos": SHOP_INTERACT, "kind": "rare", "label": "軍需商人"},
+		{"pos": STASH_POS, "kind": "rare", "label": "造裝工坊"},
+		{"pos": WEST_EXIT, "kind": "exit", "label": "營火林緣"},
+		{"pos": EAST_EXIT, "kind": "exit", "label": "雲海古道"},
+	]
 
 func on_interact() -> void:
 	if near(SHOP_INTERACT, 2.8):
@@ -422,12 +464,25 @@ func on_interact() -> void:
 		toggle_inventory()
 		return
 
-	if near(WAYPOINT_POS + Vector3(0, 0, 1.5), 2.7):
-		if PrologueState.waypoint_road_unlocked:
-			PrologueState.transition_to("res://prologue/CloudhillRoad.tscn", "from_waypoint", "雲海瞭望台（重置）")
+	if near(WELL_POS + Vector3(0, 0, 1.2), 2.5):
+		PrologueState.player_hp = 5
+		PrologueState.flask_charges = 3
+		PrologueState.play_sfx("heal")
+		show_player_emote("💧", 1.3)
+		show_subtitle("飲用生命清泉！體力（5/5）與隨身水壺（3/3）已全數回滿！", 3.2)
+		return
+
+	if near(SCRIBE_POS + Vector3(0, 0, 1.1), 2.6):
+		PrologueState.scribe_quest_accepted = true
+		show_player_emote("✉️", 1.4)
+		if PrologueState.boss_retired:
+			show_subtitle("書記官：太好了！哨長都去開茶攤了！古道角落還有 2 隻隱藏傳奇怪等著領退休章呢！", 4.8)
 		else:
-			show_player_emote("?", 1.1)
-			show_subtitle("先往東走進雲海古道，即可解鎖驛站快傳！", 3.2)
+			show_subtitle("書記官：百年前的停戰令漏發了！請往東探索《雲海古道》，勸退哨長並尋找角落的隱藏傳奇怪！", 5.0)
+		return
+
+	if near(WAYPOINT_POS + Vector3(0, 0, 1.5), 2.8):
+		open_world_map()
 		return
 
 	if near(WEST_EXIT, 2.8):
@@ -504,11 +559,15 @@ func _update_ui() -> void:
 	var step := "向哥布林買五折短劍" if not PrologueState.has_sword else "按 [I] 造裝／切印章，或過東木橋出發刷怪"
 	if PrologueState.boss_retired:
 		step = "找波波吞白裝，或經驛站重刷古道"
-	set_zone_objective("雲丘市集", step)
+	set_zone_objective("雲丘停戰營地（主城）", step)
 	update_status_line()
 
 	if near(SHOP_INTERACT, 2.8):
 		set_prompt("[ E ] 購入五折短劍 (-50¢)" if not PrologueState.has_sword else "[ E ] 逛清倉行")
+	elif near(WELL_POS + Vector3(0, 0, 1.2), 2.5):
+		set_prompt("[ E ] 生命清泉（補滿體力與水壺）")
+	elif near(SCRIBE_POS + Vector3(0, 0, 1.1), 2.6):
+		set_prompt("[ E ] 停戰書記官（主線／支線任務）")
 	elif near(TAVERN_DOOR, 2.8):
 		set_prompt("[ E ] 退休魔物大酒館")
 	elif near(SLIME_HOME, 2.3):
@@ -519,8 +578,8 @@ func _update_ui() -> void:
 		set_prompt("[ E ] 燈塔全景望遠鏡（遠眺海灣）")
 	elif near(SANDBAR_CHEST_POS, 2.8):
 		set_prompt("[ E ] 開啟沙洲秘寶箱" if not PrologueState.sandbar_chest_claimed else "[ E ] 沙洲秘寶箱（已開啟）")
-	elif near(WAYPOINT_POS + Vector3(0, 0, 1.5), 2.7):
-		set_prompt("[ E ] 快傳重置雲海古道" if PrologueState.waypoint_road_unlocked else "[ E ] 信使鳥驛站")
+	elif near(WAYPOINT_POS + Vector3(0, 0, 1.5), 2.8):
+		set_prompt("[ E ] 傳送石陣（開啟世界地圖 [U]）")
 	elif near(WEST_EXIT, 2.8):
 		set_prompt("[ E ] 返回：湖畔營火")
 	elif near(EAST_EXIT, 2.8):

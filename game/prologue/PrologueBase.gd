@@ -48,9 +48,12 @@ const FOLIAGE_SHADER := preload("res://shaders/painterly_foliage.gdshader")
 const WATER_SEA_SHADER := preload("res://shaders/living_water_sea.gdshader")
 const MIXAMO_RIG_SCRIPT := preload("res://prologue/MixamoCharacterRig.gd")
 const MINIMAP_SCRIPT := preload("res://prologue/MinimapOverlay.gd")
+const WORLD_MAP_SCRIPT := preload("res://prologue/WorldMapOverlay.gd")
 var scene_shadow_tint := Color("#464d7a")
+var scene_world_key := "clearing"
 var mixamo_rig: Node3D
 var minimap_overlay: Control
+var world_map_overlay: Control
 
 # 60 FPS integer frame counter hitstop (never mutates Engine.time_scale)
 var hitstop_frames := 0
@@ -121,6 +124,7 @@ var hud_layer: CanvasLayer
 var hud_root: Control
 var zone_badge_label: Label
 var objective_label: Label
+var quest_log_label: Label
 var hp_hearts_label: Label
 var gear_tags_label: Label
 var subtitle_panel: PanelContainer
@@ -1097,13 +1101,13 @@ func setup_hud() -> void:
 	gear_tags_label = _styled_label("", 13, UI_INK, false)
 	v_box.add_child(gear_tags_label)
 
-	# 2. Top-Right: Ultra-clean 2-line Zone + Crisp Objective Pill
+	# 2. Top-Right: Ultra-clean Zone + PoE 2 Minimalist Quest Tracker Pill
 	var obj_card := PanelContainer.new()
 	obj_card.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	obj_card.offset_left = -310
+	obj_card.offset_left = -330
 	obj_card.offset_right = -18
 	obj_card.offset_top = 16
-	obj_card.offset_bottom = 78
+	obj_card.offset_bottom = 112
 	obj_card.add_theme_stylebox_override("panel", make_panel_style(UI_DARK_BG, UI_ACCENT_GOLD, 16, 2, 14, 7))
 	obj_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_root.add_child(obj_card)
@@ -1113,16 +1117,18 @@ func setup_hud() -> void:
 	obj_card.add_child(o_box)
 	zone_badge_label = _styled_label("", 12, UI_ACCENT_GOLD, false)
 	o_box.add_child(zone_badge_label)
-	objective_label = _styled_label("", 15, Color("#fff9eb"), false)
+	objective_label = _styled_label("", 14, Color("#fff9eb"), false)
 	objective_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	o_box.add_child(objective_label)
+	quest_log_label = _styled_label("", 11, Color("#d5e6ff"), false)
+	o_box.add_child(quest_log_label)
 
 	combo_badge_panel = PanelContainer.new()
 	combo_badge_panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	combo_badge_panel.offset_left = -168
 	combo_badge_panel.offset_right = -18
-	combo_badge_panel.offset_top = 86
-	combo_badge_panel.offset_bottom = 124
+	combo_badge_panel.offset_top = 274
+	combo_badge_panel.offset_bottom = 312
 	combo_badge_panel.add_theme_stylebox_override("panel", make_panel_style(Color(0.24, 0.11, 0.08, 0.88), FIRE_ORANGE, 14, 2, 12, 4))
 	combo_badge_panel.hide()
 	hud_root.add_child(combo_badge_panel)
@@ -1133,6 +1139,10 @@ func setup_hud() -> void:
 	# PoE 2-style Fog-of-War Exploration Minimap (press [Tab] to toggle Corner / Center)
 	minimap_overlay = MINIMAP_SCRIPT.new()
 	hud_root.add_child(minimap_overlay)
+
+	# PoE 2-style Interactive World Map Overlay (press [U] or interact with Waypoint)
+	world_map_overlay = WORLD_MAP_SCRIPT.new()
+	hud_layer.add_child(world_map_overlay)
 
 	# 3. Top-Center: Boss HP Bar (only shown during Boss encounter)
 	boss_panel = PanelContainer.new()
@@ -1217,6 +1227,7 @@ func setup_hud() -> void:
 	slot_flask_sub = flk_pair[2]
 	var bag_pair := _make_hotbar_slot(hotbar, "I", "造裝", Color("#c99438"))
 	slot_bag = bag_pair[0]
+	_make_hotbar_slot(hotbar, "U", "世界圖", Color("#4ecdc4"))
 	var coop_pair := _make_hotbar_slot(hotbar, "C", "拉隊友", Color("#58b9ff"))
 	slot_coop = coop_pair[0]
 	var rst_pair := _make_hotbar_slot(hotbar, "R", "重置", Color("#7d8597"))
@@ -1419,6 +1430,19 @@ func _styled_label(words: String, size: int, color: Color, with_outline := true)
 func set_zone_objective(zone_name: String, goal: String) -> void:
 	zone_badge_label.text = zone_name
 	objective_label.text = goal
+	if quest_log_label:
+		quest_log_label.text = PrologueState.get_quest_tracker_text()
+
+func is_world_map_open() -> bool:
+	return world_map_overlay != null and world_map_overlay.visible
+
+func open_world_map() -> void:
+	if world_map_overlay:
+		world_map_overlay.open_map(scene_world_key)
+
+func toggle_world_map() -> void:
+	if world_map_overlay:
+		world_map_overlay.toggle_map(scene_world_key)
 
 func set_prompt(text_val: String) -> void:
 	prompt_label.text = text_val
@@ -1615,7 +1639,7 @@ func step_shared_physics(delta: float, cam_override_target := Vector3.INF) -> bo
 		if cinematic_timer <= 0.0:
 			exit_cinematic_shot()
 
-	if input_locked or inv_open or PrologueState.is_transitioning:
+	if input_locked or inv_open or is_world_map_open() or PrologueState.is_transitioning:
 		bird.position = player.position + Vector3(0.0, 1.48 + sin(Time.get_ticks_msec() * 0.007) * 0.07, 0.0)
 		position_camera(cam_override_target if cam_override_target != Vector3.INF else feet(), clampf(delta * 4.5, 0.0, 1.0))
 		return true
@@ -1711,6 +1735,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	if PrologueState.is_transitioning:
 		return
 	if on_map_input(event):
+		return
+	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_U:
+		toggle_world_map()
+		return
+	if is_world_map_open():
+		if event is InputEventKey and event.pressed and event.physical_keycode == KEY_ESCAPE:
+			world_map_overlay.close_map()
 		return
 	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_I:
 		toggle_inventory()
