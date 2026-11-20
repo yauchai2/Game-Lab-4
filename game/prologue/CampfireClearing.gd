@@ -23,6 +23,8 @@ var camp_loot_item: Dictionary = {}
 
 func _ready() -> void:
 	can_attack = true
+	scene_shadow_tint = Color("#243359")
+	set_wind_profile(Vector2(0.88, 0.45), 0.95, 0.24, 0.14)
 	_build_map()
 	var spawn := Vector3(14.0, 0.0, -1.2) if PrologueState.spawn_tag == "from_town" else Vector3(0.8, 0.0, 0.5)
 	setup_core_trio(spawn)
@@ -111,6 +113,11 @@ func _build_map() -> void:
 	spawn_destructible_crate(Vector3(-1.2, 0.0, 14.5), 4)
 	spawn_destructible_crate(Vector3(18.0, 0.0, -9.8), 4)
 	build_horizon_panorama(Vector3(0.0, 0.0, 0.0), 27.0, 19.0, "night_forest")
+	# Wind-blown @amelicart night grass & glowing wildflowers (580 tufts via MultiMesh)
+	spawn_wind_grass_meadow(Vector3(-4.0, 0, -2.5), 11.5, 6.2, 200, NIGHT_GRASS, Color("#4f8091"), Color("#8ad6f5"), 0.16, 0.95)
+	spawn_wind_grass_meadow(Vector3(-16.5, 0, 2.5), 9.5, 7.5, 140, NIGHT_GRASS, Color("#48788a"), Color("#f2d085"), 0.18, 1.0)
+	spawn_wind_grass_meadow(Vector3(-3.5, 0, 13.0), 9.2, 5.6, 120, NIGHT_GRASS_LIGHT, Color("#5c9499"), Color("#e88ba7"), 0.20, 1.0)
+	spawn_wind_grass_meadow(Vector3(14.5, 0, -5.5), 8.2, 6.4, 120, NIGHT_GRASS_LIGHT, Color("#568c94"), Color("#ffe38a"), 0.18, 0.95)
 
 	invisible_boundary_wall(Vector3(-26.5, 0.8, 0.0), Vector3(0.8, 1.8, 38.0))
 	invisible_boundary_wall(Vector3(26.5, 0.8, 0.0), Vector3(0.8, 1.8, 38.0))

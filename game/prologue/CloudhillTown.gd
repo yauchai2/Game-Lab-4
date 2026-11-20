@@ -24,6 +24,8 @@ var town_travelers: Array[Dictionary] = []
 
 func _ready() -> void:
 	can_attack = true
+	scene_shadow_tint = Color("#4a5a8c")
+	set_wind_profile(Vector2(0.95, 0.30), 1.25, 0.30, 0.13)
 	_build_town()
 	var spawn := Vector3(-19.5, 0.0, 1.5)
 	if PrologueState.spawn_tag == "from_road":
@@ -96,6 +98,12 @@ func _build_town() -> void:
 	spawn_destructible_crate(Vector3(1.5, 0.0, -19.2), 4)
 	spawn_destructible_crate(Vector3(-24.8, 0.0, 13.8), 4)
 	build_horizon_panorama(Vector3(0.0, 0.0, 0.0), 35.5, 24.5, "day_island")
+	# Wind-blown @amelicart sunny meadow grass & wildflowers (860 tufts via MultiMesh)
+	spawn_wind_grass_meadow(Vector3(-13.5, 0, 1.8), 10.5, 8.2, 220, MEADOW_GREEN, Color("#bfe36b"), Color("#ffe066"), 0.18, 1.0)
+	spawn_wind_grass_meadow(Vector3(12.5, 0, -1.2), 10.8, 8.2, 200, MEADOW_GREEN, Color("#c5e872"), Color("#ff9eb5"), 0.18, 1.0)
+	spawn_wind_grass_meadow(Vector3(1.5, 0, 8.2), 10.2, 5.5, 160, Color("#7ab04d"), Color("#b8de64"), Color("#87c8ff"), 0.16, 0.95)
+	spawn_wind_grass_meadow(Vector3(0.0, 0, -16.5), 14.5, 5.8, 150, MEADOW_LIGHT, Color("#d2f07d"), Color("#ff9eb5"), 0.22, 1.05)
+	spawn_wind_grass_meadow(Vector3(24.5, 0, 11.5), 9.2, 6.8, 130, MEADOW_GREEN, Color("#c2e66e"), Color("#ffe066"), 0.24, 1.05)
 
 	invisible_boundary_wall(Vector3(0.0, 0.8, -24.2), Vector3(72.0, 1.8, 0.8))
 	invisible_boundary_wall(Vector3(0.0, 0.8, 24.2), Vector3(72.0, 1.8, 0.8))

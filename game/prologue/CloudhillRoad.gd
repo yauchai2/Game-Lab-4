@@ -51,6 +51,8 @@ var coop_attack_cd := 0.0
 
 func _ready() -> void:
 	can_attack = true
+	scene_shadow_tint = Color("#5c4578")
+	set_wind_profile(Vector2(0.96, -0.26), 1.65, 0.42, 0.12)
 	_build_road_map()
 	_build_boss_and_chest()
 	_spawn_poe_mobs()
@@ -149,6 +151,12 @@ func _build_road_map() -> void:
 	spawn_destructible_crate(Vector3(-15.0, 0.0, 13.5), 4)
 	spawn_destructible_crate(Vector3(35.0, 0.0, -4.5), 5)
 	build_horizon_panorama(Vector3(6.0, 0.0, 0.0), 44.0, 22.0, "sunset_clouds")
+	# Wind-blown autumn highland grass & sweeping @amelicart pink flower sea (980 tufts!)
+	spawn_wind_grass_meadow(Vector3(-17.0, 0, 0.5), 11.5, 8.2, 240, Color("#c9833c"), Color("#f2c166"), Color("#ff6f9c"), 0.34, 1.1)
+	spawn_wind_grass_meadow(Vector3(-16.5, 0, 11.8), 10.2, 6.2, 220, Color("#6ca652"), Color("#a3d96c"), Color("#ff5c8d"), 0.52, 1.25)
+	spawn_wind_grass_meadow(Vector3(-20.5, 0, -11.5), 9.5, 5.8, 170, DAY_GRASS, Color("#f5c96e"), Color("#ff8ab0"), 0.30, 1.05)
+	spawn_wind_grass_meadow(Vector3(-6.2, 0, -0.5), 7.8, 7.2, 170, DAY_GRASS_WARM, Color("#f7d07a"), Color("#ff7aa8"), 0.28, 1.05)
+	spawn_wind_grass_meadow(Vector3(31.5, 0, 0.4), 10.5, 8.2, 180, Color("#75b35e"), Color("#b8e372"), Color("#ff8ab0"), 0.26, 1.1)
 
 	invisible_boundary_wall(Vector3(-34.0, 0.8, 0.0), Vector3(0.8, 1.8, 38.0))
 	invisible_boundary_wall(Vector3(44.0, 0.8, 0.0), Vector3(0.8, 1.8, 38.0))

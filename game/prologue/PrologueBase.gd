@@ -42,6 +42,11 @@ const UI_HP_BG := Color("#3d2d29")
 const PLAYER_RADIUS := 0.30
 const WOLF_RADIUS := 0.82
 
+const GOUACHE_SHADER := preload("res://shaders/amelicart_gouache.gdshader")
+const GRASS_SHADER := preload("res://shaders/stylized_grass.gdshader")
+const FOLIAGE_SHADER := preload("res://shaders/painterly_foliage.gdshader")
+var scene_shadow_tint := Color("#464d7a")
+
 # 60 FPS integer frame counter hitstop (never mutates Engine.time_scale)
 var hitstop_frames := 0
 var attack_cooldown := 0.0
@@ -156,16 +161,36 @@ func add_shape(body: CollisionObject3D, shape: Shape3D, offset: Vector3) -> void
 	collider.position = offset
 	body.add_child(collider)
 
+func set_wind_profile(dir: Vector2, speed: float, strength: float, scale_val := 0.14) -> void:
+	RenderingServer.global_shader_parameter_set("wind_direction", dir)
+	RenderingServer.global_shader_parameter_set("wind_speed", speed)
+	RenderingServer.global_shader_parameter_set("wind_strength", strength)
+	RenderingServer.global_shader_parameter_set("wind_scale", scale_val)
+
+func make_foliage_material(col: Color) -> ShaderMaterial:
+	var sm := ShaderMaterial.new()
+	sm.shader = FOLIAGE_SHADER
+	sm.set_shader_parameter("foliage_color", col)
+	sm.set_shader_parameter("highlight_color", col.lightened(0.22))
+	sm.set_shader_parameter("shadow_tint", scene_shadow_tint)
+	return sm
+
 func mesh_at(parent: Node3D, pos: Vector3, mesh: Mesh, color: Color, unshaded := false) -> MeshInstance3D:
 	var instance := MeshInstance3D.new()
-	var material := StandardMaterial3D.new()
-	material.albedo_color = color
-	material.roughness = 1.0
-	material.metallic = 0.0
 	if unshaded:
+		var material := StandardMaterial3D.new()
+		material.albedo_color = color
+		material.roughness = 1.0
+		material.metallic = 0.0
 		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		instance.material_override = material
+	else:
+		var sm := ShaderMaterial.new()
+		sm.shader = GOUACHE_SHADER
+		sm.set_shader_parameter("albedo_color", color)
+		sm.set_shader_parameter("shadow_tint", scene_shadow_tint)
+		instance.material_override = sm
 	instance.mesh = mesh
-	instance.material_override = material
 	parent.add_child(instance)
 	instance.position = pos
 	return instance
@@ -242,10 +267,19 @@ func cozy_tree(pos: Vector3, scale_val := 1.0, foliage_col := MEADOW_GREEN, lean
 	var crown := Node3D.new()
 	crown.position = Vector3(-sin(deg_to_rad(lean_deg)) * 1.1, 2.55, 0)
 	root.add_child(crown)
-	sphere(crown, Vector3(0.0, 0.0, 0.0), Vector3(2.35, 1.85, 2.15), foliage_col)
-	sphere(crown, Vector3(0.85, -0.25, 0.45), Vector3(1.55, 1.35, 1.50), foliage_col.lightened(0.08))
-	sphere(crown, Vector3(-0.78, -0.18, -0.42), Vector3(1.48, 1.28, 1.42), foliage_col.darkened(0.08))
-	sphere(crown, Vector3(0.15, 0.68, -0.15), Vector3(1.32, 1.05, 1.25), foliage_col.lightened(0.12))
+	var fmat := make_foliage_material(foliage_col)
+	for part in [
+		[Vector3(0.0, 0.0, 0.0), Vector3(2.35, 1.85, 2.15)],
+		[Vector3(0.85, -0.25, 0.45), Vector3(1.55, 1.35, 1.50)],
+		[Vector3(-0.78, -0.18, -0.42), Vector3(1.48, 1.28, 1.42)],
+		[Vector3(0.15, 0.68, -0.15), Vector3(1.32, 1.05, 1.25)]
+	]:
+		var s := sphere(crown, part[0], part[1], foliage_col)
+		s.material_override = fmat
+		s.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# Non-flickering static shadow proxy (matches Stylized Trees video technique)
+	var shadow_proxy := sphere(root, crown.position, Vector3(2.1, 1.65, 2.0), foliage_col)
+	shadow_proxy.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
 	sway_items.append({"node": crown, "base_rot": crown.rotation, "amp": 0.025, "speed": 1.6, "phase": pos.x * 0.7 + pos.z * 0.5})
 	if solid:
 		var body := StaticBody3D.new()
@@ -266,9 +300,15 @@ func pine_tree(pos: Vector3, scale_val := 1.0, tint := PINE_DARK, solid := false
 	var foliage := Node3D.new()
 	foliage.position = Vector3(0, 1.8, 0)
 	root.add_child(foliage)
-	cylinder(foliage, Vector3(0.06, 0.65, 0), 0.25, 1.55, 2.0, tint)
-	cylinder(foliage, Vector3(-0.08, 1.95, 0.05), 0.16, 1.18, 1.8, tint.lightened(0.07))
-	sphere(foliage, Vector3(0.0, 2.85, 0.0), Vector3(0.85, 0.95, 0.85), tint.lightened(0.13))
+	var fmat := make_foliage_material(tint)
+	var c1 := cylinder(foliage, Vector3(0.06, 0.65, 0), 0.25, 1.55, 2.0, tint)
+	var c2 := cylinder(foliage, Vector3(-0.08, 1.95, 0.05), 0.16, 1.18, 1.8, tint)
+	var c3 := sphere(foliage, Vector3(0.0, 2.85, 0.0), Vector3(0.85, 0.95, 0.85), tint)
+	for n in [c1, c2, c3]:
+		n.material_override = fmat
+		n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var shadow_proxy := cylinder(root, Vector3(0, 2.6, 0), 0.3, 1.45, 3.2, tint)
+	shadow_proxy.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
 	sway_items.append({"node": foliage, "base_rot": foliage.rotation, "amp": 0.022, "speed": 1.4, "phase": pos.x * 0.6 + pos.z * 0.4})
 	if solid:
 		var body := StaticBody3D.new()
@@ -278,6 +318,41 @@ func pine_tree(pos: Vector3, scale_val := 1.0, tint := PINE_DARK, solid := false
 		sh.height = 2.4 * scale_val
 		add_shape(body, sh, Vector3(0, 1.2 * scale_val, 0))
 	return root
+
+func spawn_wind_grass_meadow(center: Vector3, rx: float, rz: float, count: int, base_col: Color, tip_col: Color, flower_col := Color("#ff8ab0"), flower_ratio := 0.16, height_scale := 1.0) -> MultiMeshInstance3D:
+	# High-performance MultiMeshInstance3D wind-blown @amelicart grass tufts (bottom-aligned pivot!)
+	var quad := QuadMesh.new()
+	quad.size = Vector2(0.76, 0.64 * height_scale)
+	quad.center_offset = Vector3(0.0, 0.32 * height_scale, 0.0)
+	var gmat := ShaderMaterial.new()
+	gmat.shader = GRASS_SHADER
+	gmat.set_shader_parameter("base_color", base_col)
+	gmat.set_shader_parameter("tip_color", tip_col)
+	gmat.set_shader_parameter("flower_color", flower_col)
+	gmat.set_shader_parameter("shadow_tint", scene_shadow_tint)
+	quad.material = gmat
+
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_custom_data = true
+	mm.mesh = quad
+	mm.instance_count = count
+	for i in range(count):
+		var ang := float(i) * 2.39996 + center.x * 0.17
+		var rad := sqrt((float(i) + 0.5) / float(maxi(1, count)))
+		var px := center.x + cos(ang) * rad * rx
+		var pz := center.z + sin(ang) * rad * rz
+		var s := 0.78 + fmod(absf(sin(float(i) * 12.9898) * 43758.5453), 0.56)
+		var xform := Transform3D(Basis().scaled(Vector3(s, s, s)), Vector3(px, 0.01, pz))
+		mm.set_instance_transform(i, xform)
+		var is_fl := 1.0 if fmod(absf(sin(float(i) * 78.233) * 19341.1), 1.0) < flower_ratio else 0.0
+		mm.set_instance_custom_data(i, Color(is_fl, 0.0, 0.0, 1.0))
+
+	var mmi := MultiMeshInstance3D.new()
+	mmi.multimesh = mm
+	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mmi)
+	return mmi
 
 func flower_patch(pos: Vector3, count: int, colors: Array[Color], spread := 1.6) -> void:
 	for i in range(count):
