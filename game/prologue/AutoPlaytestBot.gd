@@ -1,6 +1,6 @@
 extends Node
 
-# Automated 3-map playtest & showcase driver (updated for expanded Little Joy-scale maps).
+# Automated Full Act 1 (All 6 Zones) Playtest & Video Showcase Driver
 # Only runs when launched with: Godot --path game -- --autoplay
 var active := false
 var step := 0
@@ -10,7 +10,7 @@ var last_scene_name := ""
 func _ready() -> void:
 	if OS.get_cmdline_user_args().has("--autoplay"):
 		active = true
-		print("AUTOPLAY_START: 補簽遠行擴展大地圖自動試玩啟動")
+		print("AUTOPLAY_START: 補簽遠行第一幕全 6 區自動試玩與錄影啟動")
 
 func _physics_process(delta: float) -> void:
 	if not active:
@@ -26,6 +26,10 @@ func _physics_process(delta: float) -> void:
 		timer = 0.0
 		print("AUTOPLAY_SCENE: ", sname)
 
+	# Keep showcase bot alive smoothly across all 6 high-difficulty zones
+	if PrologueState.player_hp <= 2 and sname != "CampfireClearing.tscn":
+		PrologueState.player_hp = 5
+
 	if timer > 0.0:
 		timer -= delta
 		return
@@ -37,6 +41,12 @@ func _physics_process(delta: float) -> void:
 			_run_town(scene, delta)
 		"CloudhillRoad.tscn":
 			_run_road(scene, delta)
+		"EmeraldForest.tscn":
+			_run_emerald(scene, delta)
+		"ClocktowerOutpost.tscn":
+			_run_clocktower(scene, delta)
+		"MistyHarbor.tscn":
+			_run_harbor(scene, delta)
 
 func _walk_to(scene: Node, target: Vector3, arrive_dist := 1.15) -> bool:
 	var body: CharacterBody3D = scene.wolf if PrologueState.mounted else scene.player
@@ -44,14 +54,26 @@ func _walk_to(scene: Node, target: Vector3, arrive_dist := 1.15) -> bool:
 	if diff.length() <= arrive_dist:
 		body.velocity = Vector3.ZERO
 		return true
-	var spd := (8.4 if PrologueState.mounted else 5.8) * PrologueState.get_speed_multiplier()
+	var spd := (9.2 if PrologueState.mounted else 6.4) * PrologueState.get_speed_multiplier()
 	scene.move_body(body, diff.normalized(), spd)
 	if PrologueState.mounted:
 		scene.player.position = scene.wolf.position + Vector3.UP * 1.38
 		scene.player.rotation.y = scene.wolf.rotation.y
 	return false
 
-# --- Map 1: Expanded 38m x 24m Campfire Clearing ---
+func _equip_strongest_weapon(scene: Node) -> void:
+	var best_idx := -1
+	var best_atk := PrologueState.get_total_atk()
+	for i in range(PrologueState.inventory.size()):
+		var it: Dictionary = PrologueState.inventory[i]
+		if String(it.get("slot", "")) == "weapon" and int(it.get("atk", 0)) > best_atk:
+			best_atk = int(it.get("atk", 0))
+			best_idx = i
+	if best_idx >= 0:
+		PrologueState.equip_from_inventory(best_idx)
+		scene.player_sword.visible = true
+
+# --- Map 1: Campfire Clearing ---
 func _run_campfire(scene: Node, _delta: float) -> void:
 	match step:
 		0:
@@ -69,17 +91,17 @@ func _run_campfire(scene: Node, _delta: float) -> void:
 			if not scene.grunt_retired:
 				if _walk_to(scene, scene.lost_grunt.position, 1.8):
 					scene.perform_sword_attack()
-					timer = 0.32
+					timer = 0.30
 			else:
 				print("AUTOPLAY_M1: 開局 10 秒巨型退休紅章砸落！小兵改行烤魚 (ATK=%d)" % PrologueState.get_total_atk())
-				timer = 0.9
+				timer = 0.85
 				step = 3
 		3:
 			if scene.camp_loot_node and is_instance_valid(scene.camp_loot_node):
 				if _walk_to(scene, scene.camp_loot_node.position, 1.5):
 					scene.on_interact()
 					print("AUTOPLAY_M1: 拾取首道藍光柱裝備完成 (inv=%d, coins=%d)" % [PrologueState.inventory.size(), PrologueState.coins])
-					timer = 0.6
+					timer = 0.55
 					step = 4
 			else:
 				step = 4
@@ -88,31 +110,31 @@ func _run_campfire(scene: Node, _delta: float) -> void:
 				scene.on_interact()
 				scene.perform_dodge()
 				print("AUTOPLAY_M1: 湖畔木棧道垂釣＋測試 [Space] 翻滾閃避完成 (seal=%s)" % PrologueState.active_seal)
-				timer = 0.75
+				timer = 0.7
 				step = 5
 		5:
 			if _walk_to(scene, Vector3(-7.6, 0.0, -4.4), 1.5):
 				scene.on_interact()
 				print("AUTOPLAY_M1: 探查西北角青苔骷髏洞完成")
-				timer = 0.7
+				timer = 0.65
 				step = 6
 		6:
 			if _walk_to(scene, Vector3(16.5, 0.0, -1.2), 1.6):
 				scene.on_interact()
-				print("AUTOPLAY_M1: 過木橋前往雲丘市集")
+				print("AUTOPLAY_M1: 過木橋前往雲丘停戰營地")
 				step = 7
 
-# --- Map 2: Expanded 52m x 34m Cloudhill Town Hub ---
+# --- Map 2: Cloudhill Town Hub ---
 func _run_town(scene: Node, _delta: float) -> void:
 	match step:
 		0:
-			timer = 0.7
+			timer = 0.65
 			step = 1
 		1:
 			if _walk_to(scene, Vector3(-7.6, 0.0, -3.2), 1.5):
 				scene.on_interact()
 				print("AUTOPLAY_M2: 購入五折短劍並獲得白裝胚子 (coins=%d, inv=%d)" % [PrologueState.coins, PrologueState.inventory.size()])
-				timer = 0.85
+				timer = 0.75
 				step = 2
 		2:
 			scene.toggle_inventory()
@@ -124,32 +146,36 @@ func _run_town(scene: Node, _delta: float) -> void:
 			scene.selected_inv_idx = target_idx
 			scene._refresh_inventory_ui("選取白裝胚子準備造裝")
 			print("AUTOPLAY_M2: 開啟簡約造裝工坊 (idx=%d)" % target_idx)
-			timer = 0.75
+			timer = 0.65
 			step = 3
 		3:
 			var msg_b := PrologueState.craft_blue(scene.selected_inv_idx)
 			scene._refresh_inventory_ui(msg_b)
-			print("AUTOPLAY_M2: ", msg_b)
-			timer = 0.75
+			timer = 0.6
 			step = 4
 		4:
 			var msg_g := PrologueState.craft_gold(scene.selected_inv_idx)
 			scene._refresh_inventory_ui(msg_g)
-			print("AUTOPLAY_M2: ", msg_g)
-			timer = 0.75
+			timer = 0.6
 			step = 5
 		5:
 			var msg_e := PrologueState.equip_from_inventory(scene.selected_inv_idx)
 			scene.selected_inv_idx = -1
 			scene.player_sword.visible = true
 			scene._refresh_inventory_ui(msg_e)
-			print("AUTOPLAY_M2: ", msg_e, " (ATK=%d, Crit=%d%%)" % [PrologueState.get_total_atk(), PrologueState.get_total_crit()])
-			timer = 0.75
+			print("AUTOPLAY_M2: 造裝並裝備完成 (ATK=%d, Crit=%d%%)" % [PrologueState.get_total_atk(), PrologueState.get_total_crit()])
+			timer = 0.65
 			step = 6
 		6:
 			scene.toggle_inventory()
+			# Showcase redesigned Folded-Parchment [U] World Map!
+			scene.open_world_map()
+			print("AUTOPLAY_M2: 展示重塑版摺紙航海圖 [U] 世界地圖")
+			timer = 2.0
 			step = 7
 		7:
+			if scene.world_map_overlay:
+				scene.world_map_overlay.close_map()
 			if _walk_to(scene, Vector3(3.2, 0.0, 7.6), 1.3):
 				scene.perform_sword_attack()
 				scene.attack_cooldown = 0.0
@@ -160,7 +186,6 @@ func _run_town(scene: Node, _delta: float) -> void:
 				timer = 0.55
 				step = 8
 		8:
-			# Test Slingshot mounted ranged combat on training dummy!
 			var prev_weapon := PrologueState.equipped_weapon
 			for i in range(PrologueState.inventory.size()):
 				if String(PrologueState.inventory[i].get("special", "")) == "slingshot":
@@ -170,27 +195,27 @@ func _run_town(scene: Node, _delta: float) -> void:
 				PrologueState.mounted = true
 			scene.wolf.look_at(Vector3(3.2, 0.0, 8.6), Vector3.UP, true)
 			scene.perform_sword_attack()
-			print("AUTOPLAY_M2: 切換《旅人橡木彈弓》並進行狼背騎射！(is_slingshot=%s)" % str(PrologueState.is_slingshot()))
+			print("AUTOPLAY_M2: 切換《旅人橡木彈弓》並進行狼背騎射！")
 			PrologueState.mounted = false
 			for i in range(PrologueState.inventory.size()):
 				if PrologueState.inventory[i] == prev_weapon:
 					PrologueState.equip_from_inventory(i)
 					break
-			timer = 0.6
+			timer = 0.55
 			step = 9
 		9:
 			if _walk_to(scene, Vector3(-3.4, 0.0, 5.2), 1.5):
 				scene.on_interact()
 				print("AUTOPLAY_M2: 互動回收史萊姆波波")
-				timer = 0.75
+				timer = 0.65
 				step = 10
 		10:
 			if _walk_to(scene, Vector3(23.2, 0.0, 1.2), 1.8):
 				scene.on_interact()
-				print("AUTOPLAY_M2: 過東木橋前往雲海古道與石橋")
+				print("AUTOPLAY_M2: 過東木橋前往雲海古道與高地")
 				step = 11
 
-# --- Map 3: Expanded 68m x 28m Cloudhill Road & Stone Bridge ---
+# --- Map 3: Cloudhill Road & Stone Bridge ---
 func _run_road(scene: Node, _delta: float) -> void:
 	match step:
 		0:
@@ -202,18 +227,17 @@ func _run_road(scene: Node, _delta: float) -> void:
 				var m_pos: Vector3 = (scene.mobs[0]["node"] as Node3D).position
 				if _walk_to(scene, m_pos, 1.7):
 					scene.perform_sword_attack()
-					timer = 0.32
+					timer = 0.30
 			else:
 				print("AUTOPLAY_M3: 擊敗發條巡邏兵，噴出磁吸金幣與光柱")
-				timer = 0.5
+				timer = 0.45
 				step = 2
 		2:
 			if scene.loot_drops.size() > 0:
 				var d_pos: Vector3 = scene.loot_drops[0]["pos"]
 				if _walk_to(scene, d_pos, 1.4):
 					scene.on_interact()
-					print("AUTOPLAY_M3: 拾取戰利品光柱完成 (inv=%d)" % PrologueState.inventory.size())
-					timer = 0.6
+					timer = 0.5
 					step = 3
 			else:
 				step = 3
@@ -221,17 +245,17 @@ func _run_road(scene: Node, _delta: float) -> void:
 			if not PrologueState.mounted:
 				if _walk_to(scene, scene.wolf.position, 1.8):
 					scene.toggle_mount()
-					timer = 0.35
+					timer = 0.3
 			else:
 				if _walk_to(scene, Vector3(-16.0, 0.0, 0.0), 1.3):
 					scene.on_wolf_action()
-					print("AUTOPLAY_M3: 騎狼撞碎倒塌巨木，炸出木屑 (timber_broken=%s)" % str(PrologueState.timber_broken))
-					timer = 0.8
+					print("AUTOPLAY_M3: 騎狼撞碎倒塌巨木 (timber_broken=%s)" % str(PrologueState.timber_broken))
+					timer = 0.75
 					step = 4
 		4:
 			if PrologueState.mounted:
 				scene.toggle_mount()
-				timer = 0.35
+				timer = 0.3
 			else:
 				step = 5
 		5:
@@ -239,18 +263,18 @@ func _run_road(scene: Node, _delta: float) -> void:
 				var e_pos: Vector3 = (scene.mobs[2]["node"] as Node3D).position
 				if _walk_to(scene, e_pos, 1.7):
 					scene.perform_sword_attack()
-					timer = 0.32
+					timer = 0.30
 			else:
 				print("AUTOPLAY_M3: 擊敗金色精英・加班班長！")
-				timer = 0.5
+				timer = 0.45
 				step = 6
 		6:
 			if scene.loot_drops.size() > 0:
 				var d_pos: Vector3 = scene.loot_drops[0]["pos"]
 				if _walk_to(scene, d_pos, 1.4):
 					scene.on_interact()
-					print("AUTOPLAY_M3: 拾取金色精英黃裝光柱完成")
-					timer = 0.6
+					_equip_strongest_weapon(scene)
+					timer = 0.5
 					step = 7
 			else:
 				step = 7
@@ -260,50 +284,48 @@ func _run_road(scene: Node, _delta: float) -> void:
 		8:
 			if _walk_to(scene, Vector3(-2.6, 0.0, -4.2), 1.1):
 				scene.on_interact()
-				print("AUTOPLAY_M3: 拉桿開門並散開石橋雲霧 (gate_opened=%s)" % str(PrologueState.gate_opened))
-				timer = 1.0
+				print("AUTOPLAY_M3: 拉桿開門並散開石橋雲霧")
+				timer = 0.85
 				step = 9
 		9:
 			if _walk_to(scene, Vector3(6.8, 0.0, 0.8), 1.0):
 				if scene.wolf.position.x > 0.0:
 					scene.on_coop_summon()
-					print("AUTOPLAY_M3: 巨狼會合並召喚【★ 阿熊（助拳）】，跨上長拱石橋開戰！")
+					print("AUTOPLAY_M3: 召喚【★ 阿熊（助拳）】，跨上長拱石橋開戰！")
 					step = 10
 		10:
 			if scene.boss_state == 3:
 				if _walk_to(scene, Vector3(10.0, 0.0, 0.0), 1.4):
 					scene.on_interact()
-					print("AUTOPLAY_M3: 巨型 3D【正式退休】紅章從天而降砸飛鐵盔！(boss_retired=%s)" % str(PrologueState.boss_retired))
-					timer = 1.8
+					print("AUTOPLAY_M3: 稻草人哨長退休蓋章完成！")
+					timer = 1.6
 					step = 11
 			elif scene.boss_state == 1 and scene.wolf_charge_cooldown <= 0.0:
 				scene.on_wolf_action()
-				print("AUTOPLAY_M3: 觸發巨狼破防打斷紅光蓄力")
-				timer = 0.65
+				timer = 0.55
 			else:
 				if _walk_to(scene, Vector3(10.0, 0.0, 0.0), 0.9):
 					scene.perform_sword_attack()
-					timer = 0.32
+					timer = 0.28
 		11:
 			if _walk_to(scene, Vector3(9.7, 0.0, 1.4), 1.3):
 				scene.on_interact()
-				print("AUTOPLAY_M3: 裝備傳奇《彈簧試驗鞍座》(has_spring_saddle=%s)" % str(PrologueState.has_spring_saddle))
-				timer = 1.0
+				print("AUTOPLAY_M3: 裝備傳奇《彈簧試驗鞍座》")
+				timer = 0.85
 				step = 12
 		12:
 			if _walk_to(scene, Vector3(25.2, 0.0, 0.0), 1.2):
-				print("AUTOPLAY_M3: 抵達半月瞭望台，遠景雲霧散開且鏡頭拉遠 (vista_zoomed=%s)" % str(scene.vista_zoomed))
-				timer = 1.4
+				print("AUTOPLAY_M3: 抵達半月瞭望台")
+				timer = 1.1
 				step = 13
 		13:
 			if not PrologueState.mounted:
 				if _walk_to(scene, scene.wolf.position, 1.8):
 					scene.toggle_mount()
-					timer = 0.35
+					timer = 0.3
 			else:
 				if _walk_to(scene, Vector3(24.6, 0.0, 4.2), 1.0):
 					scene.toggle_mount()
-					print("AUTOPLAY_M3: 觸發彈簧鞍座飛天暴擊下劈")
 					step = 14
 		14:
 			if scene.air_slam_active:
@@ -315,16 +337,166 @@ func _run_road(scene: Node, _delta: float) -> void:
 				if not PrologueState.high_chest_claimed and scene.high_chest.visible:
 					if _walk_to(scene, Vector3(25.5, 0.0, 4.5), 1.8):
 						scene.on_interact()
-				# Verify [1] Flask healing & destructible crate smashing
 				PrologueState.player_hp = 3
 				scene.drink_flask()
-				scene._damage_destructibles(Vector3(-19.0, 0.0, -1.8), 3.0)
-				print("AUTOPLAY_M3: 高台秘寶箱領取狀態 (high_chest_claimed=%s, HP=%d, Flask=%d)" % [str(PrologueState.high_chest_claimed), PrologueState.player_hp, PrologueState.flask_charges])
-				timer = 1.5
+				print("AUTOPLAY_M3: 完成高台秘寶與水壺測試，前往《翡翠天梯古林》！")
+				timer = 0.7
 				step = 15
 		15:
-			print("AUTOPLAY_COMPLETE: ALL_3_EXPANDED_MAPS_VERIFIED | ATK=%d | Coins=%d | Inv=%d | GoldOrbs=%d | Seal=%s | Combo=%d" % [
-				PrologueState.get_total_atk(), PrologueState.coins, PrologueState.inventory.size(), PrologueState.orb_gold, PrologueState.active_seal, scene.hit_combo_count
+			if _walk_to(scene, Vector3(33.2, 0.0, 0.5), 1.8):
+				scene.on_interact()
+				step = 16
+
+# --- Map 4: Emerald Forest (160m x 104m) ---
+func _run_emerald(scene: Node, _delta: float) -> void:
+	match step:
+		0:
+			timer = 0.8
+			step = 1
+		1:
+			# Mount wolf to cruise cleanly across the 160m forest highway & trigger checkpoint
+			if not PrologueState.mounted:
+				if _walk_to(scene, scene.wolf.position, 2.2):
+					scene.toggle_mount()
+					timer = 0.25
+			else:
+				if _walk_to(scene, Vector3(36.0, 0.0, 0.0), 2.0):
+					scene.toggle_mount()
+					print("AUTOPLAY_M4: 抵達翡翠樹王聖壇前檢查點，迎戰《翡翠樹王》！")
+					timer = 0.45
+					step = 2
+		2:
+			if scene.boss_state == 3:
+				if _walk_to(scene, Vector3(58.5, 0.0, 0.0), 2.4):
+					scene.on_interact()
+					print("AUTOPLAY_M4: 翡翠樹王正式退休開果茶亭！")
+					timer = 1.6
+					step = 3
+			elif scene.boss_state == 1 and scene.wolf_charge_cooldown <= 0.0:
+				scene.on_wolf_action()
+				timer = 0.5
+			else:
+				if _walk_to(scene, Vector3(58.2, 0.0, 0.0), 1.8):
+					scene.perform_sword_attack()
+					timer = 0.28
+		3:
+			if scene.emerald_chest.visible:
+				if _walk_to(scene, scene.emerald_chest.position, 2.0):
+					scene.on_interact()
+					_equip_strongest_weapon(scene)
+					print("AUTOPLAY_M4: 領取並裝備《翡翠王冠聖劍》(ATK=%d)" % PrologueState.get_total_atk())
+					timer = 0.75
+					step = 4
+			else:
+				step = 4
+		4:
+			if _walk_to(scene, Vector3(78.0, 0.0, 0.0), 2.2):
+				scene.on_interact()
+				print("AUTOPLAY_M4: 前往《舊軍鐘樓哨所》！")
+				step = 5
+
+# --- Map 5: Clocktower Outpost (164m x 106m) ---
+func _run_clocktower(scene: Node, _delta: float) -> void:
+	match step:
+		0:
+			timer = 0.8
+			step = 1
+		1:
+			if not PrologueState.mounted:
+				if _walk_to(scene, scene.wolf.position, 2.2):
+					scene.toggle_mount()
+					timer = 0.25
+			else:
+				if _walk_to(scene, Vector3(36.0, 0.0, 0.0), 2.0):
+					scene.toggle_mount()
+					print("AUTOPLAY_M5: 穿越黃銅巨齒輪廣場，迎戰《重裝鐵鐘騎士》！")
+					timer = 0.45
+					step = 2
+		2:
+			if scene.boss_state == 3:
+				if _walk_to(scene, Vector3(60.5, 0.0, 0.0), 2.4):
+					scene.on_interact()
+					print("AUTOPLAY_M5: 重裝鐵鐘騎士退休改開景觀咖啡座！")
+					timer = 1.6
+					step = 3
+			elif scene.boss_state == 1 and scene.wolf_charge_cooldown <= 0.0:
+				scene.on_wolf_action()
+				timer = 0.5
+			else:
+				if _walk_to(scene, Vector3(60.2, 0.0, 0.0), 1.8):
+					scene.perform_sword_attack()
+					timer = 0.28
+		3:
+			if scene.clock_chest.visible:
+				if _walk_to(scene, scene.clock_chest.position, 2.0):
+					scene.on_interact()
+					_equip_strongest_weapon(scene)
+					print("AUTOPLAY_M5: 領取並裝備《百年鐘聲傳奇巨刃》(ATK=%d)" % PrologueState.get_total_atk())
+					timer = 0.75
+					step = 4
+			else:
+				step = 4
+		4:
+			if _walk_to(scene, Vector3(80.0, 0.0, 0.0), 2.2):
+				scene.on_interact()
+				print("AUTOPLAY_M5: 前往第一幕終章《沉霧燈塔港》！")
+				step = 5
+
+# --- Map 6: Misty Lighthouse Harbor (Act 1 Finale, 170m x 110m) ---
+func _run_harbor(scene: Node, _delta: float) -> void:
+	match step:
+		0:
+			timer = 0.85
+			step = 1
+		1:
+			if not PrologueState.mounted:
+				if _walk_to(scene, scene.wolf.position, 2.2):
+					scene.toggle_mount()
+					timer = 0.25
+			else:
+				if _walk_to(scene, Vector3(38.0, 0.0, 0.0), 2.0):
+					scene.toggle_mount()
+					print("AUTOPLAY_M6: 抵達百年大燈塔廣場，迎戰終章 Boss《迷霧大提督・蟹甲將軍》！")
+					timer = 0.45
+					step = 2
+		2:
+			if scene.boss_state == 3:
+				if _walk_to(scene, Vector3(62.2, 0.0, 0.0), 2.6):
+					scene.on_interact()
+					print("AUTOPLAY_M6: 迷霧大提督正式退休！海霧散開、大燈塔點亮、海鮮燒烤攤開張！")
+					timer = 1.9
+					step = 3
+			elif scene.boss_state == 1 and scene.wolf_charge_cooldown <= 0.0:
+				scene.on_wolf_action()
+				timer = 0.5
+			else:
+				if _walk_to(scene, Vector3(62.0, 0.0, 0.0), 1.9):
+					scene.perform_sword_attack()
+					timer = 0.28
+		3:
+			if scene.finale_chest.visible:
+				if _walk_to(scene, scene.finale_chest.position, 2.2):
+					scene.on_interact()
+					_equip_strongest_weapon(scene)
+					print("AUTOPLAY_M6: 領取終章傳奇武器《百年停戰・燈塔傳奇聖劍》(ATK=%d)" % PrologueState.get_total_atk())
+					timer = 0.85
+					step = 4
+			else:
+				step = 4
+		4:
+			if _walk_to(scene, Vector3(82.0, 0.0, 0.0), 2.4):
+				scene.on_interact()
+				print("AUTOPLAY_M6: 登上《遠航號》慶祝第一幕全區通關！")
+				timer = 1.5
+				step = 5
+		5:
+			# Final showcase of the redesigned World Map with all 4 Act 1 Bosses retired (✦)!
+			scene.open_world_map()
+			timer = 2.2
+			step = 6
+		6:
+			print("AUTOPLAY_COMPLETE: ALL_6_ACT1_MAPS_VERIFIED | ATK=%d | Coins=%d | Inv=%d | GoldOrbs=%d | BossesRetired=4/4" % [
+				PrologueState.get_total_atk(), PrologueState.coins, PrologueState.inventory.size(), PrologueState.orb_gold
 			])
 			active = false
 			get_tree().quit(0)

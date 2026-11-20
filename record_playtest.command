@@ -9,9 +9,9 @@ if [ ! -x "$GODOT_BIN" ]; then
 fi
 
 RAW_AVI="$(pwd)/playtest_raw.avi"
-OUT_MP4="$(pwd)/playtest_prologue_graybox.mp4"
+OUT_MP4="$(pwd)/playtest_act1_full_showcase.mp4"
 
-echo "正在啟動 Godot 並執行三張地圖全自動試玩與錄影..."
+echo "正在啟動 Godot 並執行《補簽遠行》第一幕全 6 區＋摺紙世界地圖自動試玩與錄影..."
 "$GODOT_BIN" --path "$(pwd)/game" --write-movie "$RAW_AVI" --fixed-fps 30 -- --autoplay
 
 echo "錄影完成，正在透過 ffmpeg 轉檔為 MP4..."
@@ -23,7 +23,7 @@ fi
 if [ -n "$FFMPEG_BIN" ]; then
   "$FFMPEG_BIN" -y -i "$RAW_AVI" -c:v libx264 -pix_fmt yuv420p -crf 20 -preset fast "$OUT_MP4"
   rm -f "$RAW_AVI"
-  echo "完成！試玩影片已輸出至：$OUT_MP4"
+  echo "完成！第一幕全內容試玩影片已輸出至：$OUT_MP4"
   open -R "$OUT_MP4"
 else
   echo "找不到 ffmpeg，原始錄影檔保留於：$RAW_AVI"
