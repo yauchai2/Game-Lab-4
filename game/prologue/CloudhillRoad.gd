@@ -55,32 +55,27 @@ func _ready() -> void:
 	_update_ui()
 
 func _build_road_map() -> void:
-	# West highland meadow + stone bridge + semicircular vista lookout
 	box(self, Vector3(-7.0, -0.5, 0.0), Vector3(21.0, 1.0, 13.0), DAY_GRASS)
 	box(self, Vector3(10.5, -0.45, 0.0), Vector3(14.5, 0.9, 9.2), STONE_LIGHT)
 	box(self, Vector3(10.5, 0.45, -4.5), Vector3(14.5, 0.9, 0.45), STONE, true)
 	box(self, Vector3(10.5, 0.45, 4.5), Vector3(14.5, 0.9, 0.45), STONE, true)
 	box(self, Vector3(21.5, -0.5, 0.0), Vector3(9.5, 1.0, 12.6), DAY_GRASS)
 
-	# Trail & narrow slit guide
 	box(self, Vector3(-6.5, 0.015, 0.3), Vector3(20.0, 0.03, 2.6), TRAIL)
 	box(self, Vector3(WALL_X, 0.018, NARROW_SLIT_Z), Vector3(4.8, 0.03, 1.3), GOLD)
 
-	# Boundaries
 	box(self, Vector3(-17.8, 0.8, 0.0), Vector3(0.5, 1.6, 13.5), PINE_ORANGE, true)
 	box(self, Vector3(26.4, 0.8, 0.0), Vector3(0.5, 1.6, 13.5), PINE_TEAL, true)
 	for z in [-6.4, 6.4]:
 		box(self, Vector3(-7.0, 0.8, z), Vector3(21.5, 1.6, 0.5), PINE_ORANGE, true)
 		box(self, Vector3(21.5, 0.8, z), Vector3(10.0, 1.6, 0.5), STONE, true)
 
-	# Stylized orange & slate-blue pine trees on west highlands
 	for p in [
 		Vector3(-15.5, 0, -5.0), Vector3(-12.2, 0, -4.8), Vector3(-15.0, 0, 4.8),
 		Vector3(-11.5, 0, 5.1), Vector3(-6.8, 0, 5.2)
 	]:
 		pine_tree(p, randf_range(1.0, 1.3), PINE_ORANGE if int(absf(p.x)) % 2 == 0 else Color("#4a6b8a"))
 
-	# 1. Fallen Timber Barricade (requires mounted wolf Q-smash)
 	timber_barricade = Node3D.new()
 	timber_barricade.position = TIMBER_POS
 	add_child(timber_barricade)
@@ -88,7 +83,6 @@ func _build_road_map() -> void:
 	box(timber_barricade, Vector3(-0.35, 1.45, -1.2), Vector3(0.55, 0.55, 5.2), TIMBER_LIGHT)
 	label_at(timber_barricade, Vector3(0, 2.55, 0), "枯木路障（騎狼按 Q 撞碎）", FIRE_ORANGE, 32)
 
-	# 2. Size-Difference Faceted Stone Wall (1.4m North Slit vs 3.6m South Gate)
 	for span in [Vector2(-6.4, -4.2), Vector2(-2.8, -0.4), Vector2(3.2, 6.4)]:
 		box(self, Vector3(WALL_X, 1.35, (span.x + span.y) * 0.5),
 			Vector3(0.9, 2.7, span.y - span.x), STONE, true)
@@ -96,14 +90,12 @@ func _build_road_map() -> void:
 	box(self, Vector3(WALL_X, 2.75, GATE_Z), Vector3(0.95, 0.45, 3.7), STONE_LIGHT)
 	stone_gate = box(self, Vector3(WALL_X, 1.25, GATE_Z), Vector3(0.48, 2.5, 3.55), TIMBER, true)
 
-	# Inner lever behind narrow slit
 	box(self, LEVER_POS + Vector3(0, 0.38, 0), Vector3(0.45, 0.76, 0.45), STONE)
 	lever_handle = box(self, LEVER_POS + Vector3(0, 0.92, 0), Vector3(0.14, 0.42, 0.14), GOLD)
 	marker(LEVER_POS, GOLD, 0.55)
 	label_at(self, Vector3(WALL_X, 2.4, NARROW_SLIT_Z), "北側窄縫（小旅人鑽入）", GOLD, 30)
 	label_at(self, Vector3(WALL_X, 3.3, GATE_Z), "南側巨狼木門", Color.WHITE, 32)
 
-	# 3. Bridgehead Free Tea Stall (hidden until retirement)
 	tea_stall = Node3D.new()
 	tea_stall.position = TEA_STALL_POS
 	add_child(tea_stall)
@@ -112,7 +104,6 @@ func _build_road_map() -> void:
 	label_at(tea_stall, Vector3(0, 2.75, 0), "退休哨長・免費茶攤", GOLD, 32)
 	tea_stall.hide()
 
-	# 4. Vista Lookout Landmarks: Bounty Board, Waypoint, Chapter 1 Emerald Stairs
 	box(self, BOUNTY_POS + Vector3(0, 1.25, 0), Vector3(2.6, 1.7, 0.2), TIMBER_LIGHT, true)
 	for i in range(4):
 		box(self, BOUNTY_POS + Vector3(-0.85 + i * 0.56, 1.35, 0.14), Vector3(0.42, 0.55, 0.04), Color("#fff5dc"))
@@ -122,7 +113,6 @@ func _build_road_map() -> void:
 
 	transition_signpost(WEST_EXIT, "返回：雲丘小鎮（按 E）", GOLD)
 	transition_signpost(WAYPOINT_POS, "信使鳥驛站：快傳回雲丘小鎮（按 E）", Color("#98ffbd"))
-	# Emerald jungle exit stairs (Chapter 1)
 	for s in range(4):
 		box(self, CHAPTER_1_EXIT + Vector3(s * 0.45, -0.15 * s, 0), Vector3(0.55, 0.25, 2.4), Color("#6ca874"))
 	pine_tree(CHAPTER_1_EXIT + Vector3(0.5, 0, -2.5), 1.1, Color("#2f9e66"))
@@ -130,7 +120,6 @@ func _build_road_map() -> void:
 	marker(CHAPTER_1_EXIT + Vector3(-0.6, 0, 0), Color("#49c674"), 0.8)
 	label_at(self, CHAPTER_1_EXIT + Vector3(-0.2, 2.4, 0), "青苔石階 → 第一章：翡翠天梯古林", Color("#b8ffd0"), 32)
 
-	# Cloud sea & distant pastel peaks + distant MMORPG riders
 	for c in [Vector3(9, -1.8, -10), Vector3(16, -1.6, -11), Vector3(12, -2.0, 9.5), Vector3(26, -1.8, -9)]:
 		sphere(self, c, Vector3(6.5, 2.2, 4.8), CLOUD_WHITE, true)
 	cylinder(self, Vector3(34, 6.5, -13), 1.8, 7.2, 16.0, PINK_PEAK, true)
@@ -238,7 +227,7 @@ func update_wolf_follow(_delta: float) -> void:
 func on_wolf_action() -> void:
 	if wolf_charge_cooldown > 0.0:
 		return
-	wolf_charge_cooldown = 1.5
+	wolf_charge_cooldown = wolf_charge_max
 	wolf_charge_timer = 0.55
 	if not PrologueState.timber_broken and PrologueState.mounted and flat(wolf.position - TIMBER_POS).length() < 4.8:
 		PrologueState.timber_broken = true
@@ -256,7 +245,7 @@ func on_wolf_action() -> void:
 
 func on_interact() -> void:
 	if near(WEST_EXIT, 2.8):
-		PrologueState.transition_to("res://prologue/CloudhillTown.tscn", "from_road")
+		PrologueState.transition_to("res://prologue/CloudhillTown.tscn", "from_road", "雲丘小鎮 Hub")
 		return
 	if not PrologueState.gate_opened and not PrologueState.mounted and near(LEVER_POS, 2.1):
 		PrologueState.gate_opened = true
@@ -277,7 +266,7 @@ func on_interact() -> void:
 		return
 	if near(WAYPOINT_POS, 2.6):
 		PrologueState.waypoint_road_unlocked = true
-		PrologueState.transition_to("res://prologue/CloudhillTown.tscn", "from_waypoint")
+		PrologueState.transition_to("res://prologue/CloudhillTown.tscn", "from_waypoint", "雲丘小鎮 Hub")
 		return
 	if near(BOUNTY_POS + Vector3(0, 0, 1.0), 2.5):
 		show_player_emote("!", 1.5)
@@ -304,14 +293,14 @@ func _update_boss(delta: float) -> void:
 		BossState.IDLE:
 			var toward := flat(feet() - boss.position)
 			boss.rotation.y = atan2(toward.x, toward.z)
-			boss_cue.text = "稻草人哨長 (%d/%d)" % [boss_hp, MAX_BOSS_HP]
+			boss_cue.text = "稻草人哨長"
 			if boss_timer <= 0.0:
 				boss_state = BossState.WINDUP
 				boss_timer = 2.0
 				attack_ring.position = boss.position + Vector3(0, 0.05, 0)
 				attack_ring.show()
 				boss_hammer.rotation_degrees.x = -75.0
-				boss_cue.text = "紅光蓄力中！按 [Q] 巨狼撞斷！"
+				boss_cue.text = "紅光蓄力！按 [Q]"
 				boss_cue.modulate = STAMP_RED
 		BossState.WINDUP:
 			if boss_timer <= 0.0:
@@ -326,7 +315,7 @@ func _update_boss(delta: float) -> void:
 				boss_cue.modulate = Color("#ffd59e")
 		BossState.STAGGERED:
 			boss.rotation.z = sin(Time.get_ticks_msec() * 0.03) * 0.22
-			boss_cue.text = "破防踉蹌！趁現在連斬！"
+			boss_cue.text = "破防踉蹌！"
 			boss_cue.modulate = GOLD
 			if boss_timer <= 0.0:
 				boss.rotation.z = 0.0
@@ -355,7 +344,7 @@ func on_sword_hit() -> void:
 			attack_ring.hide()
 			boss.rotation.z = 0.0
 			boss.position.y = -0.35
-			boss_cue.text = "體力耗盡 — 靠近按 [E] 辦理退休！"
+			boss_cue.text = "靠近按 [E] 辦理退休！"
 			boss_cue.modulate = GOLD
 			_boss_say("好強的小傢伙……等等，那封停戰信是真的？", 4.0)
 
@@ -390,28 +379,46 @@ func _update_ui() -> void:
 	if PrologueState.timber_broken and not PrologueState.gate_opened:
 		step = "下騎鑽入北側窄縫拉動拉桿，開啟南側巨狼木門"
 	elif PrologueState.gate_opened and not PrologueState.boss_retired:
-		step = "跨上雲海石橋勸退稻草人哨長（蓄力時按 [Q] 破防）"
+		step = "跨上雲海石橋勸退稻草人哨長（紅光蓄力時按 [Q] 破防）"
 	elif PrologueState.boss_retired and not PrologueState.has_spring_saddle:
 		step = "開啟軍需寶箱取得《彈簧試驗鞍座》，再前往雲海瞭望台"
 	elif PrologueState.boss_retired:
 		step = "已解鎖驛站與彈簧鞍座！可試跳暴擊下劈或快傳回雲丘小鎮"
-	objective_label.text = "地圖三：雲海古道與石橋　／　" + step
+	set_zone_objective("地圖三：雲海古道與石橋", step)
 	update_status_line()
 
-	prompt_label.text = ""
+	# Top-Center Boss HP & State Bar
+	if boss_active or boss_state == BossState.KNEELED:
+		var badge := "待機警戒"
+		var bcol := Color("#ffd59e")
+		if boss_state == BossState.WINDUP:
+			badge = "紅光蓄力！快按 [Q] 破防"
+			bcol = STAMP_RED
+		elif boss_state == BossState.STAGGERED:
+			badge = "破防踉蹌！雙倍傷害"
+			bcol = GOLD
+		elif boss_state == BossState.KNEELED:
+			badge = "體力耗盡 — 按 [E] 蓋退休章"
+			bcol = Color("#98ffbd")
+		update_boss_bar(true, "舊時代 Boss：稻草人哨長", boss_hp, MAX_BOSS_HP, badge, bcol)
+	else:
+		update_boss_bar(false, "", 0, MAX_BOSS_HP)
+
 	if near(WEST_EXIT, 2.8):
-		prompt_label.text = "[E] 返回：雲丘小鎮（地圖二）"
+		set_prompt("[ E ] 返回：雲丘小鎮（地圖二）")
 	elif not PrologueState.gate_opened and not PrologueState.mounted and near(LEVER_POS, 2.1):
-		prompt_label.text = "[E] 拉動金色拉桿開啟南側木門"
+		set_prompt("[ E ] 拉動金色拉桿開啟南側木門")
 	elif boss_state == BossState.KNEELED and near(boss.position, 3.0):
-		prompt_label.text = "[E] 召喚胖黃鳥蓋下「正式退休」紅章"
+		set_prompt("[ E ] 召喚胖黃鳥蓋下「正式退休」紅章")
 	elif chest.visible and near(chest.position, 2.3):
-		prompt_label.text = "[E] 開啟百年軍需寶箱（《彈簧試驗鞍座》）"
+		set_prompt("[ E ] 開啟百年軍需寶箱（《彈簧試驗鞍座》）")
 	elif near(WAYPOINT_POS, 2.6):
-		prompt_label.text = "[E] 信使鳥驛站：快速傳送回「雲丘小鎮」"
+		set_prompt("[ E ] 信使鳥驛站：快傳回「雲丘小鎮」")
 	elif near(BOUNTY_POS + Vector3(0, 0, 1.0), 2.5):
-		prompt_label.text = "[E] 檢視公會懸賞板"
+		set_prompt("[ E ] 檢視公會懸賞板")
 	elif near(CHAPTER_1_EXIT, 2.5):
-		prompt_label.text = "[E] 青苔石階（第一章入口預留）"
+		set_prompt("[ E ] 青苔石階（第一章入口預留）")
 	elif not PrologueState.mounted and near(wolf.position, 2.7):
-		prompt_label.text = "[F] 騎上巨狼拍檔"
+		set_prompt("[ F ] 騎上巨狼拍檔")
+	else:
+		set_prompt("")

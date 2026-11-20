@@ -26,6 +26,15 @@ const PURPLE_PEAK := Color("#9688d4")
 const CLOUD_WHITE := Color("#f7eaf2")
 const STAMP_RED := Color("#e03c3c")
 
+# Storybook UI Palette
+const UI_PARCHMENT := Color("#fbf2df")
+const UI_WOOD_BORDER := Color("#6b4a35")
+const UI_INK := Color("#2e211b")
+const UI_DARK_BG := Color(0.10, 0.13, 0.22, 0.86)
+const UI_ACCENT_GOLD := Color("#f5c65b")
+const UI_HP_RED := Color("#e0534f")
+const UI_HP_BG := Color("#3d2d29")
+
 const PLAYER_RADIUS := 0.30
 const WOLF_RADIUS := 0.82
 
@@ -33,6 +42,7 @@ const WOLF_RADIUS := 0.82
 var hitstop_frames := 0
 var attack_cooldown := 0.0
 var wolf_charge_cooldown := 0.0
+var wolf_charge_max := 1.5
 var wolf_charge_timer := 0.0
 var shake_time := 0.0
 var air_slam_active := false
@@ -54,12 +64,33 @@ var wolf_spring_pad: MeshInstance3D
 var player_emote: Label3D
 var wolf_emote: Label3D
 
+# Upgraded Storybook HUD nodes
 var hud_layer: CanvasLayer
+var hud_root: Control
+var zone_badge_label: Label
 var objective_label: Label
-var status_label: Label
+var hp_hearts_label: Label
+var hp_bar: ProgressBar
+var gear_tags_label: Label
+var subtitle_panel: PanelContainer
 var subtitle_label: Label
+var prompt_panel: PanelContainer
 var prompt_label: Label
-var controls_label: Label
+
+# Boss HP Bar (Top-Center, shown only during Boss combat)
+var boss_panel: PanelContainer
+var boss_name_label: Label
+var boss_hp_bar: ProgressBar
+var boss_state_badge: Label
+
+# 4-Slot Bottom ARPG Hotbar
+var slot_attack: PanelContainer
+var slot_attack_cd: ColorRect
+var slot_mount: PanelContainer
+var slot_mount_sub: Label
+var slot_wolf: PanelContainer
+var slot_wolf_cd: ColorRect
+var slot_reset: PanelContainer
 
 # --- Procedural matte gouache geometry helpers ---
 func box(parent: Node3D, pos: Vector3, size: Vector3, color: Color, solid := false, unshaded := false) -> MeshInstance3D:
@@ -147,7 +178,6 @@ func transition_signpost(pos: Vector3, title: String, color := GOLD) -> void:
 
 # --- Core Trio Builders ---
 func setup_core_trio(spawn_pos: Vector3) -> void:
-	# 1. Silent Small Traveler
 	_make_body(player, spawn_pos, PLAYER_RADIUS)
 	box(player, Vector3(0, 0.36, 0), Vector3(0.46, 0.56, 0.34), Color("#4da1e8"))
 	sphere(player, Vector3(0, 0.84, 0.02), Vector3(0.50, 0.50, 0.48), Color("#f4c9a8"))
@@ -158,7 +188,6 @@ func setup_core_trio(spawn_pos: Vector3) -> void:
 	player_sword.visible = PrologueState.has_sword
 	player_emote = label_at(player, Vector3(0, 1.75, 0), "", Color("#fff59d"), 46)
 
-	# 2. Calm Retired Scout Giant Wolf
 	_make_body(wolf, spawn_pos + Vector3(-1.45, 0, -0.55), WOLF_RADIUS)
 	var fur := Color("#464b59")
 	var fur_light := Color("#747d91")
@@ -180,7 +209,6 @@ func setup_core_trio(spawn_pos: Vector3) -> void:
 		wolf.position = spawn_pos
 		player.position = wolf.position + Vector3.UP * 1.38
 
-	# 3. Chubby Yellow Messenger Bird
 	add_child(bird)
 	sphere(bird, Vector3.ZERO, Vector3(0.32, 0.28, 0.34), Color("#ffbf3c"))
 	box(bird, Vector3(0, 0.0, 0.19), Vector3(0.10, 0.08, 0.12), Color("#e8632c"))
@@ -196,7 +224,7 @@ func _make_body(body: CharacterBody3D, pos: Vector3, radius: float) -> void:
 	add_shape(body, shape, Vector3.UP * radius)
 	body.position = pos
 
-# --- 2.5D Orthographic Oblique Top-Down Camera & HUD ---
+# --- 2.5D Orthographic Oblique Top-Down Camera ---
 func setup_camera_and_lighting(cam_size: float, bg_col: Color, amb_col: Color, amb_energy: float, sun_col: Color, sun_energy: float) -> void:
 	add_child(camera)
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
@@ -223,43 +251,228 @@ func position_camera(target: Vector3, lerp_weight: float) -> void:
 	camera.position = camera.position.lerp(desired, lerp_weight) if lerp_weight < 1.0 else desired
 	camera.look_at(camera.position - offset)
 
+# --- Storybook UI/UX HUD System ---
+func make_panel_style(bg: Color, border: Color, radius := 12, border_w := 2, pad_x := 14, pad_y := 10) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = bg
+	sb.border_color = border
+	sb.set_border_width_all(border_w)
+	sb.set_corner_radius_all(radius)
+	sb.content_margin_left = pad_x
+	sb.content_margin_right = pad_x
+	sb.content_margin_top = pad_y
+	sb.content_margin_bottom = pad_y
+	sb.shadow_color = Color(0.05, 0.06, 0.12, 0.28)
+	sb.shadow_size = 6
+	sb.shadow_offset = Vector2(0, 3)
+	return sb
+
 func setup_hud() -> void:
 	hud_layer = CanvasLayer.new()
 	add_child(hud_layer)
-	var margin := MarginContainer.new()
-	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	for side in ["left", "right", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 20)
-	hud_layer.add_child(margin)
+	hud_root = Control.new()
+	hud_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hud_layer.add_child(hud_root)
 
-	var col := VBoxContainer.new()
-	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	margin.add_child(col)
+	# 1. Top-Left: Vitals & Active Gear Card (Storybook Parchment)
+	var vitals_card := PanelContainer.new()
+	vitals_card.position = Vector2(20, 18)
+	vitals_card.custom_minimum_size = Vector2(280, 72)
+	vitals_card.add_theme_stylebox_override("panel", make_panel_style(UI_PARCHMENT, UI_WOOD_BORDER, 14, 3, 14, 10))
+	vitals_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hud_root.add_child(vitals_card)
 
-	objective_label = _ui_line(col, 22, Color("#fff7dc"))
-	status_label = _ui_line(col, 17, Color("#cfe8ff"))
+	var v_box := VBoxContainer.new()
+	v_box.add_theme_constant_override("separation", 5)
+	vitals_card.add_child(v_box)
 
-	var spacer := Control.new()
-	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	col.add_child(spacer)
+	var hp_row := HBoxContainer.new()
+	hp_row.add_theme_constant_override("separation", 10)
+	v_box.add_child(hp_row)
 
-	subtitle_label = _ui_line(col, 21, Color("#ffe394"))
+	hp_hearts_label = _styled_label("旅人  ♥ ♥ ♥ ♥ ♥", 15, UI_INK, false)
+	hp_row.add_child(hp_hearts_label)
+
+	hp_bar = ProgressBar.new()
+	hp_bar.min_value = 0
+	hp_bar.max_value = 5
+	hp_bar.value = PrologueState.player_hp
+	hp_bar.show_percentage = false
+	hp_bar.custom_minimum_size = Vector2(110, 14)
+	hp_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	hp_bar.add_theme_stylebox_override("background", make_panel_style(UI_HP_BG, UI_WOOD_BORDER, 7, 1, 0, 0))
+	hp_bar.add_theme_stylebox_override("fill", make_panel_style(UI_HP_RED, Color.TRANSPARENT, 7, 0, 0, 0))
+	hp_row.add_child(hp_bar)
+
+	gear_tags_label = _styled_label("裝備：空手  ｜  巨狼待命", 13, Color("#6b4a35"), false)
+	v_box.add_child(gear_tags_label)
+
+	# 2. Top-Right: Zone Badge & Objective Card
+	var obj_card := PanelContainer.new()
+	obj_card.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	obj_card.offset_left = -410
+	obj_card.offset_right = -20
+	obj_card.offset_top = 18
+	obj_card.offset_bottom = 96
+	obj_card.add_theme_stylebox_override("panel", make_panel_style(UI_DARK_BG, UI_ACCENT_GOLD, 14, 2, 16, 10))
+	obj_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hud_root.add_child(obj_card)
+
+	var o_box := VBoxContainer.new()
+	o_box.add_theme_constant_override("separation", 4)
+	obj_card.add_child(o_box)
+	zone_badge_label = _styled_label("地圖", 13, UI_ACCENT_GOLD, false)
+	o_box.add_child(zone_badge_label)
+	objective_label = _styled_label("", 16, Color("#fff9eb"), false)
+	objective_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	o_box.add_child(objective_label)
+
+	# 3. Top-Center: Boss HP & Stagger State Bar (hidden until Boss fight)
+	boss_panel = PanelContainer.new()
+	boss_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	boss_panel.offset_left = -220
+	boss_panel.offset_right = 220
+	boss_panel.offset_top = 18
+	boss_panel.offset_bottom = 92
+	boss_panel.add_theme_stylebox_override("panel", make_panel_style(UI_DARK_BG, STAMP_RED, 14, 2, 16, 10))
+	boss_panel.hide()
+	hud_root.add_child(boss_panel)
+
+	var b_box := VBoxContainer.new()
+	b_box.add_theme_constant_override("separation", 5)
+	boss_panel.add_child(b_box)
+
+	var b_top := HBoxContainer.new()
+	b_box.add_child(b_top)
+	boss_name_label = _styled_label("稻草人哨長", 16, Color("#fff2cc"), false)
+	boss_name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b_top.add_child(boss_name_label)
+	boss_state_badge = _styled_label("", 14, GOLD, false)
+	b_top.add_child(boss_state_badge)
+
+	boss_hp_bar = ProgressBar.new()
+	boss_hp_bar.min_value = 0
+	boss_hp_bar.max_value = 6
+	boss_hp_bar.value = 6
+	boss_hp_bar.show_percentage = false
+	boss_hp_bar.custom_minimum_size = Vector2(390, 16)
+	boss_hp_bar.add_theme_stylebox_override("background", make_panel_style(UI_HP_BG, UI_WOOD_BORDER, 8, 1, 0, 0))
+	boss_hp_bar.add_theme_stylebox_override("fill", make_panel_style(Color("#f06b4f"), Color.TRANSPARENT, 8, 0, 0, 0))
+	b_box.add_child(boss_hp_bar)
+
+	# 4. Bottom-Center Stack: Subtitle Banner -> Contextual Action Pill -> 4-Slot ARPG Hotbar
+	var bottom_stack := VBoxContainer.new()
+	bottom_stack.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	bottom_stack.offset_left = -360
+	bottom_stack.offset_right = 360
+	bottom_stack.offset_top = -205
+	bottom_stack.offset_bottom = -16
+	bottom_stack.alignment = BoxContainer.ALIGNMENT_END
+	bottom_stack.add_theme_constant_override("separation", 8)
+	bottom_stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hud_root.add_child(bottom_stack)
+
+	subtitle_panel = PanelContainer.new()
+	subtitle_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	subtitle_panel.add_theme_stylebox_override("panel", make_panel_style(UI_DARK_BG, Color("#7382a6"), 12, 1, 18, 8))
+	subtitle_panel.hide()
+	bottom_stack.add_child(subtitle_panel)
+	subtitle_label = _styled_label("", 16, Color("#ffe8a3"), false)
 	subtitle_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	prompt_label = _ui_line(col, 20, Color("#98ffbd"))
-	controls_label = _ui_line(col, 15, Color("#e4eaf2"))
-	controls_label.text = "WASD / 方向鍵 移動　 E 互動／傳送　 F 上下騎　 Q 巨狼衝撞／破防　 左鍵 / J 揮劍　 R 重置整段序章"
+	subtitle_panel.add_child(subtitle_label)
 
-func _ui_line(parent: VBoxContainer, size: int, color: Color) -> Label:
+	prompt_panel = PanelContainer.new()
+	prompt_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	prompt_panel.add_theme_stylebox_override("panel", make_panel_style(UI_PARCHMENT, UI_ACCENT_GOLD, 20, 3, 18, 7))
+	prompt_panel.hide()
+	bottom_stack.add_child(prompt_panel)
+	prompt_label = _styled_label("", 16, UI_INK, false)
+	prompt_panel.add_child(prompt_label)
+
+	var hotbar := HBoxContainer.new()
+	hotbar.alignment = BoxContainer.ALIGNMENT_CENTER
+	hotbar.add_theme_constant_override("separation", 10)
+	bottom_stack.add_child(hotbar)
+
+	var atk_pair := _make_hotbar_slot(hotbar, "左鍵 / J", "揮劍", Color("#4da1e8"))
+	slot_attack = atk_pair[0]
+	slot_attack_cd = atk_pair[1]
+
+	var mnt_pair := _make_hotbar_slot(hotbar, "F", "上鞍騎乘", Color("#498e62"))
+	slot_mount = mnt_pair[0]
+	slot_mount_sub = mnt_pair[2]
+
+	var wlf_pair := _make_hotbar_slot(hotbar, "Q", "巨狼破防", Color("#d97836"))
+	slot_wolf = wlf_pair[0]
+	slot_wolf_cd = wlf_pair[1]
+
+	var rst_pair := _make_hotbar_slot(hotbar, "R", "重置序章", Color("#7d8597"))
+	slot_reset = rst_pair[0]
+
+func _make_hotbar_slot(parent: HBoxContainer, key_txt: String, title_txt: String, accent: Color) -> Array:
+	var slot := PanelContainer.new()
+	slot.custom_minimum_size = Vector2(114, 58)
+	slot.add_theme_stylebox_override("panel", make_panel_style(UI_DARK_BG, accent, 12, 2, 8, 6))
+	parent.add_child(slot)
+
+	var overlay_host := Control.new()
+	overlay_host.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	slot.add_child(overlay_host)
+
+	var cd_rect := ColorRect.new()
+	cd_rect.color = Color(0.05, 0.06, 0.12, 0.65)
+	cd_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	cd_rect.visible = false
+	overlay_host.add_child(cd_rect)
+
+	var vbox := VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 2)
+	slot.add_child(vbox)
+
+	var k := _styled_label(key_txt, 12, accent.lightened(0.25), false)
+	k.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(k)
+
+	var t := _styled_label(title_txt, 14, Color("#fff8e8"), false)
+	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(t)
+	return [slot, cd_rect, t]
+
+func _styled_label(words: String, size: int, color: Color, with_outline := true) -> Label:
 	var l := Label.new()
+	l.text = words
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	l.add_theme_font_size_override("font_size", size)
 	l.add_theme_color_override("font_color", color)
-	l.add_theme_color_override("font_outline_color", Color("#181b26"))
-	l.add_theme_constant_override("outline_size", 8)
-	parent.add_child(l)
+	if with_outline:
+		l.add_theme_color_override("font_outline_color", Color("#181b26"))
+		l.add_theme_constant_override("outline_size", 6)
 	return l
+
+func set_zone_objective(zone_name: String, goal: String) -> void:
+	zone_badge_label.text = "🗺️  " + zone_name
+	objective_label.text = goal
+
+func set_prompt(text_val: String) -> void:
+	prompt_label.text = text_val
+	prompt_panel.visible = not text_val.is_empty()
+
+func update_boss_bar(visible_flag: bool, boss_title: String, hp_val: int, max_hp_val: int, state_txt := "", badge_col := GOLD) -> void:
+	boss_panel.visible = visible_flag
+	if not visible_flag:
+		return
+	boss_name_label.text = boss_title
+	boss_hp_bar.max_value = max_hp_val
+	boss_hp_bar.value = hp_val
+	boss_state_badge.text = state_txt
+	boss_state_badge.add_theme_color_override("font_color", badge_col)
+
+func set_hud_visible(flag: bool) -> void:
+	if hud_root:
+		hud_root.visible = flag
 
 func feet() -> Vector3:
 	return wolf.position if PrologueState.mounted else player.position
@@ -278,6 +491,7 @@ func show_player_emote(icon: String, duration := 1.5) -> void:
 
 func show_subtitle(words: String, duration := 3.5) -> void:
 	subtitle_label.text = words
+	subtitle_panel.visible = not words.is_empty()
 	subtitle_timer = duration
 
 func move_body(body: CharacterBody3D, dir: Vector3, speed: float) -> void:
@@ -304,6 +518,9 @@ func step_shared_physics(delta: float, cam_override_target := Vector3.INF) -> bo
 		subtitle_timer -= delta
 		if subtitle_timer <= 0.0:
 			subtitle_label.text = ""
+			subtitle_panel.hide()
+
+	_update_hotbar_visuals()
 
 	if input_locked or PrologueState.is_transitioning:
 		bird.position = player.position + Vector3(0.0, 1.45 + sin(Time.get_ticks_msec() * 0.006) * 0.05, 0.0)
@@ -341,6 +558,19 @@ func step_shared_physics(delta: float, cam_override_target := Vector3.INF) -> bo
 		camera.position += Vector3(randf_range(-0.18, 0.18), randf_range(-0.12, 0.12), 0.0)
 	return true
 
+func _update_hotbar_visuals() -> void:
+	if not slot_attack:
+		return
+	slot_attack.modulate = Color.WHITE if (can_attack and PrologueState.has_sword and not PrologueState.mounted) else Color(0.55, 0.55, 0.62, 0.85)
+	slot_attack_cd.visible = attack_cooldown > 0.0
+	if PrologueState.mounted:
+		slot_mount_sub.text = "彈飛下劈!" if PrologueState.has_spring_saddle else "下鞍步行"
+	else:
+		slot_mount_sub.text = "上鞍騎乘"
+	slot_wolf_cd.visible = wolf_charge_cooldown > 0.0
+	if wolf_charge_cooldown > 0.0:
+		slot_wolf_cd.scale.y = clampf(wolf_charge_cooldown / wolf_charge_max, 0.0, 1.0)
+
 func update_wolf_follow(_delta: float) -> void:
 	var diff := flat(player.position - wolf.position)
 	move_body(wolf, diff.normalized() if diff.length() > 1.85 else Vector3.ZERO, 6.0)
@@ -371,7 +601,7 @@ func on_interact() -> void:
 func on_wolf_action() -> void:
 	if wolf_charge_cooldown > 0.0:
 		return
-	wolf_charge_cooldown = 1.4
+	wolf_charge_cooldown = wolf_charge_max
 	wolf_charge_timer = 0.45
 	show_player_emote("!", 0.7)
 
@@ -426,13 +656,18 @@ func _finish_air_slam() -> void:
 	show_subtitle("彈簧試驗鞍座・飛天暴擊下劈！(200% CRIT)", 2.2)
 
 func update_status_line() -> void:
-	var st := "旅人 HP %d/5" % PrologueState.player_hp
-	if PrologueState.has_sword:
-		st += "　｜　武器：五折庫存短劍"
+	var hearts := ""
+	for i in range(5):
+		hearts += "♥ " if i < PrologueState.player_hp else "♡ "
+	hp_hearts_label.text = "旅人  " + hearts.strip_edges()
+	hp_bar.value = PrologueState.player_hp
+
+	var tags: Array[String] = []
+	tags.append("⚔ 五折短劍" if PrologueState.has_sword else "無武器")
 	if PrologueState.has_spring_saddle:
-		st += "　｜　鞍座：彈簧試驗鞍座"
-	if PrologueState.slime_buff_active:
-		st += "　｜　Buff：鞋底閃亮 (+15% 移速)"
+		tags.append("🌀 彈簧鞍座")
 	if PrologueState.mounted:
-		st += "　｜　騎乘巨狼中"
-	status_label.text = st
+		tags.append("🐺 騎乘中")
+	if PrologueState.slime_buff_active:
+		tags.append("✨ 移速+15%")
+	gear_tags_label.text = "  ｜  ".join(tags)
