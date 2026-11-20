@@ -44,6 +44,7 @@ var attack_ring: MeshInstance3D
 var distant_riders: Array[Node3D] = []
 
 var mobs: Array[Dictionary] = []
+var checkpoints: Array[Dictionary] = []
 var loot_drops: Array[Dictionary] = []
 var public_travelers: Array[Dictionary] = []
 var coop_ally: Dictionary = {}
@@ -65,6 +66,8 @@ func _ready() -> void:
 	setup_core_trio(spawn)
 	setup_camera_and_lighting(24.0 if vista_zoomed else 16.5, Color("#f2c3e0"), Color("#ffe2c2"), 0.88, Color("#ffe0b2"), 1.15, Color("#667bd4"), Color("#ffd1a6"), Color("#c9a8e0"))
 	setup_hud()
+	if minimap_overlay:
+		minimap_overlay.configure_bounds(Rect2(-64.0, -48.0, 152.0, 96.0))
 	PrologueState.play_bgm("road")
 	_apply_persisted_state()
 
@@ -151,32 +154,80 @@ func _build_road_map() -> void:
 	spawn_destructible_crate(Vector3(-20.5, 0.0, -14.0), 4)
 	spawn_destructible_crate(Vector3(-15.0, 0.0, 13.5), 4)
 	spawn_destructible_crate(Vector3(35.0, 0.0, -4.5), 5)
-	# Seamless full-highland plateaus (West 40m x 48m + East 34m x 44m, zero bare gaps!)
-	organic_mound(self, Vector3(-17.5, -0.58, 0.0), 22.0, 25.0, 1.12, DAY_GRASS, -4.0)
-	organic_mound(self, Vector3(36.5, -0.58, 0.0), 18.0, 23.0, 1.12, Color("#84b868"), 6.0)
-	curved_path([Vector3(-22.0, 0, -12.5), Vector3(-26.5, 0, -17.5), Vector3(-30.0, 0, -19.5)], 1.9, TRAIL_STONE)
-	curved_path([Vector3(-16.2, 0, 12.8), Vector3(-21.5, 0, 17.5), Vector3(-26.5, 0, 19.5)], 2.1, TRAIL)
-	curved_path([Vector3(33.2, 0, 0.5), Vector3(39.5, 0, 0.5), Vector3(45.5, 0, 0.8)], 2.4, TRAIL, TRAIL_STONE)
+	# PoE 2-Scale 150m x 96m Seamless Wilderness Plateaus (5 Interconnected Sub-Regions!)
+	organic_mound(self, Vector3(-29.5, -0.60, 0.0), 34.0, 47.0, 1.16, DAY_GRASS, -3.0)
+	organic_mound(self, Vector3(51.0, -0.60, 0.0), 33.0, 47.0, 1.16, Color("#84b868"), 4.0)
+	# Sub-region 1: NW Old-Army Ruins (-42, 0, -28) + Checkpoint
+	organic_mound(self, Vector3(-42.0, -0.52, -28.0), 16.0, 14.0, 1.06, DAY_GRASS_WARM, 14.0)
+	curved_path([Vector3(-22.0, 0, -12.5), Vector3(-30.0, 0, -19.5), Vector3(-36.5, 0, -24.5), Vector3(-44.0, 0, -29.0)], 2.1, TRAIL_STONE)
 	stone_archway(Vector3(-29.5, 0.0, -19.5), 32.0, 1.1, true)
+	stone_archway(Vector3(-42.5, 0.0, -28.5), 48.0, 1.25, true)
+	cliff_outcrop(Vector3(-52.0, 0.0, -34.0), 4.8, 4.2, 4.0, STONE_LIGHT, DAY_GRASS, 20.0)
+	_add_checkpoint(Vector3(-34.0, 0.0, -22.5), "西北舊軍遺址")
+	# Sub-region 2: North Autumn Windmill Ridge (-12, 0, -34) -> Hidden Unique #1 Arena!
+	organic_mound(self, Vector3(-12.0, -0.52, -34.0), 16.5, 13.0, 1.06, Color("#c98a42"), -12.0)
+	curved_path([Vector3(-34.0, 0, -22.5), Vector3(-23.0, 0, -29.5), Vector3(-11.0, 0, -34.5)], 2.0, TRAIL, TRAIL_STONE)
+	stone_archway(Vector3(-16.5, 0.0, -32.0), -18.0, 1.3, true)
+	cliff_outcrop(Vector3(-3.0, 0.0, -39.5), 5.2, 4.5, 4.2, STONE, DAY_GRASS_WARM, -15.0)
+	lantern_post(Vector3(-11.5, 0.0, -31.5), 2.8, Color("#ff7b3b"), 25.0)
+	# Sub-region 3: SW Endless Pink Flower Sea (-40, 0, 29) + Checkpoint
+	organic_mound(self, Vector3(-40.0, -0.52, 29.0), 18.0, 15.0, 1.06, Color("#6ca652"), -8.0)
+	curved_path([Vector3(-16.2, 0, 12.8), Vector3(-25.5, 0, 19.5), Vector3(-34.0, 0, 25.5), Vector3(-43.0, 0, 31.0)], 2.2, TRAIL)
+	cozy_cabin(Vector3(-48.5, 0.0, 32.5), 42.0, CORAL_ROOF, TIMBER_LIGHT)
+	_add_checkpoint(Vector3(-31.0, 0.0, 22.5), "西南粉花海")
+	# Sub-region 4: South Waterfall Canyon Basin (-12, 0, 32)
+	organic_mound(self, Vector3(-12.0, -0.52, 32.0), 15.5, 13.5, 1.06, DAY_GRASS, 10.0)
+	curved_path([Vector3(-31.0, 0, 22.5), Vector3(-21.5, 0, 29.0), Vector3(-11.5, 0, 32.5)], 2.1, TRAIL, TRAIL_STONE)
+	cliff_outcrop(Vector3(-4.5, 0.0, 38.5), 4.6, 3.8, 3.8, STONE_LIGHT, DAY_GRASS, 28.0)
+	# Sub-region 5: East Emerald Highland (48..78, -32..+28) -> Hidden Unique #2 Arena + Checkpoint
+	organic_mound(self, Vector3(62.0, -0.52, -18.0), 18.0, 16.0, 1.06, Color("#63a858"), 12.0)
+	organic_mound(self, Vector3(60.0, -0.52, 18.0), 17.0, 15.0, 1.06, Color("#7bb666"), -14.0)
+	curved_path([Vector3(33.2, 0, 0.5), Vector3(45.5, 0, 0.8), Vector3(54.0, 0, -9.0), Vector3(63.5, 0, -20.5)], 2.4, TRAIL, TRAIL_STONE)
+	curved_path([Vector3(45.5, 0, 0.8), Vector3(55.0, 0, 12.0), Vector3(64.0, 0, 21.0)], 2.1, TRAIL)
 	cozy_cabin(Vector3(44.5, 0.0, -5.8), -28.0, Color("#2f9e66"), TIMBER_LIGHT)
+	stone_archway(Vector3(57.5, 0.0, -14.5), 42.0, 1.35, true)
+	lantern_post(Vector3(60.5, 0.0, -18.0), 2.9, Color("#ff7b3b"), -30.0)
+	_add_checkpoint(Vector3(48.0, 0.0, -6.5), "東境翡翠高地")
+	# Wilderness exploration trees, flower seas & crates across the 150m x 96m expanse
+	for wt in [
+		[Vector3(-48.0, 0, -20.0), 1.45, PINE_ORANGE], [Vector3(-36.0, 0, -36.0), 1.4, Color("#4a6b8a")],
+		[Vector3(-22.0, 0, -38.0), 1.35, Color("#d96b38")], [Vector3(-48.0, 0, 18.0), 1.4, PINE_ORANGE],
+		[Vector3(-35.0, 0, 36.0), 1.45, Color("#d96b38")], [Vector3(-18.0, 0, 38.0), 1.35, PINE_TEAL],
+		[Vector3(54.0, 0, -28.0), 1.5, Color("#2f9e66")], [Vector3(71.0, 0, -24.0), 1.45, PINE_TEAL],
+		[Vector3(68.0, 0, 14.0), 1.4, Color("#2f9e66")], [Vector3(52.0, 0, 26.0), 1.35, PINE_ORANGE],
+	]:
+		cozy_tree(wt[0], float(wt[1]), wt[2], randf_range(-8.0, 8.0))
+	flower_patch(Vector3(-40.0, 0, 29.0), 20, [Color("#ff5c8d"), Color("#ff9eb5"), Color("#ffe066")], 5.5)
+	flower_patch(Vector3(-12.0, 0, -34.0), 16, [Color("#ff9944"), Color("#ffe066"), Color("#f2796b")], 4.8)
+	flower_patch(Vector3(62.0, 0, 18.0), 16, [Color("#7cb8ff"), Color("#fff0a6"), Color("#98ffbd")], 4.8)
 	spawn_destructible_crate(Vector3(-30.5, 0.0, -18.5), 5)
+	spawn_destructible_crate(Vector3(-44.0, 0.0, -26.5), 6)
+	spawn_destructible_crate(Vector3(-15.0, 0.0, -35.0), 6)
 	spawn_destructible_crate(Vector3(-25.5, 0.0, 19.0), 5)
+	spawn_destructible_crate(Vector3(-42.0, 0.0, 32.0), 6)
+	spawn_destructible_crate(Vector3(-10.0, 0.0, 34.0), 6)
 	spawn_destructible_crate(Vector3(43.0, 0.0, 5.5), 5)
-	build_horizon_panorama(Vector3(8.0, 0.0, 0.0), 49.0, 26.5, "sunset_clouds")
-	# Wind-blown autumn highland grass & sweeping @amelicart pink flower sea (1,340 tufts!)
-	spawn_wind_grass_meadow(Vector3(-17.0, 0, 0.5), 11.5, 8.2, 240, Color("#c9833c"), Color("#f2c166"), Color("#ff6f9c"), 0.34, 1.1)
-	spawn_wind_grass_meadow(Vector3(-16.5, 0, 11.8), 10.2, 6.2, 220, Color("#6ca652"), Color("#a3d96c"), Color("#ff5c8d"), 0.52, 1.25)
-	spawn_wind_grass_meadow(Vector3(-24.0, 0, 18.5), 11.0, 6.2, 220, Color("#6ca652"), Color("#a3d96c"), Color("#ff5c8d"), 0.58, 1.28)
-	spawn_wind_grass_meadow(Vector3(-20.5, 0, -11.5), 9.5, 5.8, 170, DAY_GRASS, Color("#f5c96e"), Color("#ff8ab0"), 0.30, 1.05)
-	spawn_wind_grass_meadow(Vector3(-27.5, 0, -18.5), 9.0, 5.8, 140, DAY_GRASS_WARM, Color("#f7d07a"), Color("#ffe066"), 0.28, 1.05)
-	spawn_wind_grass_meadow(Vector3(-6.2, 0, -0.5), 7.8, 7.2, 170, DAY_GRASS_WARM, Color("#f7d07a"), Color("#ff7aa8"), 0.28, 1.05)
+	spawn_destructible_crate(Vector3(65.0, 0.0, -16.5), 8)
+	build_horizon_panorama(Vector3(10.0, 0.0, 0.0), 76.0, 49.0, "sunset_clouds")
+	# Wind-blown autumn highland grass & sweeping @amelicart pink flower sea (~2,200 tufts!)
+	spawn_wind_grass_meadow(Vector3(-17.0, 0, 0.5), 11.5, 8.2, 220, Color("#c9833c"), Color("#f2c166"), Color("#ff6f9c"), 0.34, 1.1)
+	spawn_wind_grass_meadow(Vector3(-16.5, 0, 11.8), 10.2, 6.2, 200, Color("#6ca652"), Color("#a3d96c"), Color("#ff5c8d"), 0.52, 1.25)
+	spawn_wind_grass_meadow(Vector3(-24.0, 0, 18.5), 11.0, 6.2, 200, Color("#6ca652"), Color("#a3d96c"), Color("#ff5c8d"), 0.58, 1.28)
+	spawn_wind_grass_meadow(Vector3(-40.0, 0, 29.0), 15.0, 11.0, 240, Color("#6ca652"), Color("#a3d96c"), Color("#ff5c8d"), 0.62, 1.3)
+	spawn_wind_grass_meadow(Vector3(-12.0, 0, 32.0), 13.0, 10.0, 180, DAY_GRASS, Color("#a3d96c"), Color("#ff8ab0"), 0.38, 1.15)
+	spawn_wind_grass_meadow(Vector3(-20.5, 0, -11.5), 9.5, 5.8, 160, DAY_GRASS, Color("#f5c96e"), Color("#ff8ab0"), 0.30, 1.05)
+	spawn_wind_grass_meadow(Vector3(-42.0, 0, -28.0), 14.0, 10.5, 190, DAY_GRASS_WARM, Color("#f7d07a"), Color("#ffe066"), 0.28, 1.1)
+	spawn_wind_grass_meadow(Vector3(-12.0, 0, -34.0), 14.0, 10.0, 190, Color("#c9833c"), Color("#f5c96e"), Color("#ff7b3b"), 0.34, 1.15)
+	spawn_wind_grass_meadow(Vector3(-6.2, 0, -0.5), 7.8, 7.2, 160, DAY_GRASS_WARM, Color("#f7d07a"), Color("#ff7aa8"), 0.28, 1.05)
 	spawn_wind_grass_meadow(Vector3(35.5, 0, 0.4), 13.5, 11.2, 180, Color("#75b35e"), Color("#b8e372"), Color("#ff8ab0"), 0.28, 1.1)
+	spawn_wind_grass_meadow(Vector3(62.0, 0, -18.0), 15.0, 12.0, 160, Color("#5ea355"), Color("#a8de6e"), Color("#98ffbd"), 0.26, 1.15)
+	spawn_wind_grass_meadow(Vector3(60.0, 0, 18.0), 14.0, 11.0, 140, Color("#75b35e"), Color("#b8e372"), Color("#ffe066"), 0.30, 1.1)
 
-	invisible_boundary_wall(Vector3(-39.0, 0.8, 0.0), Vector3(0.8, 1.8, 52.0))
-	invisible_boundary_wall(Vector3(53.0, 0.8, 0.0), Vector3(0.8, 1.8, 52.0))
-	for z in [-24.5, 24.5]:
-		invisible_boundary_wall(Vector3(-17.5, 0.8, z), Vector3(44.0, 1.8, 0.8))
-		invisible_boundary_wall(Vector3(36.5, 0.8, z), Vector3(34.0, 1.8, 0.8))
+	invisible_boundary_wall(Vector3(-62.0, 0.8, 0.0), Vector3(0.8, 1.8, 94.0))
+	invisible_boundary_wall(Vector3(82.0, 0.8, 0.0), Vector3(0.8, 1.8, 94.0))
+	for z in [-46.0, 46.0]:
+		invisible_boundary_wall(Vector3(-29.5, 0.8, z), Vector3(66.0, 1.8, 0.8))
+		invisible_boundary_wall(Vector3(51.0, 0.8, z), Vector3(64.0, 1.8, 0.8))
 
 	# Cliff outcrops, dense autumn trees, flowers & diagonal sunbeams
 	cliff_outcrop(Vector3(-23.5, 0.0, -7.8), 3.4, 2.8, 2.8, STONE_LIGHT, DAY_GRASS, 15.0)
@@ -381,38 +432,122 @@ func _update_fellow_travelers(delta: float) -> void:
 				spawn_damage_pop(boss.position, "-1", Color("#a8e6ff"), false)
 				(coop_ally["bubble"] as Label3D).text = "巨熊拍擊！🛡️"
 
+func _add_checkpoint(pos: Vector3, title: String) -> void:
+	var cp := Node3D.new()
+	cp.position = pos
+	add_child(cp)
+	cylinder(cp, Vector3(0, 0.75, 0), 0.26, 0.36, 1.5, STONE_LIGHT)
+	var orb := sphere(cp, Vector3(0, 1.85, 0), Vector3(0.55, 0.55, 0.55), Color("#4f6d82"), true)
+	var ring := marker(pos, Color("#66eae6"), 1.65)
+	var lbl := label_at(cp, Vector3(0, 2.55, 0), "◆ " + title, Color("#a8e6ff"), 26)
+	checkpoints.append({"node": cp, "pos": pos, "title": title, "orb": orb, "ring": ring, "label": lbl, "activated": false})
+
+func _update_checkpoints() -> void:
+	for cp in checkpoints:
+		if bool(cp["activated"]):
+			continue
+		if flat(feet() - (cp["pos"] as Vector3)).length() < 3.4:
+			cp["activated"] = true
+			var orb: MeshInstance3D = cp["orb"]
+			var glow := StandardMaterial3D.new()
+			glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			glow.albedo_color = Color("#66eae6")
+			orb.material_override = glow
+			(cp["label"] as Label3D).text = "✦ " + String(cp["title"]) + "（已啟動）"
+			(cp["label"] as Label3D).modulate = GOLD
+			PrologueState.player_hp = 5
+			PrologueState.flask_charges = 3
+			show_player_emote("✦", 1.4)
+			show_subtitle("已啟動探索檢查點：《%s》（體力與茶壺全滿）" % String(cp["title"]), 3.0)
+
+func get_minimap_markers() -> Array[Dictionary]:
+	var list: Array[Dictionary] = []
+	for m in mobs:
+		if not m["alive"]:
+			continue
+		var mn: Node3D = m["node"]
+		var tier := String(m.get("tier", "rare" if bool(m["rare"]) else "normal"))
+		var kind := "unique" if tier == "unique" else ("rare" if tier == "rare" else "mob")
+		list.append({"pos": mn.position, "kind": kind, "label": String(m["name"])})
+	if not PrologueState.boss_retired:
+		list.append({"pos": boss.position, "kind": "boss", "label": "稻草人哨長"})
+	for cp in checkpoints:
+		list.append({"pos": cp["pos"], "kind": "checkpoint", "label": String(cp["title"])})
+	list.append({"pos": WEST_EXIT, "kind": "exit", "label": "雲丘市集"})
+	list.append({"pos": CHAPTER_1_EXIT, "kind": "exit", "label": "翡翠古林"})
+	return list
+
 func _spawn_poe_mobs() -> void:
+	# Keep mobs[0..3] on the main road identical for AutoPlaytestBot compatibility,
+	# and populate the 150m x 96m PoE 2 wilderness with packs, golden Rares & 2 hidden orange Uniques!
 	var spawns := [
-		{"pos": Vector3(-18.5, 0.0, 2.8), "name": "發條巡邏兵", "hp": 3, "rare": false},
-		{"pos": Vector3(-11.2, 0.0, -3.5), "name": "發條巡邏兵", "hp": 3, "rare": false},
-		{"pos": Vector3(-8.2, 0.0, 2.8), "name": "★ 加班班長", "hp": 7, "rare": true},
-		{"pos": Vector3(-17.8, 0.0, -4.2), "name": "發條巡邏兵", "hp": 3, "rare": false},
-		{"pos": Vector3(-24.0, 0.0, 18.5), "name": "★ 粉花海園丁長", "hp": 8, "rare": true},
+		# Main Highway (mobs[0..3])
+		{"pos": Vector3(-18.5, 0.0, 2.8), "name": "發條巡邏兵", "hp": 3, "tier": "normal"},
+		{"pos": Vector3(-11.2, 0.0, -3.5), "name": "發條巡邏兵", "hp": 3, "tier": "normal"},
+		{"pos": Vector3(-8.2, 0.0, 2.8), "name": "★ 加班班長", "hp": 7, "tier": "rare"},
+		{"pos": Vector3(-17.8, 0.0, -4.2), "name": "發條巡邏兵", "hp": 3, "tier": "normal"},
+		# Sub-region 1: NW Old-Army Ruins
+		{"pos": Vector3(-37.0, 0.0, -24.0), "name": "生鏽步兵", "hp": 4, "tier": "normal"},
+		{"pos": Vector3(-40.5, 0.0, -26.0), "name": "生鏽步兵", "hp": 4, "tier": "normal"},
+		{"pos": Vector3(-44.0, 0.0, -30.0), "name": "★ 舊軍砲兵長", "hp": 10, "tier": "rare"},
+		# Sub-region 2: North Autumn Windmill Ridge -> Hidden Unique #1
+		{"pos": Vector3(-18.0, 0.0, -31.5), "name": "風車守衛", "hp": 5, "tier": "normal"},
+		{"pos": Vector3(-14.5, 0.0, -33.0), "name": "風車守衛", "hp": 5, "tier": "normal"},
+		{"pos": Vector3(-7.5, 0.0, -35.5), "name": "❖【傳奇】失控百年發條巨像", "hp": 20, "tier": "unique"},
+		# Sub-region 3: SW Endless Pink Flower Sea
+		{"pos": Vector3(-34.5, 0.0, 25.5), "name": "花海巡邏兵", "hp": 4, "tier": "normal"},
+		{"pos": Vector3(-38.0, 0.0, 28.0), "name": "花海巡邏兵", "hp": 4, "tier": "normal"},
+		{"pos": Vector3(-42.5, 0.0, 30.5), "name": "★ 粉花海園丁長", "hp": 10, "tier": "rare"},
+		# Sub-region 4: South Waterfall Canyon Basin
+		{"pos": Vector3(-16.5, 0.0, 30.5), "name": "溪谷斥候", "hp": 5, "tier": "normal"},
+		{"pos": Vector3(-10.5, 0.0, 33.5), "name": "★ 溪谷巡邏隊長", "hp": 11, "tier": "rare"},
+		# Sub-region 5: East Emerald Highland -> Hidden Unique #2
+		{"pos": Vector3(53.0, 0.0, -10.5), "name": "翡翠哨兵", "hp": 5, "tier": "normal"},
+		{"pos": Vector3(56.5, 0.0, -14.0), "name": "翡翠哨兵", "hp": 5, "tier": "normal"},
+		{"pos": Vector3(58.5, 0.0, 16.5), "name": "翡翠哨兵", "hp": 5, "tier": "normal"},
+		{"pos": Vector3(63.5, 0.0, -20.5), "name": "❖【傳奇】翡翠樹影守望者", "hp": 22, "tier": "unique"},
 	]
 	for sp in spawns:
 		var node := Node3D.new()
 		node.position = sp["pos"]
 		add_child(node)
-		var is_rare: bool = sp["rare"]
-		var col := Color("#f5b82e") if is_rare else Color("#76879c")
-		var scl := 1.35 if is_rare else 0.95
+		var tier: String = String(sp["tier"])
+		var is_unique := tier == "unique"
+		var is_rare := tier == "rare" or is_unique
+		var col := Color("#ff7b3b") if is_unique else (Color("#f5b82e") if tier == "rare" else Color("#76879c"))
+		var scl := 1.85 if is_unique else (1.35 if tier == "rare" else 0.95)
 		node.scale = Vector3.ONE * scl
 		cylinder(node, Vector3(0, 0.62, 0), 0.36, 0.44, 1.05, col)
 		sphere(node, Vector3(0, 1.40, 0), Vector3(0.60, 0.58, 0.58), col.lightened(0.15))
+		if is_unique:
+			# Ornate Unique crown & glowing orange aura ring
+			cylinder(node, Vector3(0, 1.85, 0), 0.24, 0.42, 0.25, GOLD, true)
+			var aura_mi := cylinder(node, Vector3(0, 0.06, 0), 1.15, 1.15, 0.06, Color("#ff7b3b"), true)
+			var aura_mat := StandardMaterial3D.new()
+			aura_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			aura_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			aura_mat.albedo_color = Color(1.0, 0.48, 0.23, 0.55)
+			aura_mi.material_override = aura_mat
 		register_living_npc(node, 0.0, 0.06, 3.8)
-		var lbl := label_at(node, Vector3(0, 2.12, 0), String(sp["name"]), GOLD if is_rare else Color("#e0ecff"), 26)
-		var m_ring := marker(sp["pos"], STAMP_RED, 1.75 if is_rare else 1.35)
+		var lbl_col := Color("#ff9f5a") if is_unique else (GOLD if tier == "rare" else Color("#e0ecff"))
+		var lbl := label_at(node, Vector3(0, 2.25 if is_unique else 2.12, 0), String(sp["name"]), lbl_col, 30 if is_unique else 26)
+		var m_ring := marker(sp["pos"], STAMP_RED, 2.35 if is_unique else (1.75 if tier == "rare" else 1.35))
 		m_ring.hide()
 		mobs.append({
 			"node": node, "label": lbl, "name": String(sp["name"]), "home": sp["pos"],
 			"ring": m_ring, "state": "idle", "timer": 0.0, "cd": 0.6, "stun": 0.0,
-			"hp": int(sp["hp"]), "max_hp": int(sp["hp"]), "rare": is_rare, "alive": true,
+			"hp": int(sp["hp"]), "max_hp": int(sp["hp"]), "rare": is_rare, "tier": tier, "alive": true,
 		})
 
-func _drop_loot(pos: Vector3, is_rare: bool) -> void:
-	spawn_bouncing_coins(pos, 6 if is_rare else 3, 5)
+func _drop_loot(pos: Vector3, is_rare: bool, tier := "normal") -> void:
+	var is_unique := tier == "unique"
+	spawn_bouncing_coins(pos, 10 if is_unique else (6 if is_rare else 3), 6 if is_unique else 5)
 	var item: Dictionary
-	if is_rare:
+	if is_unique:
+		item = PrologueState.make_item("百年守望傳奇巨刃", "weapon", "unique", 4)
+		PrologueState.orb_gold += 2
+		show_subtitle("❖ 擊敗隱藏傳奇怪！掉落【傳奇】武器與金漆罐 x2！", 4.0)
+	elif is_rare:
 		item = PrologueState.make_item("精銳斥候長劍", "weapon", "rare", 2)
 		PrologueState.orb_gold += 1
 	else:
@@ -423,9 +558,9 @@ func _drop_loot(pos: Vector3, is_rare: bool) -> void:
 	drop_node.position = pos + Vector3(randf_range(-0.6, 0.6), 0.0, randf_range(-0.6, 0.6))
 	add_child(drop_node)
 	var col := PrologueState.rarity_color(item["rarity"])
-	cylinder(drop_node, Vector3(0, 1.9, 0), 0.08, 0.14, 3.8, col, true)
+	cylinder(drop_node, Vector3(0, 2.4 if is_unique else 1.9, 0), 0.11 if is_unique else 0.08, 0.18 if is_unique else 0.14, 4.8 if is_unique else 3.8, col, true)
 	sphere(drop_node, Vector3(0, 0.25, 0), Vector3(0.45, 0.32, 0.45), col, true)
-	label_at(drop_node, Vector3(0, 1.15, 0), PrologueState.format_item_title(item), col, 26)
+	label_at(drop_node, Vector3(0, 1.15, 0), PrologueState.format_item_title(item), col, 28 if is_unique else 26)
 	pop_in_node(drop_node)
 	loot_drops.append({"node": drop_node, "item": item, "pos": drop_node.position})
 
@@ -486,6 +621,7 @@ func _physics_process(delta: float) -> void:
 	var t := Time.get_ticks_msec() * 0.001
 	_update_fellow_travelers(delta)
 	_update_mobs_ai(delta)
+	_update_checkpoints()
 	if boss_talk_timer > 0.0:
 		boss_talk_timer -= delta
 		if boss_talk_timer <= 0.0:
@@ -789,7 +925,7 @@ func _damage_nearby_mobs(base_dmg: int, is_crit: bool, radius := 2.8) -> void:
 				(m["ring"] as Node3D).queue_free()
 				var drop_pos := m_node.position
 				m_node.queue_free()
-				_drop_loot(drop_pos, bool(m["rare"]))
+				_drop_loot(drop_pos, bool(m["rare"]), String(m.get("tier", "normal")))
 
 func on_sword_hit() -> void:
 	var is_crit := randi() % 100 < PrologueState.get_total_crit()
@@ -836,7 +972,7 @@ func on_projectile_hit(pos: Vector3) -> bool:
 				(m["ring"] as Node3D).queue_free()
 				var drop_pos := m_node.position
 				m_node.queue_free()
-				_drop_loot(drop_pos, bool(m["rare"]))
+				_drop_loot(drop_pos, bool(m["rare"]), String(m.get("tier", "normal")))
 			return true
 	if boss_active and flat(pos - boss.position).length() < 1.65:
 		var total_dmg := dmg + (PrologueState.get_stagger_bonus() if boss_state == BossState.STAGGERED else 0)

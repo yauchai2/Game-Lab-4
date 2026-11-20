@@ -47,8 +47,10 @@ const GRASS_SHADER := preload("res://shaders/stylized_grass.gdshader")
 const FOLIAGE_SHADER := preload("res://shaders/painterly_foliage.gdshader")
 const WATER_SEA_SHADER := preload("res://shaders/living_water_sea.gdshader")
 const MIXAMO_RIG_SCRIPT := preload("res://prologue/MixamoCharacterRig.gd")
+const MINIMAP_SCRIPT := preload("res://prologue/MinimapOverlay.gd")
 var scene_shadow_tint := Color("#464d7a")
 var mixamo_rig: Node3D
+var minimap_overlay: Control
 
 # 60 FPS integer frame counter hitstop (never mutates Engine.time_scale)
 var hitstop_frames := 0
@@ -1128,6 +1130,10 @@ func setup_hud() -> void:
 	combo_badge_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	combo_badge_panel.add_child(combo_badge_label)
 
+	# PoE 2-style Fog-of-War Exploration Minimap (press [Tab] to toggle Corner / Center)
+	minimap_overlay = MINIMAP_SCRIPT.new()
+	hud_root.add_child(minimap_overlay)
+
 	# 3. Top-Center: Boss HP Bar (only shown during Boss encounter)
 	boss_panel = PanelContainer.new()
 	boss_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
@@ -1663,11 +1669,16 @@ func step_shared_physics(delta: float, cam_override_target := Vector3.INF) -> bo
 		bird_target = (wolf.position + Vector3(0, 1.60 + absf(sin(t_bird)) * 0.06, 0.85)) if PrologueState.mounted else (player.position + bird_hover)
 	bird.position = bird.position.lerp(bird_target, clampf(delta * bird_speed, 0.0, 1.0))
 
+	if minimap_overlay:
+		minimap_overlay.update_state(feet(), wolf.position, get_minimap_markers())
 	var target := cam_override_target if cam_override_target != Vector3.INF else feet()
 	position_camera(target, clampf(delta * 4.8, 0.0, 1.0))
 	if shake_time > 0.0:
 		camera.position += Vector3(randf_range(-shake_strength, shake_strength), randf_range(-shake_strength * 0.7, shake_strength * 0.7), 0.0)
 	return true
+
+func get_minimap_markers() -> Array[Dictionary]:
+	return []
 
 func _update_hotbar_visuals() -> void:
 	if not slot_attack:
@@ -1715,6 +1726,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_Q: on_wolf_action()
 			KEY_J: perform_sword_attack()
 			KEY_C: on_coop_summon()
+			KEY_TAB:
+				if minimap_overlay:
+					minimap_overlay.toggle_expanded()
 			KEY_M:
 				var muted := PrologueState.toggle_bgm_mute()
 				show_player_emote("🔇" if muted else "🎵", 1.1)
