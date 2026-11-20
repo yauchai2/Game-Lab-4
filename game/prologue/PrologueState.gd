@@ -18,6 +18,9 @@ var sandbar_chest_claimed := false
 var lighthouse_viewed := false
 var scribe_quest_accepted := false
 var uniques_defeated: Array[String] = []
+var emerald_boss_retired := false
+var emerald_chest_claimed := false
+var emerald_uniques_defeated: Array[String] = []
 var mounted := false
 var player_hp := 5
 var coins := 50
@@ -291,6 +294,9 @@ func reset_all() -> void:
 	lighthouse_viewed = false
 	scribe_quest_accepted = false
 	uniques_defeated.clear()
+	emerald_boss_retired = false
+	emerald_chest_claimed = false
+	emerald_uniques_defeated.clear()
 	mounted = false
 	player_hp = 5
 	coins = 50
@@ -498,15 +504,24 @@ func record_unique_defeated(uid: String) -> bool:
 	uniques_defeated.append(uid)
 	return true
 
+func record_emerald_unique_defeated(uid: String) -> bool:
+	if emerald_uniques_defeated.has(uid):
+		return false
+	emerald_uniques_defeated.append(uid)
+	return true
+
 func get_quest_tracker_text() -> String:
 	var main_q := "主線《百年停戰令》：勸退雲海石橋・稻草人哨長"
 	if not has_sword:
 		main_q = "主線《百年停戰令》：於雲丘營地整備裝備"
-	elif boss_retired:
-		main_q = "主線《百年停戰令》：✦ 已完成！前往翡翠古林"
-	var side_q := "支線《荒野傳奇怪》：探索古道角落 (%d/2)" % uniques_defeated.size()
-	if uniques_defeated.size() >= 2:
-		side_q = "支線《荒野傳奇怪》：✦ 2/2 全數勸退！"
+	elif boss_retired and not emerald_boss_retired:
+		main_q = "主線《翡翠天梯》：深入古林勸退翡翠樹王"
+	elif emerald_boss_retired:
+		main_q = "主線《翡翠天梯》：✦ 古林已停戰！等待鐘樓開放"
+	var total_u := uniques_defeated.size() + emerald_uniques_defeated.size()
+	var side_q := "支線《荒野傳奇怪》：探索古道與古林 (%d/4)" % total_u
+	if total_u >= 4:
+		side_q = "支線《荒野傳奇怪》：✦ 4/4 全數勸退！"
 	return main_q + "\n" + side_q
 
 func get_seal_title(seal_id: String) -> String:

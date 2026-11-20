@@ -41,12 +41,12 @@ const WORLD_NODES := [
 	{
 		"id": "forest",
 		"title": "翡翠天梯古林",
-		"subtitle": "第一章後續 · 區域 Boss：翡翠樹王（規劃中）",
-		"scene": "",
-		"spawn": "",
+		"subtitle": "超大型密林 (160m×104m) · Boss 翡翠樹王 · 隱藏傳奇怪 ×2",
+		"scene": "res://prologue/EmeraldForest.tscn",
+		"spawn": "from_waypoint",
 		"pos_norm": Vector2(0.73, 0.66),
-		"kind": "future",
-		"playable": false,
+		"kind": "boss_zone",
+		"playable": true,
 	},
 	{
 		"id": "clocktower",
@@ -232,6 +232,10 @@ func _select_node(n: Dictionary) -> void:
 		var boss_txt := "✦ 稻草人哨長（已勸退）" if PrologueState.boss_retired else "💀 稻草人哨長（尚在加班）"
 		var uniq_cnt := PrologueState.uniques_defeated.size()
 		_info_status.text = "%s   |   隱藏傳奇怪進度：%d / 2" % [boss_txt, uniq_cnt]
+	elif nid == "forest":
+		var fboss_txt := "✦ 翡翠樹王（已退休開果茶亭）" if PrologueState.emerald_boss_retired else "💀 翡翠樹王（仍在備戰攻城）"
+		var funiq_cnt := PrologueState.emerald_uniques_defeated.size()
+		_info_status.text = "%s   |   隱藏傳奇怪進度：%d / 2" % [fboss_txt, funiq_cnt]
 	elif nid == "town":
 		_info_status.text = "安全主城 · 免費回血泉水 / 造裝工坊 / 商人 / 任務書記官"
 	elif nid == "clearing":
@@ -323,6 +327,8 @@ func _draw_map_canvas() -> void:
 			badge = "！"
 		elif nid == "road":
 			badge = "✦" if PrologueState.boss_retired else "💀"
+		elif nid == "forest":
+			badge = "✦" if PrologueState.emerald_boss_retired else "💀"
 		elif playable:
 			badge = "★"
 		else:

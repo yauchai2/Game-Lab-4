@@ -846,8 +846,7 @@ func on_interact() -> void:
 		show_subtitle("懸賞板：翡翠樹王／河神巨蟹／沙暴騎士長／霜龍大將軍", 4.2)
 		return
 	if near(CHAPTER_1_EXIT, 2.5):
-		show_player_emote("✨", 1.4)
-		show_subtitle("第一章《翡翠天梯古林》入口（序章通關！）", 3.5)
+		PrologueState.transition_to("res://prologue/EmeraldForest.tscn", "default", "翡翠天梯古林")
 
 func _start_boss_encounter() -> void:
 	boss_active = true
@@ -1075,7 +1074,7 @@ func _update_ui() -> void:
 	elif near(BOUNTY_POS + Vector3(0, 0, 1.0), 2.5):
 		set_prompt("[ E ] 檢視公會懸賞板")
 	elif near(CHAPTER_1_EXIT, 2.5):
-		set_prompt("[ E ] 第一章入口")
+		set_prompt("[ E ] 前往：翡翠天梯古林")
 	elif not PrologueState.mounted and near(wolf.position, 2.7):
 		set_prompt("[ F ] 騎上巨狼")
 	else:
