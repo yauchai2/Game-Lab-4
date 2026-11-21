@@ -12,6 +12,7 @@ const SHADER_PROP := preload("res://diorama/shaders/diorama_prop.gdshader")
 const SHADER_GODRAY := preload("res://diorama/shaders/diorama_godray.gdshader")
 const SHADER_CONTACT := preload("res://diorama/shaders/diorama_contact_shadow.gdshader")
 const SHADER_GRASS := preload("res://diorama/shaders/diorama_grass.gdshader")
+const SHADER_WIND_TRAIL := preload("res://diorama/shaders/diorama_wind_trail.gdshader")
 const INK_FX_SCRIPT := preload("res://prologue/InkStudioFX.gd")
 const MODEL_DIR := "res://assets/models/campfire/"
 
@@ -28,6 +29,7 @@ var grass_mm: MultiMesh
 var grass_positions: Array[Vector2] = []
 var godray_nodes: Array[Node3D] = []
 var godray_mats: Array[ShaderMaterial] = []
+var wind_trail_mats: Array[ShaderMaterial] = []
 var prop_mats: Array[ShaderMaterial] = []
 var tod_foliage: Array[Dictionary] = []
 var bg_trunk_mats: Array[Dictionary] = []
@@ -173,6 +175,9 @@ func _setup_environment_and_lights() -> void:
 	env.glow_intensity = 0.22
 	env.glow_bloom = 0.05
 	env.glow_hdr_threshold = 1.12
+	env.adjustment_enabled = true
+	env.adjustment_saturation = 1.12
+	env.adjustment_contrast = 1.06
 	env.fog_enabled = true
 	env.fog_density = 0.0045
 
@@ -280,6 +285,8 @@ func _apply_time_of_day(night: bool) -> void:
 		(rec["mat"] as ShaderMaterial).set_shader_parameter("tint_color", rec["night"] if night else rec["day"])
 	for trec in bg_trunk_mats:
 		(trec["mat"] as StandardMaterial3D).albedo_color = trec["night"] if night else trec["day"]
+	for wm in wind_trail_mats:
+		wm.set_shader_parameter("trail_color", Color(0.75, 0.88, 1.0, 0.42) if night else Color(1.0, 0.99, 0.94, 0.78))
 	_recolor_grass_tufts()
 
 # --- 3. 96x96 Sculpted 3D Terrain Mesh + Heightmap Texture ---
@@ -513,6 +520,7 @@ func _apply_prop_shader(node: Node, aabb: AABB, tint_col: Color, tint_mix: float
 				sm.set_shader_parameter("grad_strength", grad_str)
 				sm.set_shader_parameter("min_y", aabb.position.y)
 				sm.set_shader_parameter("max_y", aabb.position.y + aabb.size.y)
+				sm.set_shader_parameter("aabb_center", aabb.get_center())
 				if orig is BaseMaterial3D:
 					var bm := orig as BaseMaterial3D
 					sm.set_shader_parameter("base_color", bm.albedo_color)
@@ -526,6 +534,9 @@ func _apply_prop_shader(node: Node, aabb: AABB, tint_col: Color, tint_mix: float
 				mi.set_surface_override_material(si, sm)
 				prop_mats.append(sm)
 				if day_tint.r >= 0.0:
+					# Enable Spherical Normal Transfer + Vertex Wind Sway on all foliage & pines!
+					sm.set_shader_parameter("spherical_normal_mix", 0.78)
+					sm.set_shader_parameter("wind_strength", 0.08)
 					tod_foliage.append({"mat": sm, "night": tint_col, "day": day_tint})
 	for c in node.get_children():
 		_apply_prop_shader(c, aabb, tint_col, tint_mix, brightness, grad_str, day_tint)
@@ -888,12 +899,12 @@ func _build_diorama_scene() -> void:
 		var p_node := _place_glb(self, String(sp[0]), pxz, float(sp[2]), Vector3(0, randf() * 360.0, 0), Color.WHITE, 0.0, -0.04, 0.98, true, 0.72)
 		ink_fx.register_shatter_prop(p_node, p_node.position, 0.95, sp[3], 3, 1)
 
-	# 6l. Soft Diagonal Volumetric Sunbeams (Shown in Daytime vC7OEC mode ONLY — hidden in Night mode!)
+	# 6l. Additive Fresnel Fake Volumetric Sunbeams (vC7OEC signature in Daytime mode!)
 	for gr in [
-		[Vector3(-5.8, 6.4, -3.5), 3.6, 16.0],
-		[Vector3(-1.2, 7.0, -2.0), 4.2, 17.0],
-		[Vector3(4.2, 6.6, -2.8), 3.8, 16.0],
-		[Vector3(8.8, 6.4, 1.5), 3.4, 15.0]
+		[Vector3(-6.2, 6.2, -3.5), 4.2, 18.0],
+		[Vector3(-1.4, 6.8, -2.2), 4.8, 19.0],
+		[Vector3(3.8, 6.5, -2.6), 4.4, 18.0],
+		[Vector3(8.6, 6.2, 1.8), 4.0, 17.0]
 	]:
 		var qm := QuadMesh.new(); qm.size = Vector2(float(gr[1]), float(gr[2]))
 		var gi := MeshInstance3D.new(); gi.mesh = qm
@@ -901,6 +912,9 @@ func _build_diorama_scene() -> void:
 		gi.material_override = gmat; godray_mats.append(gmat); godray_nodes.append(gi)
 		gi.position = gr[0]; gi.rotation_degrees = Vector3(14.0, -18.0, 26.0)
 		add_child(gi)
+
+	# 6l-b. Stylized Flowing White Wind Trails (vC7OEC Bezier Ribbon Breeze!)
+	_build_stylized_wind_trails()
 
 	# 6m. Gentle Floating Golden Fireflies
 	for _i in range(26):
@@ -910,7 +924,44 @@ func _build_diorama_scene() -> void:
 		var fm := _soft_cloud_puff(Vector3(fx, fy_base, fz), 0.055, Color("#ffd866"))
 		fireflies.append({"node": fm, "base": fm.position, "ph": randf() * TAU, "spd": randf_range(0.8, 1.7)})
 
-# --- 7. Playable Traveler & Wider Storybook Framing Camera ---
+func _build_stylized_wind_trails() -> void:
+	var curves := [
+		[Vector3(-10.5, 2.6, 1.8), Vector3(-3.0, 3.8, -1.2), Vector3(4.5, 3.0, 1.6), 0.08, 0.24, 0.0],
+		[Vector3(-4.0, 3.4, -4.5), Vector3(3.5, 4.5, -2.0), Vector3(11.5, 3.6, 0.5), 0.07, 0.28, 0.35],
+		[Vector3(2.0, 2.5, 3.8), Vector3(7.5, 3.6, 2.6), Vector3(13.5, 3.2, 5.2), 0.075, 0.25, 0.68],
+		[Vector3(-12.0, 3.2, -5.0), Vector3(-5.0, 4.2, -6.2), Vector3(2.0, 3.6, -3.5), 0.07, 0.22, 0.18],
+		[Vector3(-8.0, 1.8, 4.8), Vector3(-1.5, 2.5, 3.4), Vector3(5.0, 2.2, 5.0), 0.065, 0.27, 0.52]
+	]
+	for c in curves:
+		var p0: Vector3 = c[0]; var p1: Vector3 = c[1]; var p2: Vector3 = c[2]
+		var hw: float = float(c[3])
+		var st := SurfaceTool.new()
+		st.begin(Mesh.PRIMITIVE_TRIANGLES)
+		var segs := 24
+		for i in range(segs):
+			var t0 := float(i) / float(segs)
+			var t1 := float(i + 1) / float(segs)
+			var q0 := p0.lerp(p1, t0).lerp(p1.lerp(p2, t0), t0)
+			var q1 := p0.lerp(p1, t1).lerp(p1.lerp(p2, t1), t1)
+			var up := Vector3(0.0, hw, hw * 0.45)
+			st.set_uv(Vector2(t0, 0.0)); st.add_vertex(q0 - up)
+			st.set_uv(Vector2(t0, 1.0)); st.add_vertex(q0 + up)
+			st.set_uv(Vector2(t1, 1.0)); st.add_vertex(q1 + up)
+			st.set_uv(Vector2(t0, 0.0)); st.add_vertex(q0 - up)
+			st.set_uv(Vector2(t1, 1.0)); st.add_vertex(q1 + up)
+			st.set_uv(Vector2(t1, 0.0)); st.add_vertex(q1 - up)
+		var mi := MeshInstance3D.new()
+		mi.mesh = st.commit()
+		var wmat := ShaderMaterial.new()
+		wmat.shader = SHADER_WIND_TRAIL
+		wmat.set_shader_parameter("speed", float(c[4]))
+		wmat.set_shader_parameter("phase_offset", float(c[5]))
+		mi.material_override = wmat
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		wind_trail_mats.append(wmat)
+		add_child(mi)
+
+# --- 7. Playable Traveler & Low-FOV Telephoto Miniature Camera (vC7OEC Toybox Look!) ---
 func _setup_player_and_camera() -> void:
 	player = Node3D.new()
 	# Start nestled cozily right beside the Giant Wolf & Campfire (06_29_51 composition!)
@@ -922,9 +973,9 @@ func _setup_player_and_camera() -> void:
 
 	camera = Camera3D.new()
 	camera.projection = Camera3D.PROJECTION_PERSPECTIVE
-	camera.fov = 31.0
-	camera.near = 0.5
-	camera.far = 160.0
+	camera.fov = 21.0
+	camera.near = 1.0
+	camera.far = 220.0
 	camera.current = true
 	add_child(camera)
 	_update_camera(1.0)
@@ -934,11 +985,11 @@ func _update_camera(lerp_w: float) -> void:
 	var desired: Vector3
 	if orbit_camera:
 		target = Vector3(0.0, 0.35, -0.5)
-		var radius := 28.0
-		desired = target + Vector3(sin(orbit_angle) * radius, 16.5, cos(orbit_angle) * radius)
+		var radius := 42.0
+		desired = target + Vector3(sin(orbit_angle) * radius, 24.8, cos(orbit_angle) * radius)
 	else:
 		target = player.position.lerp(Vector3(0.1, 0.25, -0.4), 0.74)
-		desired = target + Vector3(0.0, 15.2, 26.2)
+		desired = target + Vector3(0.0, 22.8, 39.2)
 	camera.position = camera.position.lerp(desired, lerp_w) if lerp_w < 1.0 else desired
 	camera.look_at(target)
 

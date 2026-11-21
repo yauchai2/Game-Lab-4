@@ -1,16 +1,18 @@
 shader_type spatial;
 render_mode blend_add, unshaded, cull_disabled, depth_draw_never;
 
-// vC7OEC-inspired Soft Diagonal Volumetric God-Ray Shafts!
-uniform vec4 ray_color : source_color = vec4(0.58, 0.78, 1.0, 0.16);
-uniform float pulse_speed = 0.75;
+// vC7OEC Fake Volumetric God Rays (Additive Blending + Soft Fresnel Edge Fade + Smooth Vertical Fade!)
+uniform vec4 ray_color : source_color = vec4(1.0, 0.94, 0.62, 0.28);
 
 void fragment() {
-	// Soft Gaussian-like falloff on left/right edges & top/bottom ends (zero hard quad edges!)
-	float x_fade = sin(UV.x * 3.14159265);
-	x_fade = pow(clamp(x_fade, 0.0, 1.0), 1.8);
-	float y_fade = smoothstep(0.0, 0.32, UV.y) * smoothstep(1.0, 0.18, UV.y);
-	float shimmer = 0.82 + 0.18 * sin(TIME * pulse_speed + UV.x * 5.0);
-	ALBEDO = ray_color.rgb;
-	ALPHA = ray_color.a * x_fade * y_fade * shimmer;
+	// Soft horizontal beam profile + animated dappled canopy shimmer
+	float edge_x = pow(sin(UV.x * PI), 1.6);
+	float vert_fade = smoothstep(0.0, 0.22, UV.y) * smoothstep(1.0, 0.18, UV.y);
+	float shimmer = 0.84 + 0.16 * sin(UV.x * 11.0 + TIME * 0.75);
+	// Soft Fresnel view-angle fade so beam never looks like a flat intersecting card
+	float fresnel = pow(abs(dot(normalize(NORMAL), normalize(VIEW))), 0.65);
+
+	float alpha = edge_x * vert_fade * shimmer * fresnel * ray_color.a;
+	ALBEDO = ray_color.rgb * alpha;
+	ALPHA = clamp(alpha, 0.0, 1.0);
 }
