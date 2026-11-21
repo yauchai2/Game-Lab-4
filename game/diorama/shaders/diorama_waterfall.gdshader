@@ -1,27 +1,25 @@
 shader_type spatial;
 render_mode blend_mix, unshaded, cull_disabled;
 
-// Stylized flowing waterfall ribbon (vC7OEC x 151bb106)
-uniform vec4 water_top : source_color = vec4(0.45, 0.82, 1.0, 0.92);
-uniform vec4 water_bot : source_color = vec4(0.24, 0.60, 0.94, 0.90);
-uniform vec4 streak_col : source_color = vec4(0.90, 0.97, 1.0, 0.95);
-
-float hash21(vec2 p) {
-	p = fract(p * vec2(127.1, 311.7));
-	return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
-}
+// Organic Curved Waterfall Ribbon with Soft Feathered Edges & Seamless Water Blend!
+uniform vec4 water_top : source_color = vec4(0.46, 0.84, 1.0, 0.92);
+uniform vec4 water_bot : source_color = vec4(0.20, 0.56, 0.92, 0.90);
+uniform vec4 streak_col : source_color = vec4(0.92, 0.98, 1.0, 0.95);
 
 void fragment() {
 	vec2 uv = UV;
-	float s1 = sin(uv.x * 26.0) * 0.5 + 0.5;
-	float scroll = fract(uv.y * 2.4 - TIME * 1.85 + floor(uv.x * 10.0) * 0.17);
-	float streak = smoothstep(0.62, 0.88, s1) * smoothstep(0.15, 0.55, scroll) * smoothstep(0.95, 0.65, scroll);
-	float edge_foam = smoothstep(0.16, 0.0, uv.y) + smoothstep(0.82, 1.0, uv.y);
+	float s1 = sin(uv.x * 24.0 + sin(uv.y * 5.0 - TIME * 3.0) * 0.5) * 0.5 + 0.5;
+	float scroll = fract(uv.y * 2.4 - TIME * 1.9 + floor(uv.x * 9.0) * 0.19);
+	float streak = smoothstep(0.58, 0.86, s1) * smoothstep(0.12, 0.52, scroll) * smoothstep(0.95, 0.62, scroll);
+	float top_foam = smoothstep(0.18, 0.0, uv.y) * 0.72;
+	float bot_foam = smoothstep(0.76, 1.0, uv.y) * 0.88;
 
 	vec3 col = mix(water_top.rgb, water_bot.rgb, uv.y);
-	col = mix(col, streak_col.rgb, clamp(streak * 0.78 + edge_foam * 0.65, 0.0, 1.0));
-	float side_fade = smoothstep(0.0, 0.12, uv.x) * smoothstep(1.0, 0.88, uv.x);
+	col = mix(col, streak_col.rgb, clamp(streak * 0.78 + top_foam + bot_foam, 0.0, 1.0));
+	// Softly feather left/right edges AND bottom transition so it NEVER looks like a rectangular sticker!
+	float side_fade = smoothstep(0.0, 0.22, uv.x) * smoothstep(1.0, 0.78, uv.x);
+	float bot_fade = smoothstep(1.0, 0.90, uv.y);
 
 	ALBEDO = col;
-	ALPHA = side_fade * 0.94;
+	ALPHA = side_fade * bot_fade * 0.94;
 }

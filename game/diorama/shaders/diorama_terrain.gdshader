@@ -1,9 +1,7 @@
 shader_type spatial;
 render_mode diffuse_lambert;
 
-// Velvety Gouache 3D Diorama Terrain Shader (06_29_51 Cozy Night Meadow x vC7OEC Sunlit Miniature)
-// Vertex COLOR: R = Sandy Trail, G = Campfire Warm Clearing, B = Wet Shoreline Bank
-// Persistent state_map (filter_linear): R = Scorch, G = Snow/Frost, B = Wetness/Footprints
+// Matte Gouache 3D Diorama Terrain Shader (ZERO Plastic Specular + Smooth Hearth Glow + Persistent State!)
 uniform sampler2D state_map : filter_linear, repeat_disable;
 uniform vec2 map_min = vec2(-24.0, -18.0);
 uniform vec2 map_size = vec2(48.0, 36.0);
@@ -48,34 +46,30 @@ void fragment() {
 	float shore_w = COLOR.b;
 
 	float n1 = vnoise(v_world_pos.xz * 0.25);
-	float n2 = vnoise(v_world_pos.xz * 1.10);
-	float brush = vnoise(vec2(v_world_pos.x * 5.2, v_world_pos.z * 2.1));
-	float fine_grain = vnoise(v_world_pos.xz * 8.5);
+	float n2 = vnoise(v_world_pos.xz * 1.15);
+	float brush = vnoise(vec2(v_world_pos.x * 5.8, v_world_pos.z * 2.4));
+	float fine_grain = vnoise(v_world_pos.xz * 10.0);
 
-	// Rich mossy-olive meadow with warm hilltops & deep twilight hollows
 	float hill_t = clamp((v_world_pos.y + 0.05) * 0.50, 0.0, 1.0);
 	vec3 g_col = mix(grass_deep.rgb, grass_mid.rgb, smoothstep(0.18, 0.82, n1));
 	g_col = mix(g_col, grass_hill.rgb, hill_t * 0.68);
 
-	// Mossy cliff bank on steep slopes
 	float slope = 1.0 - clamp(v_world_nrm.y, 0.0, 1.0);
 	g_col = mix(g_col, cliff_rock.rgb, smoothstep(0.20, 0.48, slope));
 
-	// Organic shoreline, warm sandy path & wide golden-honey campfire clearing
 	vec3 col = mix(g_col, shore_sand.rgb, smoothstep(0.22, 0.88, shore_w));
 	col = mix(col, trail_col.rgb, smoothstep(0.20, 0.72, trail_w + (n2 - 0.5) * 0.14));
 	float fire_pool = smoothstep(0.04, 0.80, fire_w + (n1 - 0.5) * 0.14);
 	col = mix(col, campfire_dirt.rgb, fire_pool * 0.90);
 
-	// Soft golden hearth heart right under campfire (smooth radial falloff — NO hard circle!)
 	float d_hearth = length(v_world_pos.xz - vec2(0.0, 0.2));
 	float hearth_glow = smoothstep(1.85, 0.25, d_hearth);
 	col = mix(col, vec3(1.0, 0.82, 0.34), hearth_glow * 0.65 * night_mix);
 
-	// Subtle gouache paper & dry-brush texture
-	col *= 1.0 + (brush - 0.5) * 0.11 + (fine_grain - 0.5) * 0.05;
+	// Rich matte gouache grain
+	col *= 1.0 + (brush - 0.5) * 0.12 + (fine_grain - 0.5) * 0.06;
 
-	// Smooth Bilinear Persistent Surface State (R=Scorch, G=Snow/Frost, B=Wetness/Footprints)
+	// Persistent Surface State (R=Scorch, G=Snow/Frost, B=Wetness/Footprints)
 	vec2 uv_s = clamp((v_world_pos.xz - map_min) / map_size, vec2(0.0), vec2(1.0));
 	vec4 st = texture(state_map, uv_s);
 	float scorch = st.r;
@@ -95,10 +89,9 @@ void fragment() {
 	float ember = smoothstep(0.18, 0.36, scorch) * smoothstep(0.62, 0.32, scorch);
 
 	ALBEDO = clamp(col, 0.0, 1.0);
-	ROUGHNESS = mix(0.95, 0.38, wet_m);
+	ROUGHNESS = mix(1.0, 0.42, wet_m);
 	METALLIC = 0.0;
-	SPECULAR = mix(0.03, 0.25, wet_m);
-	// Luminous cozy night meadow floor + warm hearth bounce (zero daytime bleach!)
+	SPECULAR = mix(0.0, 0.22, wet_m);
 	EMISSION = col * mix(0.02, 0.13, night_mix)
 		+ vec3(0.98, 0.56, 0.16) * fire_pool * 0.24 * night_mix
 		+ vec3(1.0, 0.76, 0.28) * hearth_glow * 0.32 * night_mix

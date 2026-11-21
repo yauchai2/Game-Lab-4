@@ -1,16 +1,16 @@
 shader_type spatial;
 render_mode diffuse_lambert;
 
-// Velvety Gouache Diorama Prop Shader (Spherical Normal Transfer + Vertex Wind Sway + Dry-Brush Grain + Vertical Gradient!)
+// Matte Pastel/Gouache Diorama Prop Shader (ZERO Plastic Specular + Spherical Normal Transfer + Warm-Top/Cool-Bottom Gradient + Vertex Wind!)
 uniform sampler2D albedo_tex : source_color, filter_linear_mipmap;
 uniform bool has_albedo_tex = true;
 uniform vec4 base_color : source_color = vec4(1.0, 1.0, 1.0, 1.0);
 uniform vec4 tint_color : source_color = vec4(1.0, 1.0, 1.0, 1.0);
 uniform float tint_mix : hint_range(0.0, 0.92) = 0.0;
 uniform float brightness : hint_range(0.4, 1.8) = 1.00;
-uniform float saturation : hint_range(0.4, 1.6) = 1.14;
-uniform float ambient_lift : hint_range(0.0, 0.25) = 0.09;
-uniform float grad_strength : hint_range(0.0, 0.75) = 0.44;
+uniform float saturation : hint_range(0.4, 1.6) = 1.15;
+uniform float ambient_lift : hint_range(0.0, 0.25) = 0.08;
+uniform float grad_strength : hint_range(0.0, 0.75) = 0.46;
 uniform float min_y = -0.5;
 uniform float max_y = 0.5;
 uniform vec3 aabb_center = vec3(0.0, 0.0, 0.0);
@@ -65,24 +65,25 @@ void fragment() {
 	float luma = dot(col, vec3(0.299, 0.587, 0.114));
 	col = mix(vec3(luma), col, saturation);
 
-	// Rich gouache tinting that preserves deep crevices
+	// Rich gouache tinting preserving crevices
 	vec3 tinted = tint_color.rgb * clamp(luma * 1.32 + 0.15, 0.24, 1.18);
 	col = mix(col, tinted, tint_mix);
 
-	// Painterly dry-brush vertical strokes
-	float brush = vnoise(vec2((v_world_pos.x + v_world_pos.z) * 6.5, v_world_pos.y * 2.8));
-	float speckle = vnoise(vec2(v_world_pos.x * 14.0 - v_world_pos.z * 11.0, v_world_pos.y * 9.0));
-	col *= 1.0 + (brush - 0.5) * 0.13 + (speckle - 0.5) * 0.05;
+	// Painterly dry-brush noise breaking up smooth clay/plastic surfaces
+	float brush = vnoise(vec2((v_world_pos.x + v_world_pos.z) * 7.0, v_world_pos.y * 3.2));
+	float speckle = vnoise(vec2(v_world_pos.x * 15.0 - v_world_pos.z * 12.0, v_world_pos.y * 10.0));
+	col *= 1.0 + (brush - 0.5) * 0.14 + (speckle - 0.5) * 0.06;
 
-	// vC7OEC x 06_29_51 signature: Grounded base AO -> luminous painted crown!
-	float g_t = smoothstep(0.04, 0.92, v_norm_y);
-	float grad = mix(1.0 - grad_strength * 0.80, 1.0 + grad_strength * 0.40, g_t);
-	vec3 base_cool = mix(vec3(0.80, 0.84, 0.96), vec3(1.0), g_t);
-	col *= grad * base_cool;
+	// Warm-Top / Cool-Bottom Painterly Gradient (Deep cool-teal base -> bright warm sunlit crown!)
+	float g_t = smoothstep(0.04, 0.94, v_norm_y);
+	float grad = mix(1.0 - grad_strength * 0.78, 1.0 + grad_strength * 0.44, g_t);
+	vec3 temp_shift = mix(vec3(0.70, 0.80, 0.98), vec3(1.07, 1.03, 0.90), g_t);
+	col *= grad * temp_shift;
 
+	// ZERO Plastic Shine (Pure Matte Pastel/Gouache!)
 	ALBEDO = clamp(col, 0.0, 1.0);
-	ROUGHNESS = 0.95;
+	ROUGHNESS = 1.0;
 	METALLIC = 0.0;
-	SPECULAR = 0.03;
+	SPECULAR = 0.0;
 	EMISSION = col * ambient_lift;
 }

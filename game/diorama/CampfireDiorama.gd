@@ -176,8 +176,8 @@ func _setup_environment_and_lights() -> void:
 	env.glow_bloom = 0.05
 	env.glow_hdr_threshold = 1.12
 	env.adjustment_enabled = true
-	env.adjustment_saturation = 1.12
-	env.adjustment_contrast = 1.06
+	env.adjustment_saturation = 1.16
+	env.adjustment_contrast = 1.07
 	env.fog_enabled = true
 	env.fog_density = 0.0045
 
@@ -246,18 +246,18 @@ func _apply_time_of_day(night: bool) -> void:
 		for pm in prop_mats:
 			pm.set_shader_parameter("ambient_lift", 0.09)
 	else:
-		# Exact vC7OEC.mp4 Rich Sunlit Emerald Miniature Forest (ZERO bleached washout!)
-		env.tonemap_exposure = 0.84
-		env.fog_density = 0.0020
-		sky_mat.sky_top_color = Color("#3d8ee0")
-		sky_mat.sky_horizon_color = Color("#9fd4fa")
-		sky_mat.ground_bottom_color = Color("#346e38")
-		sky_mat.ground_horizon_color = Color("#9fd4fa")
-		env.ambient_light_color = Color("#749fb0")
-		env.ambient_light_energy = 0.40
-		env.fog_light_color = Color("#8fc4de")
-		key_light.light_color = Color("#ffefc2")
-		key_light.light_energy = 0.94
+		# Exact vC7OEC.mp4 Warm Golden Sunlight vs. Clean Cool Cyan-Blue Shadows (ZERO grey washout!)
+		env.tonemap_exposure = 0.88
+		env.fog_density = 0.0018
+		sky_mat.sky_top_color = Color("#3588e0")
+		sky_mat.sky_horizon_color = Color("#9cd2fa")
+		sky_mat.ground_bottom_color = Color("#2d6934")
+		sky_mat.ground_horizon_color = Color("#9cd2fa")
+		env.ambient_light_color = Color("#4088c9")
+		env.ambient_light_energy = 0.48
+		env.fog_light_color = Color("#87c2e6")
+		key_light.light_color = Color("#ffe08a")
+		key_light.light_energy = 1.12
 		campfire_light.light_energy = 0.75
 		cabin_light.light_energy = 0.35
 		if terrain_mat:
@@ -383,27 +383,28 @@ func _build_painterly_grass_tufts() -> void:
 	var xforms: Array[Transform3D] = []
 	grass_positions.clear()
 
-	for _i in range(2800):
-		var gx := rng.randf_range(-15.5, 15.5)
+	# 3.5x Denser Fluffy Miniature Lawn (5,200 tufts in 1 single MultiMesh draw call!)
+	for _i in range(9500):
+		var gx := rng.randf_range(-15.8, 15.8)
 		var gz := rng.randf_range(-12.5, 7.2)
 		var gy := terrain_height(gx, gz)
-		if gy < WATER_LEVEL + 0.34:
+		if gy < WATER_LEVEL + 0.30:
 			continue
-		if _trail_weight(gx, gz) > 0.32:
+		if _trail_weight(gx, gz) > 0.30:
 			continue
 		var d_fire := Vector2(gx, gz).distance_to(CAMPFIRE_XZ)
-		if d_fire < 2.65:
+		if d_fire < 2.55:
 			continue
-		if Vector2(gx, gz).distance_to(Vector2(9.8, 5.15)) < 2.5:
+		if Vector2(gx, gz).distance_to(Vector2(9.8, 5.15)) < 2.4:
 			continue
-		if Vector2(gx, gz).distance_to(Vector2(-9.8, -2.5)) < 2.5:
+		if Vector2(gx, gz).distance_to(Vector2(-9.8, -2.5)) < 2.4:
 			continue
-		var s := rng.randf_range(0.68, 1.18)
-		var yaw := rng.randf_range(-0.45, 0.45)
-		var basis := Basis(Vector3.UP, yaw).scaled(Vector3(s, s * rng.randf_range(0.82, 1.18), s))
-		xforms.append(Transform3D(basis, Vector3(gx, gy - 0.02, gz)))
+		var s := rng.randf_range(0.62, 1.15)
+		var yaw := rng.randf_range(-0.55, 0.55)
+		var basis := Basis(Vector3.UP, yaw).scaled(Vector3(s, s * rng.randf_range(0.78, 1.18), s))
+		xforms.append(Transform3D(basis, Vector3(gx, gy - 0.03, gz)))
 		grass_positions.append(Vector2(gx, gz))
-		if xforms.size() >= 1450:
+		if xforms.size() >= 5200:
 			break
 
 	grass_mm = MultiMesh.new()
@@ -428,17 +429,30 @@ func _recolor_grass_tufts() -> void:
 	for i in range(grass_positions.size()):
 		var p := grass_positions[i]
 		var d_fire := p.distance_to(CAMPFIRE_XZ)
-		var fire_w := smoothstep(7.0, 2.5, d_fire)
+		var fire_w := smoothstep(6.8, 2.4, d_fire)
 		var y := terrain_height(p.x, p.y)
 		var hill_t := clampf((y + 0.05) * 0.50, 0.0, 1.0)
 		var c: Color
 		if is_night:
-			c = Color("#223b34").lerp(Color("#4c6e3c"), clampf(hill_t * 0.72 + 0.28, 0.0, 1.0))
-			c = c.lerp(Color("#c28430"), fire_w * 0.85)
+			c = Color("#2b4a3e").lerp(Color("#5d7d44"), clampf(hill_t * 0.72 + 0.28, 0.0, 1.0))
+			c = c.lerp(Color("#e39634"), fire_w * 0.85)
 		else:
-			c = Color("#326e32").lerp(Color("#70ad3e"), clampf(hill_t * 0.72 + 0.28, 0.0, 1.0))
-			c = c.lerp(Color("#b89242"), fire_w * 0.30)
+			c = Color("#387834").lerp(Color("#7eb842"), clampf(hill_t * 0.72 + 0.28, 0.0, 1.0))
+			c = c.lerp(Color("#c4964c"), fire_w * 0.28)
 		grass_mm.set_instance_color(i, c)
+
+func _make_soft_puff_texture() -> ImageTexture:
+	var sz := 64
+	var img := Image.create_empty(sz, sz, false, Image.FORMAT_RGBA8)
+	var half := float(sz) * 0.5
+	for py in range(sz):
+		for px in range(sz):
+			var dx := (float(px) + 0.5 - half) / half
+			var dy := (float(py) + 0.5 - half) / half
+			var d := sqrt(dx * dx + dy * dy)
+			var a := pow(clampf(1.0 - d, 0.0, 1.0), 1.8)
+			img.set_pixel(px, py, Color(1.0, 1.0, 1.0, a))
+	return ImageTexture.create_from_image(img)
 
 # --- 4. Continuous Water Plane + Organic Curved Waterfall + Fluffy Foam Splash ---
 func _build_water_and_waterfall(height_tex: ImageTexture) -> void:
@@ -492,16 +506,37 @@ func _build_water_and_waterfall(height_tex: ImageTexture) -> void:
 	wf_mi.rotation_degrees.y = 10.0
 	add_child(wf_mi)
 
-	# 10 Soft 3D Pillowy Splash Clouds hugging the waterfall base (06_29_51.png style!)
-	for i in range(10):
-		var ang := (float(i) / 9.0 - 0.5) * 2.1
-		var pos := Vector3(-8.5 + ang * 0.96, WATER_LEVEL + 0.14 + (1.0 - absf(ang)) * 0.14, 5.10 + cos(ang) * 0.22)
-		var fm := MeshInstance3D.new()
-		var sm := SphereMesh.new(); sm.radius = randf_range(0.28, 0.46); sm.height = sm.radius * 1.55; sm.radial_segments = 14; sm.rings = 8
-		fm.mesh = sm
-		var fmat := StandardMaterial3D.new(); fmat.albedo_color = Color("#d8ecff"); fmat.roughness = 0.98; fmat.emission_enabled = true; fmat.emission = Color("#9ec8f5"); fmat.emission_energy_multiplier = 0.32
-		fm.material_override = fmat; fm.position = pos; add_child(fm)
-		waterfall_foam.append({"node": fm, "base": pos, "ph": float(i) * 0.9})
+	# Dynamic Bouncing GPUParticles3D Waterfall Splash + Soft Mist (NO static marshmallow line!)
+	var puff_tex := _make_soft_puff_texture()
+	var wf_p := GPUParticles3D.new()
+	wf_p.position = Vector3(-8.5, WATER_LEVEL + 0.15, 5.12)
+	wf_p.amount = 42
+	wf_p.lifetime = 1.15
+	wf_p.preprocess = 1.2
+	var wf_pm := ParticleProcessMaterial.new()
+	wf_pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+	wf_pm.emission_box_extents = Vector3(0.85, 0.12, 0.25)
+	wf_pm.direction = Vector3(0.0, 1.0, 0.35)
+	wf_pm.spread = 48.0
+	wf_pm.initial_velocity_min = 1.2
+	wf_pm.initial_velocity_max = 2.4
+	wf_pm.gravity = Vector3(0.0, -3.6, 0.0)
+	wf_pm.scale_min = 0.45
+	wf_pm.scale_max = 1.15
+	var wf_grad := Gradient.new()
+	wf_grad.offsets = PackedFloat32Array([0.0, 0.22, 1.0])
+	wf_grad.colors = PackedColorArray([Color(0.90, 0.96, 1.0, 0.0), Color(0.92, 0.97, 1.0, 0.85), Color(0.85, 0.94, 1.0, 0.0)])
+	var wf_gt := GradientTexture1D.new(); wf_gt.gradient = wf_grad
+	wf_pm.color_ramp = wf_gt
+	wf_p.process_material = wf_pm
+	var wf_qm := QuadMesh.new(); wf_qm.size = Vector2(0.85, 0.85)
+	var wf_qmat := StandardMaterial3D.new()
+	wf_qmat.albedo_texture = puff_tex; wf_qmat.vertex_color_use_as_albedo = true
+	wf_qmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; wf_qmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	wf_qmat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES; wf_qmat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+	wf_qm.material = wf_qmat
+	wf_p.draw_pass_1 = wf_qm
+	add_child(wf_p)
 
 # --- 5. GLB Loader with Dry-Brush Gouache Shader, Contact Shadow Decal & Auto Grounding ---
 func _apply_prop_shader(node: Node, aabb: AABB, tint_col: Color, tint_mix: float, brightness := 1.00, grad_str := 0.42, day_tint := Color(-1.0, 0.0, 0.0)) -> void:
@@ -804,14 +839,40 @@ func _build_diorama_scene() -> void:
 	var pmat := StandardMaterial3D.new(); pmat.albedo_color = Color("#a86e42"); pmat.roughness = 0.92
 	porch.mesh = pbm; porch.material_override = pmat; porch.position = Vector3(0.05, 0.12, 1.75)
 	cab_node.add_child(porch)
-	# Matte plump cotton-cloud chimney puffs rising straight out of the stone chimney!
-	for i in range(6):
-		var cp := MeshInstance3D.new()
-		var csm := SphereMesh.new(); csm.radius = 0.36; csm.height = 0.64; csm.radial_segments = 14; csm.rings = 8
-		cp.mesh = csm
-		var cmat := StandardMaterial3D.new(); cmat.albedo_color = Color("#e8eef7"); cmat.roughness = 1.0; cmat.emission_enabled = true; cmat.emission = Color("#b8c8e0"); cmat.emission_energy_multiplier = 0.22
-		cp.material_override = cmat; cp.position = Vector3(9.85, cab_y + 3.45, 3.55); add_child(cp)
-		cabin_smoke.append({"node": cp, "offset": float(i) / 6.0, "base_y": cab_y + 3.45})
+	# Soft Billowing GPUParticles3D Chimney Smoke (scales up, curves in breeze & alpha-fades naturally!)
+	var smk_p := GPUParticles3D.new()
+	smk_p.position = Vector3(9.85, cab_y + 3.45, 3.55)
+	smk_p.amount = 28
+	smk_p.lifetime = 3.2
+	smk_p.preprocess = 3.2
+	var smk_pm := ParticleProcessMaterial.new()
+	smk_pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
+	smk_pm.emission_sphere_radius = 0.14
+	smk_pm.direction = Vector3(0.28, 1.0, 0.05)
+	smk_pm.spread = 16.0
+	smk_pm.initial_velocity_min = 0.72
+	smk_pm.initial_velocity_max = 1.05
+	smk_pm.gravity = Vector3(0.42, 0.22, 0.06)
+	smk_pm.damping_min = 0.12; smk_pm.damping_max = 0.22
+	smk_pm.scale_min = 0.55; smk_pm.scale_max = 1.45
+	var smk_sc := Curve.new()
+	smk_sc.add_point(Vector2(0.0, 0.32)); smk_sc.add_point(Vector2(0.45, 0.95)); smk_sc.add_point(Vector2(1.0, 1.55))
+	var smk_st := CurveTexture.new(); smk_st.curve = smk_sc
+	smk_pm.scale_curve = smk_st
+	var smk_grad := Gradient.new()
+	smk_grad.offsets = PackedFloat32Array([0.0, 0.18, 0.65, 1.0])
+	smk_grad.colors = PackedColorArray([Color(0.94, 0.96, 1.0, 0.0), Color(0.95, 0.97, 1.0, 0.72), Color(0.90, 0.94, 1.0, 0.42), Color(0.88, 0.92, 1.0, 0.0)])
+	var smk_gt := GradientTexture1D.new(); smk_gt.gradient = smk_grad
+	smk_pm.color_ramp = smk_gt
+	smk_p.process_material = smk_pm
+	var smk_qm := QuadMesh.new(); smk_qm.size = Vector2(1.05, 1.05)
+	var smk_qmat := StandardMaterial3D.new()
+	smk_qmat.albedo_texture = _make_soft_puff_texture(); smk_qmat.vertex_color_use_as_albedo = true
+	smk_qmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; smk_qmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	smk_qmat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES; smk_qmat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+	smk_qm.material = smk_qmat
+	smk_p.draw_pass_1 = smk_qm
+	add_child(smk_p)
 
 	# 6j. Layered Forest Enclosure (Night: 06_29_51 Midnight-Indigo + Hero Crimson; Day: vC7OEC Lush Emerald!)
 	_place_glb(self, "pine_tree.glb", Vector2(0.90, -8.5), 6.4, Vector3(0, 12, 0), Color("#de4a38"), 0.86, -0.15, 1.08, true, 2.2, Color("#c96b2c"))
@@ -1152,13 +1213,14 @@ func _physics_process(delta: float) -> void:
 	if bird_node:
 		bird_node.position.y = terrain_height(1.22, -0.78) + 0.34 + absf(sin(t * 3.4)) * 0.05
 
+	# Golden Sun-Motes in Daytime (vC7OEC) + Glowing Fireflies at Night (06_29_51)!
 	for rec in fireflies:
 		var fl: Node3D = rec["node"]
 		var bp: Vector3 = rec["base"]
 		var ph := float(rec["ph"])
 		var sp := float(rec["spd"])
 		fl.position = bp + Vector3(sin(t * sp + ph) * 0.65, sin(t * sp * 1.3 + ph) * 0.35, cos(t * sp * 0.8 + ph) * 0.65)
-		fl.visible = is_night
+		fl.visible = true
 
 	if ink_fx:
 		ink_fx.step(delta, player.position, moving)
