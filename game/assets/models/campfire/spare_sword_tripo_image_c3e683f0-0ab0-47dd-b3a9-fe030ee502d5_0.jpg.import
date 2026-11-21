@@ -1,0 +1,44 @@
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+uid="uid://deu1lup21c1mv"
+path.s3tc="res://.godot/imported/spare_sword_tripo_image_c3e683f0-0ab0-47dd-b3a9-fe030ee502d5_0.jpg-3b596fe5cae1e6ebcfc68577433bf155.s3tc.ctex"
+metadata={
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
+}
+generator_parameters={
+"md5": "7572a0ab08a06b9f968331e8cb03753f"
+}
+
+[deps]
+
+source_file="res://assets/models/campfire/spare_sword_tripo_image_c3e683f0-0ab0-47dd-b3a9-fe030ee502d5_0.jpg"
+dest_files=["res://.godot/imported/spare_sword_tripo_image_c3e683f0-0ab0-47dd-b3a9-fe030ee502d5_0.jpg-3b596fe5cae1e6ebcfc68577433bf155.s3tc.ctex"]
+
+[params]
+
+compress/mode=2
+compress/high_quality=false
+compress/lossy_quality=0.7
+compress/uastc_level=0
+compress/rdo_quality_loss=0.0
+compress/hdr_compression=1
+compress/normal_map=0
+compress/channel_pack=0
+mipmaps/generate=true
+mipmaps/limit=-1
+roughness/mode=0
+roughness/src_normal=""
+process/channel_remap/red=0
+process/channel_remap/green=1
+process/channel_remap/blue=2
+process/channel_remap/alpha=3
+process/fix_alpha_border=true
+process/premult_alpha=false
+process/normal_map_invert_y=false
+process/hdr_as_srgb=false
+process/hdr_clamp_exposure=false
+process/size_limit=0
+detect_3d/compress_to=0

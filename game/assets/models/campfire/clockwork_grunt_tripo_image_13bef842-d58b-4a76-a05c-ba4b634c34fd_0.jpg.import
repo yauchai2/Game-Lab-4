@@ -1,0 +1,44 @@
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+uid="uid://c1mvhhxf1tmpg"
+path.s3tc="res://.godot/imported/clockwork_grunt_tripo_image_13bef842-d58b-4a76-a05c-ba4b634c34fd_0.jpg-ca192dd6e47a24113f36e69184c48cd7.s3tc.ctex"
+metadata={
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
+}
+generator_parameters={
+"md5": "98170fc687e767abb1b8ed8fac2f5c89"
+}
+
+[deps]
+
+source_file="res://assets/models/campfire/clockwork_grunt_tripo_image_13bef842-d58b-4a76-a05c-ba4b634c34fd_0.jpg"
+dest_files=["res://.godot/imported/clockwork_grunt_tripo_image_13bef842-d58b-4a76-a05c-ba4b634c34fd_0.jpg-ca192dd6e47a24113f36e69184c48cd7.s3tc.ctex"]
+
+[params]
+
+compress/mode=2
+compress/high_quality=false
+compress/lossy_quality=0.7
+compress/uastc_level=0
+compress/rdo_quality_loss=0.0
+compress/hdr_compression=1
+compress/normal_map=0
+compress/channel_pack=0
+mipmaps/generate=true
+mipmaps/limit=-1
+roughness/mode=0
+roughness/src_normal=""
+process/channel_remap/red=0
+process/channel_remap/green=1
+process/channel_remap/blue=2
+process/channel_remap/alpha=3
+process/fix_alpha_border=true
+process/premult_alpha=false
+process/normal_map_invert_y=false
+process/hdr_as_srgb=false
+process/hdr_clamp_exposure=false
+process/size_limit=0
+detect_3d/compress_to=0

@@ -1,0 +1,44 @@
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+uid="uid://c6amyysj1kjis"
+path.s3tc="res://.godot/imported/traveler_c01_tripo_image_dadeb34f-6fc2-4b7a-896b-e0c7db565402_0_0.jpg-39becf29dc380c908a4a7b256292c28a.s3tc.ctex"
+metadata={
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
+}
+generator_parameters={
+"md5": "2ffef8b177ee152de526d198ddc4fd99"
+}
+
+[deps]
+
+source_file="res://assets/models/campfire/traveler_c01_tripo_image_dadeb34f-6fc2-4b7a-896b-e0c7db565402_0_0.jpg"
+dest_files=["res://.godot/imported/traveler_c01_tripo_image_dadeb34f-6fc2-4b7a-896b-e0c7db565402_0_0.jpg-39becf29dc380c908a4a7b256292c28a.s3tc.ctex"]
+
+[params]
+
+compress/mode=2
+compress/high_quality=false
+compress/lossy_quality=0.7
+compress/uastc_level=0
+compress/rdo_quality_loss=0.0
+compress/hdr_compression=1
+compress/normal_map=0
+compress/channel_pack=0
+mipmaps/generate=true
+mipmaps/limit=-1
+roughness/mode=0
+roughness/src_normal=""
+process/channel_remap/red=0
+process/channel_remap/green=1
+process/channel_remap/blue=2
+process/channel_remap/alpha=3
+process/fix_alpha_border=true
+process/premult_alpha=false
+process/normal_map_invert_y=false
+process/hdr_as_srgb=false
+process/hdr_clamp_exposure=false
+process/size_limit=0
+detect_3d/compress_to=0
