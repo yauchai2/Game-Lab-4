@@ -526,7 +526,7 @@ func _build_water_and_waterfall(height_tex: ImageTexture) -> void:
 	water_mat.set_shader_parameter("map_min", MAP_MIN)
 	water_mat.set_shader_parameter("map_size", MAP_SIZE)
 	water_mat.set_shader_parameter("water_level", WATER_LEVEL)
-	water_mat.set_shader_parameter("bobber_pos", Vector3(-1.35, WATER_LEVEL, 5.85))
+	water_mat.set_shader_parameter("bobber_pos", Vector3(-1.32, WATER_LEVEL, 5.75))
 	water_mat.set_shader_parameter("waterfall_pos", Vector3(-8.5, WATER_LEVEL, 5.10))
 	w_inst.material_override = water_mat
 	w_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -747,19 +747,19 @@ func _build_diorama_scene() -> void:
 
 	_add_smoke(self, Vector3(CAMPFIRE_XZ.x + 0.1, fy + 0.82, CAMPFIRE_XZ.y - 0.1), false)
 
-	# 6b. Hero Campfire Props (Red diamond rug, open journal on log bench, leather backpack, bedroll)
-	_place_glb(self, "campfire_rug.glb", Vector2(2.05, 1.35), 2.30, Vector3(0, -14, 0), Color("#b83d35"), 0.22, 0.02, 1.00, true, 1.35)
-	_place_glb(self, "journal_log.glb", Vector2(2.65, -0.35), 1.90, Vector3(0, 6, 0), Color("#8c5b38"), 0.14, -0.04, 0.98, true, 1.15)
-	_place_glb(self, "journal.glb", Vector2(2.58, -0.35), 0.90, Vector3(0, -12, 0), Color("#f5e6cc"), 0.08, 0.48, 1.02)
-	_place_glb(self, "backpack.glb", Vector2(3.85, -0.42), 1.32, Vector3(0, -24, 0), Color("#995f36"), 0.16, -0.02, 1.00, true, 0.85)
-	_place_glb(self, "bedroll.glb", Vector2(3.45, 0.72), 1.05, Vector3(0, 32, 0), Color("#a63c35"), 0.18, -0.02, 0.98, true, 0.65)
+	# 6b. Hero Campfire Props (Balanced cozy diorama spacing & grounded proportions)
+	_place_glb(self, "campfire_rug.glb", Vector2(1.85, 1.55), 1.95, Vector3(0, -14, 0), Color("#b83d35"), 0.22, 0.02, 1.00, true, 1.15)
+	_place_glb(self, "journal_log.glb", Vector2(2.95, -0.25), 1.72, Vector3(0, 6, 0), Color("#8c5b38"), 0.14, -0.04, 0.98, true, 1.05)
+	_place_glb(self, "journal.glb", Vector2(2.88, -0.25), 0.82, Vector3(0, -12, 0), Color("#f5e6cc"), 0.08, 0.42, 1.02)
+	_place_glb(self, "backpack.glb", Vector2(4.05, -0.32), 1.18, Vector3(0, -24, 0), Color("#995f36"), 0.16, -0.02, 1.00, true, 0.78)
+	_place_glb(self, "bedroll.glb", Vector2(3.45, 0.95), 0.95, Vector3(0, 26, 0), Color("#a63c35"), 0.18, -0.02, 0.98, true, 0.60)
 
 	# 6c. Left of Campfire: Sitting Log + Clockwork Grunt FACING THE CAMPFIRE & CAMERA!
-	_place_glb(self, "sit_log.glb", Vector2(-2.25, 0.35), 1.62, Vector3(0, 18, 0), Color("#7d4e31"), 0.14, -0.05, 0.98, true, 1.05)
-	var grunt_root := _place_glb(self, "clockwork_grunt.glb", Vector2(-2.15, 0.32), 1.48, Vector3(0, 52, 0), Color("#c95838"), 0.18, 0.18, 1.02)
-	_place_glb(grunt_root, "grunt_helmet.glb", Vector2(0.0, 0.0), 0.74, Vector3(0, 0, 0), Color("#7088ad"), 0.16, 1.24, 1.02, false)
+	_place_glb(self, "sit_log.glb", Vector2(-2.55, 0.30), 1.52, Vector3(0, 20, 0), Color("#7d4e31"), 0.14, -0.05, 0.98, true, 0.98)
+	var grunt_root := _place_glb(self, "clockwork_grunt.glb", Vector2(-2.45, 0.28), 1.45, Vector3(0, 62, 0), Color("#c95838"), 0.18, 0.18, 1.02)
+	_place_glb(grunt_root, "grunt_helmet.glb", Vector2(0.0, 0.0), 0.72, Vector3(0, 0, 0), Color("#7088ad"), 0.16, 1.21, 1.02, false)
 	grunt_key = Node3D.new()
-	grunt_key.position = Vector3(0.0, 0.68, -0.38)
+	grunt_key.position = Vector3(0.0, 0.66, -0.38)
 	grunt_root.add_child(grunt_key)
 	var kmat := StandardMaterial3D.new(); kmat.albedo_color = Color("#e0ad38"); kmat.roughness = 0.45
 	var k_rod := MeshInstance3D.new(); var kcm := CylinderMesh.new(); kcm.top_radius = 0.035; kcm.bottom_radius = 0.035; kcm.height = 0.30
@@ -774,42 +774,43 @@ func _build_diorama_scene() -> void:
 	grunt_root.add_child(sk)
 	_place_glb(grunt_root, "grilled_fish.glb", Vector2(0.22, 1.12), 0.56, Vector3(0, 88, 0), Color("#8ca8c4"), 0.18, 0.66, 1.04, false)
 
-	# 6d. Warm Fox-Mahogany Curled Giant Wolf & Fat Yellow Bird beside Campfire (06_29_51 sleek 3/4 profile!)
+	# 6d. Warm Fox-Mahogany Curled Giant Wolf & Fat Yellow Bird beside Campfire (sleek 3/4 profile with breathing room!)
 	wolf_node = Node3D.new()
-	wolf_node.position = Vector3(0.28, terrain_height(0.28, -1.28), -1.28)
-	wolf_node.rotation_degrees.y = 14.0
+	wolf_node.position = Vector3(0.15, terrain_height(0.15, -1.52), -1.52)
+	wolf_node.rotation_degrees.y = 12.0
 	add_child(wolf_node)
-	_add_contact_shadow(wolf_node, 1.70, 0.04)
+	_add_contact_shadow(wolf_node, 1.52, 0.04)
 	var fur_d := StandardMaterial3D.new(); fur_d.albedo_color = Color("#5e2f21"); fur_d.roughness = 0.95
 	var fur_w := StandardMaterial3D.new(); fur_w.albedo_color = Color("#de8a38"); fur_w.roughness = 0.95
 	var nose_m := StandardMaterial3D.new(); nose_m.albedo_color = Color("#261410"); nose_m.roughness = 0.6
 	for wp in [
-		[Vector3(0.05, 0.62, -0.05), Vector3(2.05, 1.02, 1.65), fur_d],
-		[Vector3(-0.78, 0.54, 0.56), Vector3(1.10, 0.68, 0.92), fur_w],
-		[Vector3(-1.12, 0.22, 1.02), Vector3(0.46, 0.24, 0.72), fur_w],
-		[Vector3(0.90, 0.46, 0.70), Vector3(0.76, 0.50, 1.38), fur_d],
-		[Vector3(1.00, 0.48, 1.30), Vector3(0.44, 0.34, 0.54), fur_w]
+		[Vector3(0.04, 0.55, -0.04), Vector3(1.80, 0.90, 1.46), fur_d],
+		[Vector3(-0.70, 0.48, 0.50), Vector3(0.98, 0.60, 0.82), fur_w],
+		[Vector3(-1.00, 0.20, 0.92), Vector3(0.42, 0.22, 0.66), fur_w],
+		[Vector3(0.80, 0.42, 0.62), Vector3(0.68, 0.45, 1.24), fur_d],
+		[Vector3(0.90, 0.43, 1.16), Vector3(0.40, 0.31, 0.48), fur_w]
 	]:
 		var wm := MeshInstance3D.new(); var ws := SphereMesh.new(); ws.radius = 0.5; ws.height = 1.0
 		wm.mesh = ws; wm.scale = wp[1]; wm.position = wp[0]; wm.material_override = wp[2]
 		wolf_node.add_child(wm)
 	var w_head := Node3D.new()
-	w_head.position = Vector3(-0.76, 1.05, 0.76)
+	w_head.position = Vector3(-0.68, 0.94, 0.68)
 	w_head.rotation_degrees = Vector3(14.0, -32.0, -6.0)
 	wolf_node.add_child(w_head)
-	var cranium := MeshInstance3D.new(); var crs := SphereMesh.new(); crs.radius = 0.44; crs.height = 0.76
+	var cranium := MeshInstance3D.new(); var crs := SphereMesh.new(); crs.radius = 0.40; crs.height = 0.70
 	cranium.mesh = crs; cranium.scale = Vector3(1.0, 0.88, 1.12); cranium.material_override = fur_d; w_head.add_child(cranium)
-	var snout := MeshInstance3D.new(); var snc := CylinderMesh.new(); snc.top_radius = 0.08; snc.bottom_radius = 0.24; snc.height = 0.68
-	snout.mesh = snc; snout.rotation_degrees.x = 96.0; snout.position = Vector3(0.0, -0.06, 0.54); snout.material_override = fur_w; w_head.add_child(snout)
-	var nose := MeshInstance3D.new(); var ns := SphereMesh.new(); ns.radius = 0.08; ns.height = 0.14
-	nose.mesh = ns; nose.position = Vector3(0.0, -0.09, 0.88); nose.material_override = nose_m; w_head.add_child(nose)
-	for ex in [-0.24, 0.24]:
-		var ear := MeshInstance3D.new(); var ec := CylinderMesh.new(); ec.top_radius = 0.02; ec.bottom_radius = 0.17; ec.height = 0.58
-		ear.mesh = ec; ear.position = Vector3(ex, 0.44, -0.10); ear.rotation_degrees = Vector3(-18.0, 0.0, -ex * 42.0); ear.material_override = fur_d
+	var snout := MeshInstance3D.new(); var snc := CylinderMesh.new(); snc.top_radius = 0.075; snc.bottom_radius = 0.22; snc.height = 0.62
+	snout.mesh = snc; snout.rotation_degrees.x = 96.0; snout.position = Vector3(0.0, -0.05, 0.49); snout.material_override = fur_w; w_head.add_child(snout)
+	var nose := MeshInstance3D.new(); var ns := SphereMesh.new(); ns.radius = 0.075; ns.height = 0.13
+	nose.mesh = ns; nose.position = Vector3(0.0, -0.08, 0.80); nose.material_override = nose_m; w_head.add_child(nose)
+	for ex in [-0.22, 0.22]:
+		var ear := MeshInstance3D.new(); var ec := CylinderMesh.new(); ec.top_radius = 0.02; ec.bottom_radius = 0.15; ec.height = 0.52
+		ear.mesh = ec; ear.position = Vector3(ex, 0.40, -0.09); ear.rotation_degrees = Vector3(-18.0, 0.0, -ex * 42.0); ear.material_override = fur_d
 		w_head.add_child(ear)
 
 	bird_node = Node3D.new()
-	bird_node.position = Vector3(1.22, terrain_height(1.22, -0.78) + 0.34, -0.78)
+	bird_node.position = Vector3(2.15, terrain_height(2.15, -0.35) + 0.56, -0.35)
+	bird_node.rotation_degrees.y = -28.0
 	add_child(bird_node)
 	var b_mat := StandardMaterial3D.new(); b_mat.albedo_color = Color("#ffbf38"); b_mat.roughness = 0.9
 	var bm := MeshInstance3D.new(); var bs := SphereMesh.new(); bs.radius = 0.21; bs.height = 0.38
@@ -837,23 +838,23 @@ func _build_diorama_scene() -> void:
 
 	golem_node = _place_glb(self, "golem.glb", Vector2(-5.4, -8.6), 1.95, Vector3(0, 14, 0), Color("#9bb386"), 0.14, -0.04, 1.02, true, 1.05)
 
-	# 6f. Mid-Left Mossy Skull Cave (shifted slightly left so stones & golem are 100% clear!)
-	_place_glb(self, "skull_cave.glb", Vector2(-9.8, -2.5), 4.9, Vector3(0, -22, 0), Color("#809475"), 0.22, -0.35, 0.96, true, 2.7)
+	# 6f. Mid-Left Mossy Skull Cave (angled cleanly toward the campfire clearing, unobstructed!)
+	_place_glb(self, "skull_cave.glb", Vector2(-9.3, -2.8), 4.6, Vector3(0, -28, 0), Color("#809475"), 0.22, -0.32, 0.96, true, 2.5)
 
-	# 6g. Lower-Left Waterfall Rocks (flanking cleanly outside water sheet + mossy cliff cap!) + Fishing Pier
-	_place_glb(self, "waterfall_rock.glb", Vector2(-10.1, 3.85), 3.3, Vector3(0, 20, 0), Color("#5c6d99"), 0.32, -0.35, 0.96, true, 1.6)
-	_place_glb(self, "waterfall_rock.glb", Vector2(-6.50, 3.60), 2.2, Vector3(0, -28, 0), Color("#5c6d99"), 0.32, -0.30, 0.96, true, 1.2)
-	_place_glb(self, "waterfall_rock.glb", Vector2(-8.55, 3.05), 3.0, Vector3(0, 6, 0), Color("#63759e"), 0.30, -0.10, 0.96, true, 1.4)
+	# 6g. Lower-Left Waterfall Rocks (tightly framing waterfall cascade) + Grounded Fishing Pier
+	_place_glb(self, "waterfall_rock.glb", Vector2(-9.95, 3.85), 3.0, Vector3(0, 20, 0), Color("#5c6d99"), 0.32, -0.35, 0.96, true, 1.5)
+	_place_glb(self, "waterfall_rock.glb", Vector2(-6.85, 3.75), 2.0, Vector3(0, -28, 0), Color("#5c6d99"), 0.32, -0.30, 0.96, true, 1.1)
+	_place_glb(self, "waterfall_rock.glb", Vector2(-8.55, 3.10), 2.7, Vector3(0, 6, 0), Color("#63759e"), 0.30, -0.10, 0.96, true, 1.3)
 
 	var pier_y := WATER_LEVEL + 0.16
-	_build_fishing_pier(Vector3(-2.7, pier_y, 5.15))
-	_place_glb(self, "bucket.glb", Vector2(-2.25, 5.10), 0.68, Vector3(0, 18, 0), Color("#849bb5"), 0.16, pier_y + 0.94, 1.02, false)
-	_place_glb(self, "fishing_rod.glb", Vector2(-1.65, 5.15), 2.25, Vector3(14, -22, -24), Color("#ad6c3b"), 0.14, pier_y + 0.78, 1.00, false)
-	var line_m := MeshInstance3D.new(); var lcm := CylinderMesh.new(); lcm.top_radius = 0.012; lcm.bottom_radius = 0.012; lcm.height = 1.65
+	_build_fishing_pier(Vector3(-2.6, pier_y, 4.95))
+	_place_glb(self, "bucket.glb", Vector2(-2.20, 4.92), 0.62, Vector3(0, 18, 0), Color("#849bb5"), 0.16, pier_y + 0.78, 1.02, false)
+	_place_glb(self, "fishing_rod.glb", Vector2(-1.62, 4.98), 2.15, Vector3(14, -22, -24), Color("#ad6c3b"), 0.14, pier_y + 0.72, 1.00, false)
+	var line_m := MeshInstance3D.new(); var lcm := CylinderMesh.new(); lcm.top_radius = 0.012; lcm.bottom_radius = 0.012; lcm.height = 1.60
 	var lmat := StandardMaterial3D.new(); lmat.albedo_color = Color("#e0ecff"); lmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	line_m.mesh = lcm; line_m.material_override = lmat; line_m.position = Vector3(-1.35, WATER_LEVEL + 0.88, 5.85)
+	line_m.mesh = lcm; line_m.material_override = lmat; line_m.position = Vector3(-1.32, WATER_LEVEL + 0.85, 5.75)
 	add_child(line_m)
-	fishing_bobber = Node3D.new(); fishing_bobber.position = Vector3(-1.35, WATER_LEVEL + 0.05, 5.85); add_child(fishing_bobber)
+	fishing_bobber = Node3D.new(); fishing_bobber.position = Vector3(-1.32, WATER_LEVEL + 0.05, 5.75); add_child(fishing_bobber)
 	var b_red := MeshInstance3D.new(); var brs := SphereMesh.new(); brs.radius = 0.15; brs.height = 0.30
 	var brm := StandardMaterial3D.new(); brm.albedo_color = Color("#e04838"); brm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	b_red.mesh = brs; b_red.material_override = brm; fishing_bobber.add_child(b_red)
@@ -878,38 +879,41 @@ func _build_diorama_scene() -> void:
 
 	# Shoreline Foliage (Night: rich plum-magenta; Day: sunlit olive-lime)
 	for sh in [
-		["palm_bush.glb", Vector2(-11.8, -1.6), 2.0, 18.0, Color("#5e245c"), Color("#598f36")],
-		["palm_bush.glb", Vector2(-10.4, 0.9), 1.7, -24.0, Color("#6e2b64"), Color("#6ca33b")],
-		["palm_bush.glb", Vector2(5.0, -7.45), 1.9, 14.0, Color("#542361"), Color("#4f8533")],
-		["palm_bush.glb", Vector2(4.6, 3.6), 1.9, -16.0, Color("#66285e"), Color("#659c39")]
+		["palm_bush.glb", Vector2(-11.8, -1.6), 1.9, 18.0, Color("#5e245c"), Color("#598f36")],
+		["palm_bush.glb", Vector2(-10.4, 0.9), 1.65, -24.0, Color("#6e2b64"), Color("#6ca33b")],
+		["palm_bush.glb", Vector2(5.0, -7.45), 1.85, 14.0, Color("#542361"), Color("#4f8533")],
+		["palm_bush.glb", Vector2(5.1, 3.45), 1.55, -16.0, Color("#66285e"), Color("#659c39")]
 	]:
-		_place_glb(self, String(sh[0]), sh[1], float(sh[2]), Vector3(0, float(sh[3]), 0), sh[4], 0.78, -0.10, 1.00, true, 1.0, sh[5])
+		_place_glb(self, String(sh[0]), sh[1], float(sh[2]), Vector3(0, float(sh[3]), 0), sh[4], 0.78, -0.10, 1.00, true, 0.95, sh[5])
 
-	# Foreground Lake-Corner Framing Shrubs (Night: midnight-blue & plum; Day: rich forest & lime)
+	# Grounded Bank Framing Shrubs (planted solidly on dry mossy shores, zero rock/water overlap!)
 	for fg in [
-		["lush_shrub.glb", Vector2(-11.6, 6.7), 3.6, 20.0, Color("#183075"), Color("#256630")],
-		["lush_shrub.glb", Vector2(-9.6, 7.6), 3.0, -18.0, Color("#63245c"), Color("#6da63c")],
-		["lush_shrub.glb", Vector2(10.6, 7.3), 3.6, -28.0, Color("#183075"), Color("#256630")],
-		["lush_shrub.glb", Vector2(12.0, 6.5), 3.1, 16.0, Color("#63245c"), Color("#6da63c")]
+		["lush_shrub.glb", Vector2(-11.4, 4.4), 2.4, 20.0, Color("#183075"), Color("#256630")],
+		["lush_shrub.glb", Vector2(-12.4, 2.2), 2.1, -18.0, Color("#63245c"), Color("#6da63c")],
+		["lush_shrub.glb", Vector2(12.2, 4.8), 2.4, -28.0, Color("#183075"), Color("#256630")],
+		["lush_shrub.glb", Vector2(13.2, 2.8), 2.1, 16.0, Color("#63245c"), Color("#6da63c")]
 	]:
-		_place_glb(self, String(fg[0]), fg[1], float(fg[2]), Vector3(0, float(fg[3]), 0), fg[4], 0.82, WATER_LEVEL + 0.05, 1.00, false, 0.0, fg[5])
+		_place_glb(self, String(fg[0]), fg[1], float(fg[2]), Vector3(0, float(fg[3]), 0), fg[4], 0.82, -0.10, 1.00, true, 1.0, fg[5])
 
-	# Scattered White & Blue Bobble Wildflowers & Mossy Shore Rocks
+	# Scattered White & Blue Bobble Wildflowers (flanking stone steps & cabin lawn, zero wall clipping!)
 	for wf in [
-		Vector2(-4.4, -5.8), Vector2(-2.8, -5.4), Vector2(6.35, -5.2),
-		Vector2(6.0, -4.4), Vector2(-5.4, 2.8), Vector2(-4.0, 3.4),
-		Vector2(3.2, 2.9), Vector2(11.4, -5.2), Vector2(-9.8, -5.4)
+		Vector2(-5.3, -5.6), Vector2(-2.4, -5.2), Vector2(1.75, -2.75),
+		Vector2(5.2, -2.5), Vector2(6.35, -5.2), Vector2(6.0, -4.4),
+		Vector2(-5.4, 2.8), Vector2(-4.0, 3.4), Vector2(3.2, 2.9),
+		Vector2(11.4, -5.2), Vector2(-9.8, -5.4)
 	]:
-		flower_roots.append(_place_glb(self, "wildflowers.glb", wf, 1.15, Vector3(0, wf.x * 41.0, 0), Color.WHITE, 0.0, -0.04, 1.08))
+		flower_roots.append(_place_glb(self, "wildflowers.glb", wf, 1.08, Vector3(0, wf.x * 41.0, 0), Color.WHITE, 0.0, -0.04, 1.08))
 
+	# Natural Big/Medium/Small Shore Rock Clusters (grounded on mossy banks, clearing pier & bridge!)
 	for sr in [
-		[Vector2(-6.2, -1.4), 1.25], [Vector2(6.5, 1.8), 1.35],
-		[Vector2(10.6, 1.0), 1.18], [Vector2(11.8, -4.0), 1.22],
-		[Vector2(6.6, 5.4), 1.30], [Vector2(11.5, 5.8), 1.18],
-		[Vector2(-0.8, 4.3), 1.05], [Vector2(5.9, 4.1), 1.15]
+		[Vector2(-6.2, -1.4), 1.38], [Vector2(5.8, 1.4), 1.18],
+		[Vector2(10.6, 1.0), 0.92], [Vector2(11.8, -4.0), 1.28],
+		[Vector2(6.6, 5.4), 1.15], [Vector2(9.8, 5.2), 0.88],
+		[Vector2(1.1, 4.55), 0.85], [Vector2(5.3, 4.2), 0.82]
 	]:
 		var s_xz: Vector2 = sr[0]
-		_place_glb(self, "shore_rock.glb", s_xz, float(sr[1]), Vector3(0, s_xz.x * 31.0, 0), Color("#697aa6"), 0.28, -0.14, 0.96, true, 0.85)
+		var s_sz: float = float(sr[1])
+		_place_glb(self, "shore_rock.glb", s_xz, s_sz, Vector3(0, s_xz.x * 31.0, 0), Color("#697aa6"), 0.28, -0.14, 0.96, true, s_sz * 0.68)
 
 	# Stones break the water surface, with a small wake anchored around each base.
 	var channel_stones := PackedVector2Array([Vector2(8.5,-6.0), Vector2(8.1,1.45), Vector2(3.8,7.1), Vector2(-6.4,8.3)])
@@ -921,11 +925,11 @@ func _build_diorama_scene() -> void:
 	var wood_cols := [Color("#8c5838"), Color("#c48a58"), Color("#543525"), Color("#e0a050")]
 	var rock_cols := [Color("#63749e"), Color("#8e9ec4"), Color("#56824e"), Color("#445070")]
 	for sp in [
-		["stump.glb", Vector2(-3.9, 2.1), 1.08, wood_cols],
-		["stump.glb", Vector2(5.4, 2.0), 1.05, wood_cols],
-		["stump.glb", Vector2(4.6, -3.5), 1.02, wood_cols],
-		["shore_rock.glb", Vector2(-4.5, -3.8), 1.15, rock_cols],
-		["shore_rock.glb", Vector2(12.0, 1.2), 1.12, rock_cols]
+		["stump.glb", Vector2(-3.9, 2.1), 1.02, wood_cols],
+		["stump.glb", Vector2(4.25, 2.55), 0.95, wood_cols],
+		["stump.glb", Vector2(0.8, -5.8), 0.96, wood_cols],
+		["shore_rock.glb", Vector2(-4.5, -3.8), 1.08, rock_cols],
+		["shore_rock.glb", Vector2(12.0, 1.2), 1.05, rock_cols]
 	]:
 		var pxz: Vector2 = sp[1]
 		var p_node := _place_glb(self, String(sp[0]), pxz, float(sp[2]), Vector3(0, randf() * 360.0, 0), Color.WHITE, 0.0, -0.04, 0.98, true, 0.72)
@@ -1261,7 +1265,7 @@ func _build_forest_canopy() -> void:
 			var ground := terrain_height(px, pz)
 			if ground > WATER_LEVEL + 0.2:
 				roots.append(Vector3(px, ground, pz))
-	for pos_xz in [Vector2(-11,-7), Vector2(-13,0), Vector2(3,-10), Vector2(7,-8), Vector2(13,-6), Vector2(14,3), Vector2(-9,1), Vector2(2.5, -7.0)]:
+	for pos_xz in [Vector2(-11,-7), Vector2(-13,0), Vector2(3,-10), Vector2(7,-8), Vector2(13,-6), Vector2(14,3), Vector2(-12.8,-4.8), Vector2(1.8, -7.6)]:
 		roots.append(Vector3(pos_xz.x, terrain_height(pos_xz.x, pos_xz.y), pos_xz.y))
 	trunks.instance_count = roots.size()
 	var firs := MultiMesh.new()
@@ -1354,17 +1358,17 @@ func _build_stylized_wind_trails() -> void:
 # --- 7. Playable Traveler & Low-FOV Telephoto Miniature Camera (vC7OEC Toybox Look!) ---
 func _setup_player_and_camera() -> void:
 	player = Node3D.new()
-	# Start nestled cozily right beside the Giant Wolf & Campfire (06_29_51 composition!)
-	player.position = Vector3(0.82, terrain_height(0.82, -0.68), -0.68)
+	# Start nestled cozily beside the Giant Wolf & Campfire with clear hero silhouette!
+	player.position = Vector3(0.95, terrain_height(0.95, -0.62), -0.62)
 	add_child(player)
 	player_visual = Node3D.new()
 	player.add_child(player_visual)
-	var traveler := _place_glb(player_visual, "traveler_c01_animated.glb", Vector2.ZERO, 1.18,
-		Vector3.ZERO, Color.WHITE, 0.0, 0.0, 1.04, false, 0.45)
+	var traveler := _place_glb(player_visual, "traveler_c01_animated.glb", Vector2.ZERO, 1.32,
+		Vector3.ZERO, Color.WHITE, 0.0, 0.0, 1.04, false, 0.50)
 	var animation_players := traveler.find_children("*", "AnimationPlayer", true, false)
 	if animation_players.is_empty():
 		traveler.queue_free()
-		_place_glb(player_visual, "traveler_c01.glb", Vector2.ZERO, 1.18, Vector3.ZERO, Color.WHITE, 0.0, 0.0, 1.04, false, 0.45)
+		_place_glb(player_visual, "traveler_c01.glb", Vector2.ZERO, 1.32, Vector3.ZERO, Color.WHITE, 0.0, 0.0, 1.04, false, 0.50)
 	else:
 		player_motion = animation_players[0] as AnimationPlayer
 		for motion in [&"Idle", &"Walk"]:
@@ -1604,7 +1608,7 @@ func _physics_process(delta: float) -> void:
 	if golem_node:
 		golem_node.position.y = terrain_height(-5.4, -8.6) - 0.04 + absf(sin(t * 2.2)) * 0.06
 	if bird_node:
-		bird_node.position.y = terrain_height(1.22, -0.78) + 0.34 + absf(sin(t * 3.4)) * 0.05
+		bird_node.position.y = terrain_height(2.15, -0.35) + 0.56 + absf(sin(t * 3.4)) * 0.04
 
 	# Golden Sun-Motes in Daytime (vC7OEC) + Glowing Fireflies at Night (06_29_51)!
 	for rec in fireflies:
