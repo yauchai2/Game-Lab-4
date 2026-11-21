@@ -1,8 +1,8 @@
 extends Node3D
 
-# Handcrafted 3D Lakeside Campfire Diorama (Refined Visual Edition)
-# Atmosphere: ChatGPT Night Campfire Reference (06_29_51.png) — luminous sage-teal grass, cobalt-indigo pines, warm honey campfire
-# Diorama Tech: vC7OEC.mp4 — 96x96 3D terrain, recessed water w/ auto shore foam, vertical gradient props, contact shadows, god rays
+# Handcrafted 3D Lakeside Campfire Diorama (Gouache Night x vC7OEC Miniature Edition)
+# Atmosphere: ChatGPT Night Campfire Reference (06_29_51.png) — deep velvet midnight-indigo pines, warm olive-moss grass, rich honey campfire glow
+# Diorama Tech: vC7OEC.mp4 — 96x96 3D terrain, 1600+ wind-swayed grass tufts, recessed water w/ shore foam, dry-brush vertical-gradient props, contact shadows, day sunbeams
 # Interactive FX: Smooth Bilinear Persistent Surface State (Scorch/Snow/Wetness) + RigidBody3D Shatter Physics
 
 const SHADER_TERRAIN := preload("res://diorama/shaders/diorama_terrain.gdshader")
@@ -11,6 +11,7 @@ const SHADER_WATERFALL := preload("res://diorama/shaders/diorama_waterfall.gdsha
 const SHADER_PROP := preload("res://diorama/shaders/diorama_prop.gdshader")
 const SHADER_GODRAY := preload("res://diorama/shaders/diorama_godray.gdshader")
 const SHADER_CONTACT := preload("res://diorama/shaders/diorama_contact_shadow.gdshader")
+const SHADER_GRASS := preload("res://diorama/shaders/diorama_grass.gdshader")
 const INK_FX_SCRIPT := preload("res://prologue/InkStudioFX.gd")
 const MODEL_DIR := "res://assets/models/campfire/"
 
@@ -22,6 +23,10 @@ const CAMPFIRE_XZ := Vector2(0.0, 0.2)
 var terrain_mat: ShaderMaterial
 var water_mat: ShaderMaterial
 var contact_mat: ShaderMaterial
+var grass_mat: ShaderMaterial
+var grass_mm: MultiMesh
+var grass_positions: Array[Vector2] = []
+var godray_nodes: Array[Node3D] = []
 var godray_mats: Array[ShaderMaterial] = []
 var prop_mats: Array[ShaderMaterial] = []
 var ink_fx: Node3D
@@ -62,12 +67,13 @@ var attack_cd := 0.0
 
 # --- 1. Analytical 3D Sculpted Diorama Heightfield ---
 func _river_center_x(z: float) -> float:
-	return 8.4 + sin((z + 1.2) * 0.24) * 1.30 - (z + 1.8) * 0.24
+	return 8.3 + sin((z + 1.2) * 0.24) * 1.25 - (z + 1.8) * 0.26
 
 func _lake_shore_z(x: float) -> float:
-	var base := 4.25 + sin(x * 0.26) * 0.68 + cos(x * 0.14) * 0.42
-	if x > 5.4:
-		base += smoothstep(5.4, 10.2, x) * 2.95
+	var base := 4.35 + sin(x * 0.26) * 0.65 + cos(x * 0.14) * 0.38
+	if x > 5.2:
+		# Push lake shore cleanly southward under the right cabin peninsula so cabin sits 100% dry!
+		base += smoothstep(5.2, 9.2, x) * 3.85
 	return base
 
 func _dist_to_segment(p: Vector2, a: Vector2, b: Vector2) -> float:
@@ -81,51 +87,53 @@ func _dist_to_segment(p: Vector2, a: Vector2, b: Vector2) -> float:
 func _trail_weight(x: float, z: float) -> float:
 	var p := Vector2(x, z)
 	var pts := [
-		Vector2(-7.8, -2.5), Vector2(-4.8, -0.9), Vector2(-2.2, 0.4),
+		Vector2(-8.6, -1.9), Vector2(-5.4, -0.7), Vector2(-2.2, 0.4),
 		Vector2(0.0, 0.2), Vector2(2.8, -0.3), Vector2(5.8, -1.1),
-		Vector2(8.6, -1.1), Vector2(12.2, -1.4), Vector2(16.5, -1.2)
+		Vector2(8.5, -1.1), Vector2(12.2, -1.4), Vector2(16.5, -1.2)
 	]
 	var min_d := 999.0
 	for i in range(pts.size() - 1):
 		min_d = minf(min_d, _dist_to_segment(p, pts[i], pts[i + 1]))
-	return smoothstep(1.30, 0.42, min_d)
+	return smoothstep(1.28, 0.40, min_d)
 
 func terrain_height(x: float, z: float) -> float:
 	var p := Vector2(x, z)
-	var h := 0.12 + sin(x * 0.16) * 0.11 + cos(z * 0.18) * 0.09
+	var h := 0.14 + sin(x * 0.16) * 0.10 + cos(z * 0.18) * 0.09
 
-	# Upper-left Standing Stones & Golem Hill
-	h += smoothstep(6.2, 1.2, p.distance_to(Vector2(-7.0, -7.8))) * 1.75
+	# Upper-left Standing Stones & Golem Hill (higher & shifted slightly right so 100% unobstructed!)
+	h += smoothstep(6.0, 1.2, p.distance_to(Vector2(-5.4, -8.8))) * 2.15
 	# Mid-left Skull Cave Slope
-	h += smoothstep(5.5, 1.4, p.distance_to(Vector2(-8.6, -3.4))) * 1.45
+	h += smoothstep(5.0, 1.4, p.distance_to(Vector2(-9.8, -2.5))) * 1.18
 	# Lower-left Waterfall Cliff Ledge
-	h += smoothstep(4.2, 1.1, p.distance_to(Vector2(-10.2, 3.2))) * 1.55
+	h += smoothstep(4.2, 1.1, p.distance_to(Vector2(-9.4, 3.1))) * 1.48
 
 	# Northern & Side Forest Ridges
-	if z < -8.5:
-		h += smoothstep(-8.5, -16.0, z) * 2.1
-	if x < -12.0:
-		h += smoothstep(-12.0, -20.0, x) * 1.6
+	if z < -9.0:
+		h += smoothstep(-9.0, -16.5, z) * 2.2
+	if x < -12.5:
+		h += smoothstep(-12.5, -20.0, x) * 1.6
 	if x > 13.5:
-		h += smoothstep(13.5, 20.0, x) * 1.4
+		h += smoothstep(13.5, 20.0, x) * 1.5
 
 	# Central Campfire Clearing
-	h = lerpf(h, 0.14, smoothstep(5.2, 1.8, p.distance_to(CAMPFIRE_XZ)) * 0.85)
-	# Right Cabin Peninsula
-	h = lerpf(h, 0.40, smoothstep(4.2, 1.5, p.distance_to(Vector2(9.2, 4.4))) * 0.84)
+	h = lerpf(h, 0.15, smoothstep(5.4, 1.8, p.distance_to(CAMPFIRE_XZ)) * 0.86)
 
-	# Carved Right River Valley
+	# Carved Right River Valley (curves gracefully around the cabin peninsula)
 	var rx := _river_center_x(z)
 	var d_river := absf(x - rx)
-	var river_w := 2.30 if z < 4.5 else 3.1
-	h = lerpf(h, -1.42, smoothstep(river_w + 1.35, river_w * 0.45, d_river))
+	var river_w := 2.15 if z < 4.2 else 2.75
+	h = lerpf(h, -1.42, smoothstep(river_w + 1.25, river_w * 0.45, d_river))
 
 	# Carved Deep Southern Lake Basin
 	var shore_z := _lake_shore_z(x)
-	var lake_cut := smoothstep(shore_z - 1.25, shore_z + 1.35, z)
+	var lake_cut := smoothstep(shore_z - 1.15, shore_z + 1.25, z)
 	if x < -7.0 and z < 4.8:
 		lake_cut *= smoothstep(3.6, 4.9, z)
 	h = lerpf(h, -1.68, lake_cut)
+
+	# Raised Dry Right Cabin Peninsula (applied AFTER river/lake carve so cabin is ALWAYS high & dry!)
+	var cab_pen := smoothstep(4.6, 1.85, p.distance_to(Vector2(10.0, 5.25)))
+	h = lerpf(h, 0.60, cab_pen * 0.92)
 	return h
 
 func _ready() -> void:
@@ -136,18 +144,19 @@ func _ready() -> void:
 	add_child(ink_fx)
 	var state_tex: ImageTexture = ink_fx.setup(Vector3(CAMPFIRE_XZ.x, terrain_height(CAMPFIRE_XZ.x, CAMPFIRE_XZ.y), CAMPFIRE_XZ.y))
 	ink_fx.state_img.fill(Color(0.0, 0.0, 0.0, 1.0))
-	ink_fx.paint_scorch(Vector3(CAMPFIRE_XZ.x, 0.0, CAMPFIRE_XZ.y), 0.95, 0.38)
+	ink_fx.paint_scorch(Vector3(CAMPFIRE_XZ.x, 0.0, CAMPFIRE_XZ.y), 0.95, 0.36)
 	ink_fx.state_tex.update(ink_fx.state_img)
 
 	_setup_environment_and_lights()
 	var height_tex := _build_sculpted_terrain(state_tex)
+	_build_painterly_grass_tufts()
 	_build_water_and_waterfall(height_tex)
 	_build_diorama_scene()
 	_setup_player_and_camera()
 	_setup_minimal_ui()
 	_apply_time_of_day(true)
 
-# --- 2. Luminous Night-vs-Day Filmic Lighting (ZERO Pitch-Black Crush!) ---
+# --- 2. Cozy Velvet Midnight-Indigo Night vs. Sunlit Emerald Day ---
 func _setup_environment_and_lights() -> void:
 	env = Environment.new()
 	var sky := Sky.new()
@@ -156,15 +165,14 @@ func _setup_environment_and_lights() -> void:
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	# Filmic tonemapping keeps night indigos & sage greens luminous like gouache!
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	env.tonemap_exposure = 1.12
+	env.tonemap_exposure = 0.98
 	env.glow_enabled = true
-	env.glow_intensity = 0.28
-	env.glow_bloom = 0.06
-	env.glow_hdr_threshold = 1.08
+	env.glow_intensity = 0.22
+	env.glow_bloom = 0.05
+	env.glow_hdr_threshold = 1.12
 	env.fog_enabled = true
-	env.fog_density = 0.0055
+	env.fog_density = 0.0045
 
 	world_env = WorldEnvironment.new()
 	world_env.environment = env
@@ -173,86 +181,97 @@ func _setup_environment_and_lights() -> void:
 	key_light = DirectionalLight3D.new()
 	key_light.rotation_degrees = Vector3(-46.0, -32.0, 0.0)
 	key_light.shadow_enabled = true
-	key_light.shadow_blur = 2.8
+	key_light.shadow_blur = 2.6
 	key_light.shadow_bias = 0.03
 	add_child(key_light)
 
-	# Focused warm honey campfire glow (warms center without turning bridge/cabin neon!)
+	# Rich cozy honey-amber campfire glow (warms center & spills warmly onto surrounding grass!)
 	campfire_light = OmniLight3D.new()
-	campfire_light.light_color = Color("#ffa84c")
-	campfire_light.light_energy = 2.45
-	campfire_light.omni_range = 9.2
-	campfire_light.omni_attenuation = 1.55
+	campfire_light.light_color = Color("#ff9933")
+	campfire_light.light_energy = 3.25
+	campfire_light.omni_range = 10.6
+	campfire_light.omni_attenuation = 1.45
 	campfire_light.shadow_enabled = true
 	campfire_light.shadow_blur = 2.5
-	campfire_light.position = Vector3(CAMPFIRE_XZ.x, terrain_height(CAMPFIRE_XZ.x, CAMPFIRE_XZ.y) + 1.35, CAMPFIRE_XZ.y)
+	campfire_light.position = Vector3(CAMPFIRE_XZ.x, terrain_height(CAMPFIRE_XZ.x, CAMPFIRE_XZ.y) + 1.38, CAMPFIRE_XZ.y)
 	add_child(campfire_light)
 
 	cabin_light = OmniLight3D.new()
-	cabin_light.light_color = Color("#ffc466")
-	cabin_light.light_energy = 1.65
-	cabin_light.omni_range = 5.2
-	cabin_light.position = Vector3(8.5, terrain_height(8.5, 5.2) + 1.25, 5.2)
+	cabin_light.light_color = Color("#ffba4d")
+	cabin_light.light_energy = 2.10
+	cabin_light.omni_range = 5.8
+	cabin_light.position = Vector3(9.4, terrain_height(9.4, 5.6) + 1.25, 5.8)
 	add_child(cabin_light)
 
 func _apply_time_of_day(night: bool) -> void:
 	is_night = night
 	if night:
-		# Exact 06_29_51.png Luminous Night Palette (Rich Cobalt Sky + Sage-Teal Meadow + Warm Honey Fire!)
-		sky_mat.sky_top_color = Color("#122254")
-		sky_mat.sky_horizon_color = Color("#243d7d")
-		sky_mat.ground_bottom_color = Color("#182c5c")
-		sky_mat.ground_horizon_color = Color("#243d7d")
-		env.ambient_light_color = Color("#6e88cc")
-		env.ambient_light_energy = 0.88
-		env.fog_light_color = Color("#1e3470")
-		key_light.light_color = Color("#b8d2ff")
-		key_light.light_energy = 0.78
-		campfire_light.light_energy = 2.45
-		cabin_light.light_energy = 1.65
+		# Exact 06_29_51.png Cozy Velvet Night Palette (Deep Indigo Forest + Warm Olive Meadow + Honey Fire!)
+		sky_mat.sky_top_color = Color("#091338")
+		sky_mat.sky_horizon_color = Color("#152969")
+		sky_mat.ground_bottom_color = Color("#0c1842")
+		sky_mat.ground_horizon_color = Color("#152969")
+		env.ambient_light_color = Color("#2e4485")
+		env.ambient_light_energy = 0.56
+		env.fog_light_color = Color("#122359")
+		key_light.light_color = Color("#87a8f2")
+		key_light.light_energy = 0.46
+		campfire_light.light_energy = 3.25
+		cabin_light.light_energy = 2.10
 		if terrain_mat:
-			terrain_mat.set_shader_parameter("grass_deep", Color("#2b4b4c"))
-			terrain_mat.set_shader_parameter("grass_mid", Color("#3d634f"))
-			terrain_mat.set_shader_parameter("grass_hill", Color("#567c52"))
-			terrain_mat.set_shader_parameter("trail_col", Color("#e0b27c"))
-			terrain_mat.set_shader_parameter("campfire_dirt", Color("#e8a84a"))
-			terrain_mat.set_shader_parameter("cliff_rock", Color("#475275"))
+			terrain_mat.set_shader_parameter("grass_deep", Color("#1d3236"))
+			terrain_mat.set_shader_parameter("grass_mid", Color("#36543c"))
+			terrain_mat.set_shader_parameter("grass_hill", Color("#567040"))
+			terrain_mat.set_shader_parameter("trail_col", Color("#d9a46c"))
+			terrain_mat.set_shader_parameter("campfire_dirt", Color("#f09f38"))
+			terrain_mat.set_shader_parameter("shore_sand", Color("#26384d"))
+			terrain_mat.set_shader_parameter("cliff_rock", Color("#2a314d"))
 			terrain_mat.set_shader_parameter("night_mix", 1.0)
 		if water_mat:
-			water_mat.set_shader_parameter("deep_color", Color("#1b52a6"))
-			water_mat.set_shader_parameter("shallow_color", Color("#388ce6"))
-		for gm in godray_mats:
-			gm.set_shader_parameter("ray_color", Color(0.62, 0.80, 1.0, 0.14))
+			water_mat.set_shader_parameter("deep_color", Color("#0f3070"))
+			water_mat.set_shader_parameter("shallow_color", Color("#1e54a6"))
+			water_mat.set_shader_parameter("foam_color", Color("#9ec4f5"))
+		if grass_mat:
+			grass_mat.set_shader_parameter("night_mix", 1.0)
+		for gn in godray_nodes:
+			gn.visible = false
 		for pm in prop_mats:
-			pm.set_shader_parameter("ambient_lift", 0.17)
+			pm.set_shader_parameter("ambient_lift", 0.06)
 	else:
 		# Exact vC7OEC.mp4 Sunlit Emerald Miniature Forest!
-		sky_mat.sky_top_color = Color("#5caaf2")
-		sky_mat.sky_horizon_color = Color("#c4e6ff")
-		sky_mat.ground_bottom_color = Color("#508c55")
-		sky_mat.ground_horizon_color = Color("#c4e6ff")
-		env.ambient_light_color = Color("#9cc4d4")
-		env.ambient_light_energy = 0.78
-		env.fog_light_color = Color("#a8d8eb")
-		key_light.light_color = Color("#fff3cf")
-		key_light.light_energy = 1.25
+		sky_mat.sky_top_color = Color("#4a9ef0")
+		sky_mat.sky_horizon_color = Color("#bae2ff")
+		sky_mat.ground_bottom_color = Color("#46824b")
+		sky_mat.ground_horizon_color = Color("#bae2ff")
+		env.ambient_light_color = Color("#8cb8c9")
+		env.ambient_light_energy = 0.68
+		env.fog_light_color = Color("#9fd4eb")
+		key_light.light_color = Color("#fff2c9")
+		key_light.light_energy = 1.28
 		campfire_light.light_energy = 0.85
 		cabin_light.light_energy = 0.45
 		if terrain_mat:
-			terrain_mat.set_shader_parameter("grass_deep", Color("#3d7841"))
-			terrain_mat.set_shader_parameter("grass_mid", Color("#5ea148"))
-			terrain_mat.set_shader_parameter("grass_hill", Color("#80bd57"))
-			terrain_mat.set_shader_parameter("trail_col", Color("#d9b480"))
-			terrain_mat.set_shader_parameter("campfire_dirt", Color("#d4a462"))
-			terrain_mat.set_shader_parameter("cliff_rock", Color("#7d8599"))
+			terrain_mat.set_shader_parameter("grass_deep", Color("#326e37"))
+			terrain_mat.set_shader_parameter("grass_mid", Color("#549940"))
+			terrain_mat.set_shader_parameter("grass_hill", Color("#7cb84f"))
+			terrain_mat.set_shader_parameter("trail_col", Color("#d9b17c"))
+			terrain_mat.set_shader_parameter("campfire_dirt", Color("#d4a15e"))
+			terrain_mat.set_shader_parameter("shore_sand", Color("#8fa691"))
+			terrain_mat.set_shader_parameter("cliff_rock", Color("#747d94"))
 			terrain_mat.set_shader_parameter("night_mix", 0.0)
 		if water_mat:
-			water_mat.set_shader_parameter("deep_color", Color("#1e6cc9"))
-			water_mat.set_shader_parameter("shallow_color", Color("#42aef5"))
+			water_mat.set_shader_parameter("deep_color", Color("#1b64bf"))
+			water_mat.set_shader_parameter("shallow_color", Color("#3ca8f0"))
+			water_mat.set_shader_parameter("foam_color", Color("#e6f5ff"))
+		if grass_mat:
+			grass_mat.set_shader_parameter("night_mix", 0.0)
+		for gn in godray_nodes:
+			gn.visible = true
 		for gm in godray_mats:
-			gm.set_shader_parameter("ray_color", Color(1.0, 0.94, 0.66, 0.22))
+			gm.set_shader_parameter("ray_color", Color(1.0, 0.94, 0.66, 0.24))
 		for pm in prop_mats:
-			pm.set_shader_parameter("ambient_lift", 0.08)
+			pm.set_shader_parameter("ambient_lift", 0.04)
+	_recolor_grass_tufts()
 
 # --- 3. 96x96 Sculpted 3D Terrain Mesh + Heightmap Texture ---
 func _build_sculpted_terrain(state_tex: ImageTexture) -> ImageTexture:
@@ -277,7 +296,7 @@ func _build_sculpted_terrain(state_tex: ImageTexture) -> ImageTexture:
 
 			var trail_w := _trail_weight(x, z)
 			var d_fire := Vector2(x, z).distance_to(CAMPFIRE_XZ)
-			var fire_w := smoothstep(6.2, 1.5, d_fire) * smoothstep(-0.25, 0.05, y)
+			var fire_w := smoothstep(6.6, 1.4, d_fire) * smoothstep(-0.20, 0.06, y)
 			var shore_w := smoothstep(-0.15, -0.68, y)
 			cols[idx] = Color(trail_w, fire_w, shore_w, 1.0)
 
@@ -324,6 +343,89 @@ func _build_sculpted_terrain(state_tex: ImageTexture) -> ImageTexture:
 			himg.set_pixel(px, py, Color(norm_h, 0.0, 0.0, 1.0))
 	return ImageTexture.create_from_image(himg)
 
+# --- 3b. 1,600+ Painterly Stylized Grass Tufts (06_29_51 x vC7OEC Signature!) ---
+func _build_painterly_grass_tufts() -> void:
+	# Build a charming 3-blade stylized gouache grass tuft mesh
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var blades := [
+		[Vector3(-0.07, 0.0, 0.0), Vector3(-0.13, 0.34, 0.02), 0.045],
+		[Vector3(0.0, 0.0, 0.0), Vector3(0.01, 0.44, -0.02), 0.052],
+		[Vector3(0.07, 0.0, 0.0), Vector3(0.14, 0.32, 0.02), 0.045]
+	]
+	for b in blades:
+		var base_p: Vector3 = b[0]
+		var tip_p: Vector3 = b[1]
+		var hw: float = b[2]
+		st.set_uv(Vector2(0.0, 0.0)); st.set_normal(Vector3(0, 0.3, 1).normalized()); st.add_vertex(base_p + Vector3(-hw, 0, 0))
+		st.set_uv(Vector2(1.0, 0.0)); st.set_normal(Vector3(0, 0.3, 1).normalized()); st.add_vertex(base_p + Vector3(hw, 0, 0))
+		st.set_uv(Vector2(0.5, 1.0)); st.set_normal(Vector3(0, 0.3, 1).normalized()); st.add_vertex(tip_p)
+	var tuft_mesh := st.commit()
+
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 42069
+	var xforms: Array[Transform3D] = []
+	grass_positions.clear()
+
+	for _i in range(2800):
+		var gx := rng.randf_range(-15.5, 15.5)
+		var gz := rng.randf_range(-12.5, 7.2)
+		var gy := terrain_height(gx, gz)
+		if gy < WATER_LEVEL + 0.32:
+			continue
+		if _trail_weight(gx, gz) > 0.38:
+			continue
+		var d_fire := Vector2(gx, gz).distance_to(CAMPFIRE_XZ)
+		if d_fire < 1.85:
+			continue
+		# Skip directly inside cabin footprint
+		if Vector2(gx, gz).distance_to(Vector2(9.4, 4.5)) < 2.2:
+			continue
+		# Skip directly inside skull cave footprint
+		if Vector2(gx, gz).distance_to(Vector2(-9.8, -2.5)) < 2.4:
+			continue
+		var s := rng.randf_range(0.75, 1.38)
+		var yaw := rng.randf_range(-0.45, 0.45)
+		var basis := Basis(Vector3.UP, yaw).scaled(Vector3(s, s * rng.randf_range(0.85, 1.25), s))
+		xforms.append(Transform3D(basis, Vector3(gx, gy - 0.02, gz)))
+		grass_positions.append(Vector2(gx, gz))
+		if xforms.size() >= 1650:
+			break
+
+	grass_mm = MultiMesh.new()
+	grass_mm.transform_format = MultiMesh.TRANSFORM_3D
+	grass_mm.use_colors = true
+	grass_mm.mesh = tuft_mesh
+	grass_mm.instance_count = xforms.size()
+	for i in range(xforms.size()):
+		grass_mm.set_instance_transform(i, xforms[i])
+
+	var mmi := MultiMeshInstance3D.new()
+	mmi.multimesh = grass_mm
+	grass_mat = ShaderMaterial.new()
+	grass_mat.shader = SHADER_GRASS
+	mmi.material_override = grass_mat
+	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mmi)
+
+func _recolor_grass_tufts() -> void:
+	if not grass_mm:
+		return
+	for i in range(grass_positions.size()):
+		var p := grass_positions[i]
+		var d_fire := p.distance_to(CAMPFIRE_XZ)
+		var fire_w := smoothstep(6.8, 1.9, d_fire)
+		var y := terrain_height(p.x, p.y)
+		var hill_t := clampf((y + 0.05) * 0.50, 0.0, 1.0)
+		var c: Color
+		if is_night:
+			c = Color("#243f3c").lerp(Color("#476b43"), clampf(hill_t * 0.75 + 0.25, 0.0, 1.0))
+			c = c.lerp(Color("#d9983a"), fire_w * 0.85)
+		else:
+			c = Color("#3d7d3e").lerp(Color("#88c44e"), clampf(hill_t * 0.75 + 0.25, 0.0, 1.0))
+			c = c.lerp(Color("#d9a84e"), fire_w * 0.40)
+		grass_mm.set_instance_color(i, c)
+
 # --- 4. Continuous Water Plane + Organic Curved Waterfall + Fluffy Foam Splash ---
 func _build_water_and_waterfall(height_tex: ImageTexture) -> void:
 	var w_mesh := PlaneMesh.new()
@@ -345,18 +447,18 @@ func _build_water_and_waterfall(height_tex: ImageTexture) -> void:
 	w_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(w_inst)
 
-	# Curved waterfall cascading from tucked cliff gap into fluffy foam clouds
+	# Curved waterfall cascading out from between mossy cliff stones into fluffy foam clouds
 	var wf_st := SurfaceTool.new()
 	wf_st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var wf_w := 1.75
+	var wf_w := 1.72
 	var segs := 12
 	for i in range(segs):
 		var t0 := float(i) / float(segs)
 		var t1 := float(i + 1) / float(segs)
-		var y0 := lerpf(1.38, WATER_LEVEL - 0.05, t0 * t0)
-		var y1 := lerpf(1.38, WATER_LEVEL - 0.05, t1 * t1)
-		var z0 := lerpf(3.75, 5.05, t0)
-		var z1 := lerpf(3.75, 5.05, t1)
+		var y0 := lerpf(1.32, WATER_LEVEL - 0.05, t0 * t0)
+		var y1 := lerpf(1.32, WATER_LEVEL - 0.05, t1 * t1)
+		var z0 := lerpf(3.70, 5.05, t0)
+		var z1 := lerpf(3.70, 5.05, t1)
 		var v00 := Vector3(-wf_w * 0.5, y0, z0)
 		var v10 := Vector3(wf_w * 0.5, y0, z0)
 		var v01 := Vector3(-wf_w * 0.5, y1, z1)
@@ -373,18 +475,18 @@ func _build_water_and_waterfall(height_tex: ImageTexture) -> void:
 	wf_mat.shader = SHADER_WATERFALL
 	wf_mi.material_override = wf_mat
 	wf_mi.position = Vector3(-8.5, 0.0, 0.0)
-	wf_mi.rotation_degrees.y = 12.0
+	wf_mi.rotation_degrees.y = 10.0
 	add_child(wf_mi)
 
 	# 10 Fluffy Matte-White Splash Clouds hugging the waterfall base (06_29_51.png style!)
 	for i in range(10):
-		var ang := (float(i) / 9.0 - 0.5) * 2.2
-		var pos := Vector3(-8.5 + ang * 1.05, WATER_LEVEL + 0.14 + (1.0 - absf(ang)) * 0.14, 5.12 + cos(ang) * 0.25)
-		var fm := _soft_cloud_puff(pos, randf_range(0.32, 0.56), Color(0.90, 0.97, 1.0, 0.90))
+		var ang := (float(i) / 9.0 - 0.5) * 2.1
+		var pos := Vector3(-8.5 + ang * 0.96, WATER_LEVEL + 0.14 + (1.0 - absf(ang)) * 0.14, 5.10 + cos(ang) * 0.22)
+		var fm := _soft_cloud_puff(pos, randf_range(0.28, 0.48), Color(0.86, 0.94, 1.0, 0.90))
 		waterfall_foam.append({"node": fm, "base": pos, "ph": float(i) * 0.9})
 
-# --- 5. GLB Loader with Vertical Gradient, Contact Shadow Decal & Auto Grounding ---
-func _apply_prop_shader(node: Node, aabb: AABB, tint_col: Color, tint_mix: float, brightness := 1.08, grad_str := 0.26) -> void:
+# --- 5. GLB Loader with Dry-Brush Gouache Shader, Contact Shadow Decal & Auto Grounding ---
+func _apply_prop_shader(node: Node, aabb: AABB, tint_col: Color, tint_mix: float, brightness := 1.00, grad_str := 0.42) -> void:
 	if node is MeshInstance3D:
 		var mi := node as MeshInstance3D
 		if mi.mesh:
@@ -440,7 +542,7 @@ func _add_contact_shadow(parent: Node3D, radius: float, y_off := 0.03) -> void:
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(mi)
 
-func _place_glb(parent: Node3D, fname: String, xz: Vector2, target_size: float, rot_deg := Vector3.ZERO, tint := Color.WHITE, tint_mix := 0.0, y_offset := 0.0, brightness := 1.08, use_terrain_y := true, shadow_r := 0.0) -> Node3D:
+func _place_glb(parent: Node3D, fname: String, xz: Vector2, target_size: float, rot_deg := Vector3.ZERO, tint := Color.WHITE, tint_mix := 0.0, y_offset := 0.0, brightness := 1.00, use_terrain_y := true, shadow_r := 0.0) -> Node3D:
 	var holder := Node3D.new()
 	var y := (terrain_height(xz.x, xz.y) if use_terrain_y else 0.0) + y_offset
 	holder.position = Vector3(xz.x, y, xz.y)
@@ -458,7 +560,7 @@ func _place_glb(parent: Node3D, fname: String, xz: Vector2, target_size: float, 
 			inst.scale = Vector3.ONE * s
 			var cxz := Vector2(aabb.position.x + aabb.size.x * 0.5, aabb.position.z + aabb.size.z * 0.5)
 			inst.position = Vector3(-cxz.x * s, -aabb.position.y * s, -cxz.y * s)
-			_apply_prop_shader(inst, aabb, tint, tint_mix, brightness, 0.28)
+			_apply_prop_shader(inst, aabb, tint, tint_mix, brightness, 0.42)
 			holder.add_child(inst)
 	if shadow_r > 0.0:
 		_add_contact_shadow(holder, shadow_r, 0.04 - y_offset if use_terrain_y else 0.02)
@@ -490,16 +592,16 @@ func _build_campfire_smoke_ribbon(base_pos: Vector3) -> MeshInstance3D:
 	for i in range(segs):
 		var t0 := float(i) / float(segs)
 		var t1 := float(i + 1) / float(segs)
-		var x0 := sin(t0 * PI * 1.7) * 0.45 + t0 * 1.35
-		var x1 := sin(t1 * PI * 1.7) * 0.45 + t1 * 1.35
+		var x0 := sin(t0 * PI * 1.7) * 0.42 + t0 * 1.25
+		var x1 := sin(t1 * PI * 1.7) * 0.42 + t1 * 1.25
 		var y0 := t0 * 4.4
 		var y1 := t1 * 4.4
 		var w0 := lerpf(0.05, 0.22, sin(t0 * PI * 0.85))
 		var w1 := lerpf(0.05, 0.22, sin(t1 * PI * 0.85))
 		var a0 := sin(t0 * PI) * 0.26
 		var a1 := sin(t1 * PI) * 0.26
-		var c0 := Color(0.88, 0.91, 0.97, a0)
-		var c1 := Color(0.88, 0.91, 0.97, a1)
+		var c0 := Color(0.86, 0.89, 0.96, a0)
+		var c1 := Color(0.86, 0.89, 0.96, a1)
 		st.set_color(c0); st.add_vertex(Vector3(x0 - w0, y0, 0.0))
 		st.set_color(c0); st.add_vertex(Vector3(x0 + w0, y0, 0.0))
 		st.set_color(c1); st.add_vertex(Vector3(x1 + w1, y1, 0.0))
@@ -524,16 +626,21 @@ func _build_diorama_scene() -> void:
 	# 6a. Central Campfire + S-Curve Storybook Smoke Ribbon
 	for ang_d in [-28.0, 36.0, 102.0, 158.0]:
 		var r := deg_to_rad(ang_d)
-		_place_glb(self, "charred_log.glb", CAMPFIRE_XZ + Vector2(cos(r), sin(r)) * 0.26, 0.90, Vector3(0, ang_d, 0), Color("#734836"), 0.12, -0.04, 1.02)
+		_place_glb(self, "charred_log.glb", CAMPFIRE_XZ + Vector2(cos(r), sin(r)) * 0.26, 0.90, Vector3(0, ang_d, 0), Color("#6e4230"), 0.16, -0.04, 0.95)
 
 	var fy := terrain_height(CAMPFIRE_XZ.x, CAMPFIRE_XZ.y)
+	# Cozy bright golden hearth glow disc directly under the campfire logs (06_29_51 signature!)
+	var hearth_m := MeshInstance3D.new(); var hcm := CylinderMesh.new(); hcm.top_radius = 1.25; hcm.bottom_radius = 1.25; hcm.height = 0.02
+	var hmat := StandardMaterial3D.new(); hmat.albedo_color = Color(1.0, 0.80, 0.32, 0.55); hmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; hmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	hearth_m.mesh = hcm; hearth_m.material_override = hmat; hearth_m.position = Vector3(CAMPFIRE_XZ.x, fy + 0.03, CAMPFIRE_XZ.y); add_child(hearth_m)
+
 	campfire_flame = Node3D.new()
 	campfire_flame.position = Vector3(CAMPFIRE_XZ.x, fy + 0.16, CAMPFIRE_XZ.y)
 	add_child(campfire_flame)
 	for fp in [
-		[Vector3(0.0, 0.36, 0.0), 0.34, 0.78, Color("#ff8c2b")],
-		[Vector3(0.10, 0.26, 0.05), 0.22, 0.56, Color("#ffd447")],
-		[Vector3(-0.08, 0.22, -0.04), 0.18, 0.45, Color("#fff5b2")]
+		[Vector3(0.0, 0.46, 0.0), 0.40, 0.96, Color("#ff7b1c")],
+		[Vector3(0.12, 0.34, 0.05), 0.26, 0.68, Color("#ffc42e")],
+		[Vector3(-0.10, 0.28, -0.04), 0.21, 0.54, Color("#fff5a8")]
 	]:
 		var cm := CylinderMesh.new(); cm.top_radius = 0.02; cm.bottom_radius = float(fp[1]); cm.height = float(fp[2])
 		var fi := MeshInstance3D.new(); fi.mesh = cm
@@ -541,24 +648,23 @@ func _build_diorama_scene() -> void:
 		fi.material_override = fmat; fi.position = fp[0]
 		campfire_flame.add_child(fi)
 
-	campfire_smoke_ribbon = _build_campfire_smoke_ribbon(Vector3(CAMPFIRE_XZ.x + 0.1, fy + 0.75, CAMPFIRE_XZ.y - 0.1))
+	campfire_smoke_ribbon = _build_campfire_smoke_ribbon(Vector3(CAMPFIRE_XZ.x + 0.1, fy + 0.82, CAMPFIRE_XZ.y - 0.1))
 
 	# 6b. Hero Campfire Props (Red diamond rug, open journal on log bench, leather backpack, bedroll)
-	_place_glb(self, "campfire_rug.glb", Vector2(2.05, 1.35), 2.30, Vector3(0, -14, 0), Color("#c24a40"), 0.16, 0.02, 1.08, true, 1.35)
-	_place_glb(self, "journal_log.glb", Vector2(2.65, -0.35), 1.90, Vector3(0, 6, 0), Color("#9e6b46"), 0.10, -0.04, 1.05, true, 1.15)
-	_place_glb(self, "journal.glb", Vector2(2.58, -0.35), 0.90, Vector3(0, -12, 0), Color("#faf0db"), 0.08, 0.48, 1.12)
-	_place_glb(self, "backpack.glb", Vector2(3.85, -0.42), 1.32, Vector3(0, -24, 0), Color("#a86e42"), 0.10, -0.02, 1.08, true, 0.85)
-	_place_glb(self, "bedroll.glb", Vector2(3.45, 0.72), 1.05, Vector3(0, 32, 0), Color("#b54b42"), 0.14, -0.02, 1.05, true, 0.65)
+	_place_glb(self, "campfire_rug.glb", Vector2(2.05, 1.35), 2.30, Vector3(0, -14, 0), Color("#b83d35"), 0.22, 0.02, 1.00, true, 1.35)
+	_place_glb(self, "journal_log.glb", Vector2(2.65, -0.35), 1.90, Vector3(0, 6, 0), Color("#8c5b38"), 0.14, -0.04, 0.98, true, 1.15)
+	_place_glb(self, "journal.glb", Vector2(2.58, -0.35), 0.90, Vector3(0, -12, 0), Color("#f5e6cc"), 0.08, 0.48, 1.02)
+	_place_glb(self, "backpack.glb", Vector2(3.85, -0.42), 1.32, Vector3(0, -24, 0), Color("#995f36"), 0.16, -0.02, 1.00, true, 0.85)
+	_place_glb(self, "bedroll.glb", Vector2(3.45, 0.72), 1.05, Vector3(0, 32, 0), Color("#a63c35"), 0.18, -0.02, 0.98, true, 0.65)
 
 	# 6c. Left of Campfire: Sitting Log + Clockwork Grunt FACING THE CAMPFIRE & CAMERA!
-	_place_glb(self, "sit_log.glb", Vector2(-2.25, 0.35), 1.62, Vector3(0, 18, 0), Color("#8f5d3d"), 0.10, -0.05, 1.05, true, 1.05)
-	# Rotated +52° so his face & roasting skewer point 3/4 toward the campfire & camera!
-	var grunt_root := _place_glb(self, "clockwork_grunt.glb", Vector2(-2.15, 0.32), 1.48, Vector3(0, 52, 0), Color("#d46642"), 0.14, 0.18, 1.12)
-	_place_glb(grunt_root, "grunt_helmet.glb", Vector2(0.0, 0.0), 0.74, Vector3(0, 0, 0), Color("#869cbd"), 0.10, 1.24, 1.12, false)
+	_place_glb(self, "sit_log.glb", Vector2(-2.25, 0.35), 1.62, Vector3(0, 18, 0), Color("#7d4e31"), 0.14, -0.05, 0.98, true, 1.05)
+	var grunt_root := _place_glb(self, "clockwork_grunt.glb", Vector2(-2.15, 0.32), 1.48, Vector3(0, 52, 0), Color("#c95838"), 0.18, 0.18, 1.02)
+	_place_glb(grunt_root, "grunt_helmet.glb", Vector2(0.0, 0.0), 0.74, Vector3(0, 0, 0), Color("#7088ad"), 0.16, 1.24, 1.02, false)
 	grunt_key = Node3D.new()
 	grunt_key.position = Vector3(0.0, 0.68, -0.38)
 	grunt_root.add_child(grunt_key)
-	var kmat := StandardMaterial3D.new(); kmat.albedo_color = Color("#e8bc4d"); kmat.roughness = 0.45
+	var kmat := StandardMaterial3D.new(); kmat.albedo_color = Color("#e0ad38"); kmat.roughness = 0.45
 	var k_rod := MeshInstance3D.new(); var kcm := CylinderMesh.new(); kcm.top_radius = 0.035; kcm.bottom_radius = 0.035; kcm.height = 0.30
 	k_rod.mesh = kcm; k_rod.material_override = kmat; k_rod.rotation_degrees.x = 90.0; k_rod.position = Vector3(0, 0, -0.14)
 	grunt_key.add_child(k_rod)
@@ -566,147 +672,170 @@ func _build_diorama_scene() -> void:
 		var kr := MeshInstance3D.new(); var ksm := SphereMesh.new(); ksm.radius = 0.12; ksm.height = 0.24
 		kr.mesh = ksm; kr.material_override = kmat; kr.scale = Vector3(1.0, 1.0, 0.35); kr.position = kp
 		grunt_key.add_child(kr)
-	# Roasting skewer + grilled_fish.glb extending forward (+Z) toward the campfire
 	var sk := MeshInstance3D.new(); var skm := CylinderMesh.new(); skm.top_radius = 0.018; skm.bottom_radius = 0.022; skm.height = 0.96
 	sk.mesh = skm; sk.rotation_degrees.x = 76.0; sk.position = Vector3(0.22, 0.62, 0.68)
 	grunt_root.add_child(sk)
-	_place_glb(grunt_root, "grilled_fish.glb", Vector2(0.22, 1.12), 0.56, Vector3(0, 88, 0), Color("#a8c2d9"), 0.15, 0.66, 1.15, false)
+	_place_glb(grunt_root, "grilled_fish.glb", Vector2(0.22, 1.12), 0.56, Vector3(0, 88, 0), Color("#8ca8c4"), 0.18, 0.66, 1.04, false)
 
-	# 6d. Curled Giant Wolf & Fat Yellow Bird beside Campfire
+	# 6d. Warm Fox-Mahogany Curled Giant Wolf & Fat Yellow Bird beside Campfire (06_29_51 palette!)
 	wolf_node = Node3D.new()
-	wolf_node.position = Vector3(0.35, terrain_height(0.35, -1.25), -1.25)
+	wolf_node.position = Vector3(0.28, terrain_height(0.28, -1.28), -1.28)
 	wolf_node.rotation_degrees.y = 18.0
 	add_child(wolf_node)
-	_add_contact_shadow(wolf_node, 1.45, 0.04)
-	var fur_d := StandardMaterial3D.new(); fur_d.albedo_color = Color("#4d3f4a"); fur_d.roughness = 0.95
-	var fur_w := StandardMaterial3D.new(); fur_w.albedo_color = Color("#b57d52"); fur_w.roughness = 0.95
+	_add_contact_shadow(wolf_node, 1.70, 0.04)
+	var fur_d := StandardMaterial3D.new(); fur_d.albedo_color = Color("#693626"); fur_d.roughness = 0.95
+	var fur_w := StandardMaterial3D.new(); fur_w.albedo_color = Color("#e38f3e"); fur_w.roughness = 0.95
+	var eye_m := StandardMaterial3D.new(); eye_m.albedo_color = Color("#ffe066"); eye_m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	for wp in [
-		[Vector3(0.0, 0.55, 0.0), Vector3(1.65, 0.82, 1.45), fur_d],
-		[Vector3(-0.78, 0.52, 0.55), Vector3(0.95, 0.62, 0.85), fur_w],
-		[Vector3(-0.75, 0.95, 0.72), Vector3(0.76, 0.64, 0.88), fur_d],
-		[Vector3(-0.82, 0.78, 1.15), Vector3(0.36, 0.28, 0.52), fur_w],
-		[Vector3(0.72, 0.42, 0.68), Vector3(0.62, 0.42, 1.15), fur_d]
+		[Vector3(0.0, 0.62, 0.0), Vector3(1.95, 0.98, 1.62), fur_d],
+		[Vector3(-0.84, 0.56, 0.62), Vector3(1.12, 0.70, 0.96), fur_w],
+		[Vector3(-0.80, 1.08, 0.78), Vector3(0.88, 0.72, 0.96), fur_d],
+		[Vector3(-0.88, 0.88, 1.28), Vector3(0.42, 0.32, 0.62), fur_w],
+		[Vector3(-1.12, 0.24, 1.08), Vector3(0.45, 0.26, 0.68), fur_w],
+		[Vector3(0.85, 0.46, 0.74), Vector3(0.72, 0.48, 1.32), fur_d],
+		[Vector3(0.95, 0.48, 1.32), Vector3(0.42, 0.34, 0.52), fur_w]
 	]:
 		var wm := MeshInstance3D.new(); var ws := SphereMesh.new(); ws.radius = 0.5; ws.height = 1.0
 		wm.mesh = ws; wm.scale = wp[1]; wm.position = wp[0]; wm.material_override = wp[2]
 		wolf_node.add_child(wm)
-	for ex in [-0.95, -0.55]:
-		var ear := MeshInstance3D.new(); var ec := CylinderMesh.new(); ec.top_radius = 0.03; ec.bottom_radius = 0.16; ec.height = 0.42
-		ear.mesh = ec; ear.position = Vector3(ex, 1.38, 0.68); ear.material_override = fur_d
+	for ex in [-1.04, -0.56]:
+		var ear := MeshInstance3D.new(); var ec := CylinderMesh.new(); ec.top_radius = 0.02; ec.bottom_radius = 0.20; ec.height = 0.58
+		ear.mesh = ec; ear.position = Vector3(ex, 1.56, 0.74); ear.material_override = fur_d
 		wolf_node.add_child(ear)
+		var eye := MeshInstance3D.new(); var em := BoxMesh.new(); em.size = Vector3(0.12, 0.045, 0.045)
+		eye.mesh = em; eye.position = Vector3(ex * 0.96, 1.12, 1.22); eye.material_override = eye_m
+		wolf_node.add_child(eye)
 
 	bird_node = Node3D.new()
-	bird_node.position = Vector3(1.18, terrain_height(1.18, -0.82) + 0.32, -0.82)
+	bird_node.position = Vector3(1.22, terrain_height(1.22, -0.78) + 0.34, -0.78)
 	add_child(bird_node)
-	var b_mat := StandardMaterial3D.new(); b_mat.albedo_color = Color("#ffbf3c"); b_mat.roughness = 0.9
-	var bm := MeshInstance3D.new(); var bs := SphereMesh.new(); bs.radius = 0.20; bs.height = 0.36
+	var b_mat := StandardMaterial3D.new(); b_mat.albedo_color = Color("#ffbf38"); b_mat.roughness = 0.9
+	var bm := MeshInstance3D.new(); var bs := SphereMesh.new(); bs.radius = 0.21; bs.height = 0.38
 	bm.mesh = bs; bm.material_override = b_mat; bird_node.add_child(bm)
 	var beak := MeshInstance3D.new(); var bkm := BoxMesh.new(); bkm.size = Vector3(0.08, 0.06, 0.10)
 	var bkmat := StandardMaterial3D.new(); bkmat.albedo_color = Color("#e8632c")
 	beak.mesh = bkm; beak.material_override = bkmat; beak.position = Vector3(0, 0.02, 0.20); bird_node.add_child(beak)
 
-	# 6e. Upper-Left Standing Stones & Mossy Stone Golem on Raised Knoll
+	# 6e. Upper-Left Standing Stones & Mossy Stone Golem on Raised Unobstructed Knoll!
 	for ss in [
-		[Vector2(-9.2, -7.2), 1.85, 16.0],
-		[Vector2(-8.3, -9.1), 2.45, 8.0],
-		[Vector2(-6.8, -9.9), 3.25, -4.0],
-		[Vector2(-5.0, -9.0), 2.50, -14.0],
-		[Vector2(-4.4, -7.3), 1.78, -20.0]
+		[Vector2(-7.8, -8.2), 1.95, 16.0],
+		[Vector2(-6.9, -10.0), 2.55, 8.0],
+		[Vector2(-5.4, -10.8), 3.40, -4.0],
+		[Vector2(-3.7, -9.9), 2.60, -14.0],
+		[Vector2(-3.1, -8.1), 1.85, -20.0]
 	]:
 		var sp2: Vector2 = ss[0]
 		var sz: float = ss[1]
-		_place_glb(self, "standing_stone.glb", sp2, sz, Vector3(0, float(ss[2]), 0), Color("#99a8cc"), 0.22, -0.10, 1.12, true, 0.95)
-		var orb := MeshInstance3D.new(); var os := SphereMesh.new(); os.radius = 0.11; os.height = 0.22
-		var omat := StandardMaterial3D.new(); omat.albedo_color = Color("#ffd466"); omat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		_place_glb(self, "standing_stone.glb", sp2, sz, Vector3(0, float(ss[2]), 0), Color("#7d8bb5"), 0.32, -0.10, 0.98, true, 0.95)
+		var orb := MeshInstance3D.new(); var os := SphereMesh.new(); os.radius = 0.12; os.height = 0.24
+		var omat := StandardMaterial3D.new(); omat.albedo_color = Color("#ffca4f"); omat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		orb.mesh = os; orb.material_override = omat
 		orb.position = Vector3(sp2.x, terrain_height(sp2.x, sp2.y) + sz * 0.58, sp2.y + 0.36)
 		add_child(orb)
 
-	golem_node = _place_glb(self, "golem.glb", Vector2(-6.9, -7.8), 1.85, Vector3(0, 14, 0), Color("#b5c7a3"), 0.10, -0.04, 1.14, true, 1.05)
+	golem_node = _place_glb(self, "golem.glb", Vector2(-5.4, -8.6), 1.95, Vector3(0, 14, 0), Color("#9bb386"), 0.14, -0.04, 1.02, true, 1.05)
 
-	# 6f. Mid-Left Mossy Skull Cave (turned -22° so eye sockets & dark cave mouth face trail/camera)
-	_place_glb(self, "skull_cave.glb", Vector2(-8.5, -3.5), 5.4, Vector3(0, -22, 0), Color("#9cb08e"), 0.14, -0.35, 1.10, true, 2.8)
+	# 6f. Mid-Left Mossy Skull Cave (shifted slightly left so stones & golem are 100% clear!)
+	_place_glb(self, "skull_cave.glb", Vector2(-9.8, -2.5), 4.9, Vector3(0, -22, 0), Color("#809475"), 0.22, -0.35, 0.96, true, 2.7)
 
-	# 6g. Lower-Left Waterfall Rocks tightly framing the waterfall + Fishing Pier w/ PROPERLY RAISED Bucket!
-	_place_glb(self, "waterfall_rock.glb", Vector2(-9.95, 3.85), 3.2, Vector3(0, 20, 0), Color("#7d8eb8"), 0.24, -0.35, 1.08, true, 1.6)
-	_place_glb(self, "waterfall_rock.glb", Vector2(-6.75, 4.15), 2.5, Vector3(0, -28, 0), Color("#7d8eb8"), 0.24, -0.30, 1.08, true, 1.3)
+	# 6g. Lower-Left Waterfall Rocks (flanking cleanly outside water sheet + mossy cliff cap!) + Fishing Pier
+	_place_glb(self, "waterfall_rock.glb", Vector2(-10.1, 3.85), 3.3, Vector3(0, 20, 0), Color("#5c6d99"), 0.32, -0.35, 0.96, true, 1.6)
+	_place_glb(self, "waterfall_rock.glb", Vector2(-6.50, 3.60), 2.2, Vector3(0, -28, 0), Color("#5c6d99"), 0.32, -0.30, 0.96, true, 1.2)
+	_place_glb(self, "waterfall_rock.glb", Vector2(-8.55, 3.05), 3.0, Vector3(0, 6, 0), Color("#63759e"), 0.30, -0.10, 0.96, true, 1.4)
 
 	var pier_y := WATER_LEVEL + 0.16
-	_place_glb(self, "pier.glb", Vector2(-2.7, 5.15), 3.3, Vector3(0, -6, 0), Color("#b87b4f"), 0.10, pier_y, 1.05, false)
-	# Fixed bucket height sitting squarely ON TOP of the pier planks!
-	_place_glb(self, "bucket.glb", Vector2(-2.25, 5.10), 0.68, Vector3(0, 18, 0), Color("#9bb2c9"), 0.10, pier_y + 0.94, 1.12, false)
-	_place_glb(self, "fishing_rod.glb", Vector2(-1.65, 5.15), 2.25, Vector3(14, -22, -24), Color("#c27e4a"), 0.10, pier_y + 0.78, 1.08, false)
+	_place_glb(self, "pier.glb", Vector2(-2.7, 5.15), 3.3, Vector3(0, -6, 0), Color("#9e633b"), 0.16, pier_y, 0.98, false)
+	_place_glb(self, "bucket.glb", Vector2(-2.25, 5.10), 0.68, Vector3(0, 18, 0), Color("#849bb5"), 0.16, pier_y + 0.94, 1.02, false)
+	_place_glb(self, "fishing_rod.glb", Vector2(-1.65, 5.15), 2.25, Vector3(14, -22, -24), Color("#ad6c3b"), 0.14, pier_y + 0.78, 1.00, false)
 	var line_m := MeshInstance3D.new(); var lcm := CylinderMesh.new(); lcm.top_radius = 0.012; lcm.bottom_radius = 0.012; lcm.height = 1.65
-	var lmat := StandardMaterial3D.new(); lmat.albedo_color = Color("#edf4ff"); lmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	var lmat := StandardMaterial3D.new(); lmat.albedo_color = Color("#e0ecff"); lmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	line_m.mesh = lcm; line_m.material_override = lmat; line_m.position = Vector3(-1.35, WATER_LEVEL + 0.88, 5.85)
 	add_child(line_m)
 	fishing_bobber = Node3D.new(); fishing_bobber.position = Vector3(-1.35, WATER_LEVEL + 0.05, 5.85); add_child(fishing_bobber)
 	var b_red := MeshInstance3D.new(); var brs := SphereMesh.new(); brs.radius = 0.15; brs.height = 0.30
-	var brm := StandardMaterial3D.new(); brm.albedo_color = Color("#e85242"); brm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	var brm := StandardMaterial3D.new(); brm.albedo_color = Color("#e04838"); brm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	b_red.mesh = brs; b_red.material_override = brm; fishing_bobber.add_child(b_red)
 	var b_wht := MeshInstance3D.new(); var bws := SphereMesh.new(); bws.radius = 0.145; bws.height = 0.16
-	var bwm := StandardMaterial3D.new(); bwm.albedo_color = Color("#fff9f0"); bwm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	var bwm := StandardMaterial3D.new(); bwm.albedo_color = Color("#fff6e8"); bwm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	b_wht.mesh = bws; b_wht.material_override = bwm; b_wht.position = Vector3(0, 0.08, 0); fishing_bobber.add_child(b_wht)
 
-	# 6h. Right Wooden Arch Bridge (Natural Warm Cedar — NOT Red!)
-	_place_glb(self, "bridge.glb", Vector2(8.55, -1.10), 4.60, Vector3(0, 6, 0), Color("#c48b5c"), 0.10, -0.20, 0.98, false)
+	# 6h. Right Wooden Arch Bridge (Natural Warm Cedar)
+	_place_glb(self, "bridge.glb", Vector2(8.55, -1.10), 4.60, Vector3(0, 6, 0), Color("#b07648"), 0.16, -0.22, 0.94, false)
 
-	# 6i. Cozy Red-Roof Cabin pulled slightly inward so the FULL cabin & glowing window are framed!
-	var cab_xz := Vector2(9.1, 4.4)
-	_place_glb(self, "cabin.glb", cab_xz, 4.25, Vector3(0, -10, 0), Color("#d16b4c"), 0.08, -0.06, 1.05, true, 2.2)
+	# 6i. Cozy Red-Roof Cabin HIGH & DRY on Raised Grassy Peninsula + Glowing Window & Porch!
+	var cab_xz := Vector2(9.8, 5.15)
+	var cab_node := _place_glb(self, "cabin.glb", cab_xz, 4.25, Vector3(0, -10, 0), Color("#bd5338"), 0.14, -0.02, 0.98, true, 2.2)
 	var cab_y := terrain_height(cab_xz.x, cab_xz.y)
+	# Warm glowing golden 4-pane storybook window aligned squarely inside cabin window frame!
+	var win_m := MeshInstance3D.new(); var wbm := BoxMesh.new(); wbm.size = Vector3(0.68, 0.64, 0.14)
+	var wmat := StandardMaterial3D.new(); wmat.albedo_color = Color("#ffd55c"); wmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	win_m.mesh = wbm; win_m.material_override = wmat; win_m.position = Vector3(0.06, 1.18, 1.44)
+	cab_node.add_child(win_m)
+	var bar_mat := StandardMaterial3D.new(); bar_mat.albedo_color = Color("#5e3924"); bar_mat.roughness = 0.9
+	for bsz in [[Vector3(0.72, 0.055, 0.04), Vector3(0.06, 1.18, 1.52)], [Vector3(0.055, 0.68, 0.04), Vector3(0.06, 1.18, 1.52)]]:
+		var bar_m := MeshInstance3D.new(); var bx := BoxMesh.new(); bx.size = bsz[0]
+		bar_m.mesh = bx; bar_m.material_override = bar_mat; bar_m.position = bsz[1]; cab_node.add_child(bar_m)
+	# Cozy wooden porch step in front of cabin
+	var porch := MeshInstance3D.new(); var pbm := BoxMesh.new(); pbm.size = Vector3(1.55, 0.24, 0.65)
+	var pmat := StandardMaterial3D.new(); pmat.albedo_color = Color("#a86e42"); pmat.roughness = 0.92
+	porch.mesh = pbm; porch.material_override = pmat; porch.position = Vector3(0.05, 0.12, 1.75)
+	cab_node.add_child(porch)
 	# Tightly clustered billowing chimney cloud puffs (vC7OEC style!)
 	for i in range(8):
-		var cp := _soft_cloud_puff(Vector3(9.85, cab_y + 3.25, 4.1), 0.36, Color(0.88, 0.92, 0.98, 0.50))
+		var cp := _soft_cloud_puff(Vector3(10.5, cab_y + 3.25, 4.85), 0.36, Color(0.84, 0.89, 0.96, 0.48))
 		cabin_smoke.append({"node": cp, "offset": float(i) / 8.0, "base_y": cab_y + 3.25})
 
-	# 6j. Layered Luminous Forest Enclosure (06_29_51.png Cobalt-Indigo Pines + Hero Terracotta-Crimson Pine!)
-	_place_glb(self, "pine_tree.glb", Vector2(0.85, -8.4), 6.2, Vector3(0, 12, 0), Color("#d64b3e"), 0.80, -0.15, 1.15, true, 2.2)
+	# 6j. Layered Velvety Midnight-Indigo Forest Enclosure + Rich Burnt-Crimson Hero Pine!
+	_place_glb(self, "pine_tree.glb", Vector2(0.90, -8.5), 6.4, Vector3(0, 12, 0), Color("#b83528"), 0.84, -0.15, 1.02, true, 2.2)
 	for tp in [
-		[Vector2(-12.2, -7.4), 6.6, 22.0, Color("#345cc2")],
-		[Vector2(-14.6, -2.2), 5.8, -14.0, Color("#2c50ad")],
-		[Vector2(-13.8, 2.8), 5.4, 34.0, Color("#3057b8")],
-		[Vector2(-9.6, -12.2), 5.8, 10.0, Color("#2a4ca6")],
-		[Vector2(-3.8, -12.0), 5.5, -24.0, Color("#3158ba")],
-		[Vector2(4.4, -11.8), 5.6, 18.0, Color("#2d52b0")],
-		[Vector2(6.6, -8.6), 6.0, -18.0, Color("#3660c7")],
-		[Vector2(13.2, -6.2), 5.8, 28.0, Color("#2e52b0")],
-		[Vector2(14.8, -0.2), 5.5, -10.0, Color("#3258ba")],
-		[Vector2(13.4, 3.2), 6.2, -16.0, Color("#2e53b3")],
-		[Vector2(14.4, 7.2), 5.4, 24.0, Color("#28499e")],
-		[Vector2(-13.4, 7.8), 5.2, -20.0, Color("#28499e")]
+		[Vector2(-12.4, -7.2), 6.8, 22.0, Color("#203e94")],
+		[Vector2(-15.2, -9.8), 7.2, -8.0, Color("#172e73")],
+		[Vector2(-16.2, -5.2), 6.4, 15.0, Color("#19327a")],
+		[Vector2(-14.8, -2.0), 6.0, -14.0, Color("#1c3682")],
+		[Vector2(-14.0, 2.8), 5.6, 34.0, Color("#1d3985")],
+		[Vector2(-10.2, -12.4), 6.4, 10.0, Color("#172d70")],
+		[Vector2(-3.4, -12.2), 6.0, -24.0, Color("#1d3885")],
+		[Vector2(4.4, -11.8), 6.2, 18.0, Color("#1a337d")],
+		[Vector2(6.6, -8.6), 6.2, -18.0, Color("#23439c")],
+		[Vector2(12.8, -9.8), 6.8, 12.0, Color("#183075")],
+		[Vector2(15.6, -8.2), 7.0, -18.0, Color("#162b6b")],
+		[Vector2(13.2, -5.8), 6.0, 28.0, Color("#1d3885")],
+		[Vector2(15.2, -0.4), 5.8, -10.0, Color("#203d8f")],
+		[Vector2(13.8, 3.2), 6.4, -16.0, Color("#1c3785")],
+		[Vector2(14.8, 7.2), 5.6, 24.0, Color("#172d70")],
+		[Vector2(-13.6, 7.6), 5.4, -20.0, Color("#172d70")]
 	]:
-		_place_glb(self, "pine_tree.glb", tp[0], float(tp[1]), Vector3(0, float(tp[2]), 0), tp[3], 0.78, -0.18, 1.14, true, 2.0)
+		_place_glb(self, "pine_tree.glb", tp[0], float(tp[1]), Vector3(0, float(tp[2]), 0), tp[3], 0.84, -0.18, 1.00, true, 2.0)
 
-	# Luminous Northern Woodland Backlight Trunks (06_29_51.png tall vertical blue trunks!)
-	for bx in [-13.5, -10.2, -7.4, -4.5, -1.8, 1.2, 4.0, 6.8, 9.6, 12.6]:
-		var tr_h := randf_range(7.0, 10.5)
+	# Luminous Northern Woodland Backlight Trunks (06_29_51.png vertical deep-blue trunks!)
+	for bx in [-14.2, -11.4, -8.5, -5.6, -2.8, 0.2, 3.0, 5.8, 8.6, 11.4, 14.2]:
+		var tr_h := randf_range(7.5, 11.0)
 		var tr_m := MeshInstance3D.new()
-		var tcm := CylinderMesh.new(); tcm.top_radius = 0.45; tcm.bottom_radius = 0.55; tcm.height = tr_h
+		var tcm := CylinderMesh.new(); tcm.top_radius = 0.48; tcm.bottom_radius = 0.58; tcm.height = tr_h
 		var tmat := StandardMaterial3D.new()
-		tmat.albedo_color = Color("#243f85") if int(absf(bx)) % 2 == 0 else Color("#1b306b")
+		tmat.albedo_color = Color("#1b3478") if int(absf(bx)) % 2 == 0 else Color("#122457")
 		tmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		tr_m.mesh = tcm; tr_m.material_override = tmat
 		tr_m.position = Vector3(float(bx), tr_h * 0.45, -15.4 + fmod(absf(bx) * 1.7, 1.8))
 		add_child(tr_m)
 
-	# Shoreline Plum-Violet Foliage Framing
+	# Rich Plum-Magenta Shoreline Foliage (06_29_51 palette — NOT pale lavender!)
 	for sh in [
-		["palm_bush.glb", Vector2(-11.4, -1.8), 1.95, 18.0, Color("#733e7a")],
-		["palm_bush.glb", Vector2(-10.2, 0.8), 1.65, -24.0, Color("#7d4278")],
-		["palm_bush.glb", Vector2(3.8, -6.4), 1.85, 14.0, Color("#673d7d")],
-		["palm_bush.glb", Vector2(4.6, 3.6), 1.85, -16.0, Color("#75407a")]
+		["palm_bush.glb", Vector2(-11.8, -1.6), 2.0, 18.0, Color("#5e245c")],
+		["palm_bush.glb", Vector2(-10.4, 0.9), 1.7, -24.0, Color("#6e2b64")],
+		["palm_bush.glb", Vector2(3.8, -6.5), 1.9, 14.0, Color("#542361")],
+		["palm_bush.glb", Vector2(4.6, 3.6), 1.9, -16.0, Color("#66285e")]
 	]:
-		_place_glb(self, String(sh[0]), sh[1], float(sh[2]), Vector3(0, float(sh[3]), 0), sh[4], 0.65, -0.10, 1.14, true, 1.0)
+		_place_glb(self, String(sh[0]), sh[1], float(sh[2]), Vector3(0, float(sh[3]), 0), sh[4], 0.78, -0.10, 1.00, true, 1.0)
 
-	# Foreground Lake-Corner Framing Shrubs (floating cleanly at WATER_LEVEL + 0.05 so they frame bottom corners!)
+	# Foreground Lake-Corner Framing Shrubs (Rich Midnight-Blue & Plum symmetrically framing BOTH bottom corners!)
 	for fg in [
-		["lush_shrub.glb", Vector2(-11.4, 6.6), 3.2, 20.0, Color("#2e52b0")],
-		["lush_shrub.glb", Vector2(-9.5, 7.4), 2.6, -18.0, Color("#7d4282")],
-		["lush_shrub.glb", Vector2(11.4, 7.3), 3.1, -28.0, Color("#2e52b0")],
-		["lush_shrub.glb", Vector2(12.8, 6.2), 2.6, 16.0, Color("#7d4282")]
+		["lush_shrub.glb", Vector2(-11.6, 6.7), 3.6, 20.0, Color("#183075")],
+		["lush_shrub.glb", Vector2(-9.6, 7.6), 3.0, -18.0, Color("#63245c")],
+		["lush_shrub.glb", Vector2(10.6, 7.3), 3.6, -28.0, Color("#183075")],
+		["lush_shrub.glb", Vector2(12.0, 6.5), 3.1, 16.0, Color("#63245c")]
 	]:
-		_place_glb(self, String(fg[0]), fg[1], float(fg[2]), Vector3(0, float(fg[3]), 0), fg[4], 0.72, WATER_LEVEL + 0.05, 1.14, false, 0.0)
+		_place_glb(self, String(fg[0]), fg[1], float(fg[2]), Vector3(0, float(fg[3]), 0), fg[4], 0.82, WATER_LEVEL + 0.05, 1.00, false, 0.0)
 
 	# Scattered White & Blue Bobble Wildflowers & Mossy Shore Rocks
 	for wf in [
@@ -714,20 +843,20 @@ func _build_diorama_scene() -> void:
 		Vector2(6.0, -4.4), Vector2(-5.4, 2.8), Vector2(-4.0, 3.4),
 		Vector2(3.2, 2.9), Vector2(11.4, -5.2), Vector2(-9.8, -5.4)
 	]:
-		_place_glb(self, "wildflowers.glb", wf, 1.15, Vector3(0, wf.x * 41.0, 0), Color.WHITE, 0.0, -0.04, 1.20)
+		_place_glb(self, "wildflowers.glb", wf, 1.15, Vector3(0, wf.x * 41.0, 0), Color.WHITE, 0.0, -0.04, 1.08)
 
 	for sr in [
 		[Vector2(-6.2, -1.4), 1.25], [Vector2(6.5, 1.8), 1.35],
 		[Vector2(10.6, 1.0), 1.18], [Vector2(11.8, -4.0), 1.22],
-		[Vector2(7.2, 5.8), 1.28], [Vector2(-0.8, 4.3), 1.05],
-		[Vector2(5.9, 4.1), 1.15]
+		[Vector2(6.6, 5.4), 1.30], [Vector2(11.5, 5.8), 1.18],
+		[Vector2(-0.8, 4.3), 1.05], [Vector2(5.9, 4.1), 1.15]
 	]:
 		var s_xz: Vector2 = sr[0]
-		_place_glb(self, "shore_rock.glb", s_xz, float(sr[1]), Vector3(0, s_xz.x * 31.0, 0), Color("#8a9cc4"), 0.18, -0.14, 1.08, true, 0.85)
+		_place_glb(self, "shore_rock.glb", s_xz, float(sr[1]), Vector3(0, s_xz.x * 31.0, 0), Color("#697aa6"), 0.28, -0.14, 0.96, true, 0.85)
 
 	# 6k. Interactive Shatterable Props (RigidBody3D Physics Shards + Pixel Sparks + Smooth Scorch)
 	var wood_cols := [Color("#8c5838"), Color("#c48a58"), Color("#543525"), Color("#e0a050")]
-	var rock_cols := [Color("#7a8aad"), Color("#a6b5d4"), Color("#56824e"), Color("#586482")]
+	var rock_cols := [Color("#63749e"), Color("#8e9ec4"), Color("#56824e"), Color("#445070")]
 	for sp in [
 		["stump.glb", Vector2(-3.9, 2.1), 1.08, wood_cols],
 		["stump.glb", Vector2(5.4, 2.0), 1.05, wood_cols],
@@ -736,10 +865,10 @@ func _build_diorama_scene() -> void:
 		["shore_rock.glb", Vector2(12.0, 1.2), 1.12, rock_cols]
 	]:
 		var pxz: Vector2 = sp[1]
-		var p_node := _place_glb(self, String(sp[0]), pxz, float(sp[2]), Vector3(0, randf() * 360.0, 0), Color.WHITE, 0.0, -0.04, 1.08, true, 0.72)
+		var p_node := _place_glb(self, String(sp[0]), pxz, float(sp[2]), Vector3(0, randf() * 360.0, 0), Color.WHITE, 0.0, -0.04, 0.98, true, 0.72)
 		ink_fx.register_shatter_prop(p_node, p_node.position, 0.95, sp[3], 3, 1)
 
-	# 6l. Soft Diagonal Volumetric God Rays (vC7OEC signature!)
+	# 6l. Soft Diagonal Volumetric Sunbeams (Shown in Daytime vC7OEC mode ONLY — hidden in Night mode!)
 	for gr in [
 		[Vector3(-5.8, 6.4, -3.5), 3.6, 16.0],
 		[Vector3(-1.2, 7.0, -2.0), 4.2, 17.0],
@@ -749,26 +878,27 @@ func _build_diorama_scene() -> void:
 		var qm := QuadMesh.new(); qm.size = Vector2(float(gr[1]), float(gr[2]))
 		var gi := MeshInstance3D.new(); gi.mesh = qm
 		var gmat := ShaderMaterial.new(); gmat.shader = SHADER_GODRAY
-		gi.material_override = gmat; godray_mats.append(gmat)
+		gi.material_override = gmat; godray_mats.append(gmat); godray_nodes.append(gi)
 		gi.position = gr[0]; gi.rotation_degrees = Vector3(14.0, -18.0, 26.0)
 		add_child(gi)
 
-	# 6m. Gentle Floating Fireflies
-	for _i in range(22):
+	# 6m. Gentle Floating Golden Fireflies
+	for _i in range(26):
 		var fx := randf_range(-11.0, 11.0)
 		var fz := randf_range(-8.0, 6.5)
 		var fy_base := maxf(WATER_LEVEL + 0.6, terrain_height(fx, fz) + randf_range(0.6, 2.4))
-		var fm := _soft_cloud_puff(Vector3(fx, fy_base, fz), 0.055, Color("#ffe38a"))
+		var fm := _soft_cloud_puff(Vector3(fx, fy_base, fz), 0.055, Color("#ffd866"))
 		fireflies.append({"node": fm, "base": fm.position, "ph": randf() * TAU, "spd": randf_range(0.8, 1.7)})
 
 # --- 7. Playable Traveler & Wider Storybook Framing Camera ---
 func _setup_player_and_camera() -> void:
 	player = Node3D.new()
-	player.position = Vector3(1.1, terrain_height(1.1, -0.35), -0.35)
+	# Start nestled cozily right beside the Giant Wolf & Campfire (06_29_51 composition!)
+	player.position = Vector3(0.82, terrain_height(0.82, -0.68), -0.68)
 	add_child(player)
 	player_visual = Node3D.new()
 	player.add_child(player_visual)
-	_place_glb(player_visual, "traveler_c01.glb", Vector2.ZERO, 1.18, Vector3.ZERO, Color.WHITE, 0.0, 0.0, 1.14, false, 0.45)
+	_place_glb(player_visual, "traveler_c01.glb", Vector2.ZERO, 1.18, Vector3.ZERO, Color.WHITE, 0.0, 0.0, 1.04, false, 0.45)
 
 	camera = Camera3D.new()
 	camera.projection = Camera3D.PROJECTION_PERSPECTIVE
@@ -787,8 +917,7 @@ func _update_camera(lerp_w: float) -> void:
 		var radius := 28.0
 		desired = target + Vector3(sin(orbit_angle) * radius, 16.5, cos(orbit_angle) * radius)
 	else:
-		# Pulled back to frame FULL 06_29_51.png diorama (lake + waterfall + pier + camp + stones + full cabin + forest!)
-		target = player.position.lerp(Vector3(0.1, 0.25, -0.4), 0.72)
+		target = player.position.lerp(Vector3(0.1, 0.25, -0.4), 0.74)
 		desired = target + Vector3(0.0, 15.2, 26.2)
 	camera.position = camera.position.lerp(desired, lerp_w) if lerp_w < 1.0 else desired
 	camera.look_at(target)
@@ -802,8 +931,8 @@ func _setup_minimal_ui() -> void:
 	hint_panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
 	hint_panel.offset_left = 18; hint_panel.offset_bottom = -16; hint_panel.offset_top = -52; hint_panel.offset_right = 680
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.08, 0.13, 0.28, 0.68)
-	sb.border_color = Color(0.95, 0.78, 0.42, 0.45)
+	sb.bg_color = Color(0.06, 0.10, 0.24, 0.72)
+	sb.border_color = Color(0.95, 0.76, 0.38, 0.45)
 	sb.set_border_width_all(1); sb.set_corner_radius_all(14)
 	sb.content_margin_left = 14; sb.content_margin_right = 14; sb.content_margin_top = 6; sb.content_margin_bottom = 6
 	hint_panel.add_theme_stylebox_override("panel", sb)
@@ -922,8 +1051,8 @@ func _physics_process(delta: float) -> void:
 	if campfire_flame:
 		campfire_flame.scale = Vector3(1.0 + sin(t * 8.5) * 0.06, 0.94 + sin(t * 12.5) * 0.14, 1.0 + cos(t * 9.5) * 0.06)
 	if campfire_light:
-		var base_e := 2.45 if is_night else 0.85
-		campfire_light.light_energy = base_e + sin(t * 10.5) * 0.22
+		var base_e := 3.25 if is_night else 0.85
+		campfire_light.light_energy = base_e + sin(t * 10.5) * 0.26
 	if campfire_smoke_ribbon:
 		campfire_smoke_ribbon.rotation.y = sin(t * 0.9) * 0.14
 		campfire_smoke_ribbon.scale.x = 1.0 + sin(t * 1.6) * 0.08
@@ -931,10 +1060,10 @@ func _physics_process(delta: float) -> void:
 	for rec in cabin_smoke:
 		var cn: MeshInstance3D = rec["node"]
 		var cyc := fmod(t * 0.24 + float(rec["offset"]), 1.0)
-		cn.position = Vector3(9.85 + cyc * 1.15, float(rec["base_y"]) + cyc * 2.1, 4.10 + sin(cyc * PI) * 0.18)
+		cn.position = Vector3(10.1 + cyc * 1.15, float(rec["base_y"]) + cyc * 2.1, 4.20 + sin(cyc * PI) * 0.18)
 		var sc := 0.55 + cyc * 1.15
 		cn.scale = Vector3(sc, sc * 0.92, sc)
-		(cn.material_override as StandardMaterial3D).albedo_color.a = sin(cyc * PI) * 0.45
+		(cn.material_override as StandardMaterial3D).albedo_color.a = sin(cyc * PI) * 0.44
 
 	for rec in waterfall_foam:
 		var fn: Node3D = rec["node"]
@@ -949,9 +1078,9 @@ func _physics_process(delta: float) -> void:
 	if grunt_key:
 		grunt_key.rotation.z += delta * 1.8
 	if golem_node:
-		golem_node.position.y = terrain_height(-6.9, -7.8) - 0.04 + absf(sin(t * 2.2)) * 0.06
+		golem_node.position.y = terrain_height(-5.4, -8.6) - 0.04 + absf(sin(t * 2.2)) * 0.06
 	if bird_node:
-		bird_node.position.y = terrain_height(1.18, -0.82) + 0.32 + absf(sin(t * 3.4)) * 0.05
+		bird_node.position.y = terrain_height(1.22, -0.78) + 0.34 + absf(sin(t * 3.4)) * 0.05
 
 	for rec in fireflies:
 		var fl: Node3D = rec["node"]
