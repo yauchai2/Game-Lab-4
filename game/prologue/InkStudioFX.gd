@@ -16,6 +16,7 @@ var _tex_upload_timer := 0.0
 
 # Weather: 0 = Starry Night (ambient embers), 1 = Falling Snow (frost accumulates, melts near fire), 2 = Night Rain (wet puddles)
 var weather_mode := 0
+var render_legacy_precipitation := true
 var weather_particles: Array[Dictionary] = []
 var pixel_sparks: Array[Dictionary] = []
 var physics_shards: Array[Dictionary] = []
@@ -259,7 +260,7 @@ func step(delta: float, actor_pos: Vector3, actor_moving: bool) -> void:
 			paint_scorch(_campfire_pos, 1.5, 0.015)
 
 	# 3. Live Pixel Snow / Rain Particles
-	if weather_mode != 0 and weather_particles.size() < 48:
+	if render_legacy_precipitation and weather_mode != 0 and weather_particles.size() < 48:
 		var wp := MeshInstance3D.new()
 		var bm := BoxMesh.new()
 		bm.size = Vector3(0.11, 0.11, 0.11) if weather_mode == 1 else Vector3(0.04, 0.42, 0.04)

@@ -16,10 +16,20 @@ const SHADER_WIND_TRAIL := preload("res://diorama/shaders/diorama_wind_trail.gds
 const INK_FX_SCRIPT := preload("res://prologue/InkStudioFX.gd")
 const MODEL_DIR := "res://assets/models/campfire/"
 
-const MAP_MIN := Vector2(-24.0, -18.0)
-const MAP_SIZE := Vector2(48.0, 36.0)
+const MAP_MIN := Vector2(-32.0, -27.0)
+const MAP_SIZE := Vector2(64.0, 54.0)
+const SURFACE_STATE_MIN := Vector2(-24.0, -18.0)
+const SURFACE_STATE_SIZE := Vector2(48.0, 36.0)
 const WATER_LEVEL := -0.58
 const CAMPFIRE_XZ := Vector2(0.0, 0.2)
+const CABIN_XZ := Vector2(3.85, -4.15)
+const CABIN_YAW := -PI / 10.0
+const BRIDGE_XZ := Vector2(8.55, -1.1)
+const BRIDGE_HALF_SPAN := 2.85
+const BRIDGE_HALF_WIDTH := 0.82
+const ORBIT_TARGET := Vector3(1.1, 0.95, -1.0)
+const RoundedBoxMesh := preload("res://diorama/RoundedBox.gd")
+const Precipitation := preload("res://diorama/LakesidePrecipitation.gd")
 
 var terrain_mat: ShaderMaterial
 var water_mat: ShaderMaterial
@@ -34,6 +44,7 @@ var prop_mats: Array[ShaderMaterial] = []
 var tod_foliage: Array[Dictionary] = []
 var bg_trunk_mats: Array[Dictionary] = []
 var ink_fx: Node3D
+var precipitation: Precipitation
 
 var world_env: WorldEnvironment
 var env: Environment
@@ -41,17 +52,21 @@ var sky_mat: ProceduralSkyMaterial
 var key_light: DirectionalLight3D
 var campfire_light: OmniLight3D
 var cabin_light: OmniLight3D
+var smoke_materials: Array[ShaderMaterial] = []
 var camera: Camera3D
+var camera_target := ORBIT_TARGET
+var lens_material: ShaderMaterial
+var lens_strength := 1.0
 
 var player: Node3D
 var player_visual: Node3D
+var player_motion: AnimationPlayer
+var practice_sword: Node3D
+var flower_roots: Array[Node3D] = []
 var player_yaw := 0.0
 var _walk_phase := 0.0
 
 var campfire_flame: Node3D
-var campfire_smoke_ribbon: MeshInstance3D
-var cabin_smoke: Array[Dictionary] = []
-var waterfall_foam: Array[Dictionary] = []
 var fishing_bobber: Node3D
 var grunt_key: Node3D
 var golem_node: Node3D
@@ -59,15 +74,17 @@ var wolf_node: Node3D
 var bird_node: Node3D
 var fireflies: Array[Dictionary] = []
 
-var is_night := true
-var orbit_camera := false
-var orbit_angle := 0.0
+var is_night := false
+var orbit_camera := true
+var orbit_angle := -0.42
 var show_hint := true
+var hud_parent: Node
 var hint_panel: PanelContainer
 var hint_label: Label
 var toast_label: Label
 var toast_timer := 0.0
 var attack_cd := 0.0
+var scene_time := 0.0
 
 # --- 1. Analytical 3D Sculpted Diorama Heightfield ---
 func _river_center_x(z: float) -> float:
@@ -92,13 +109,17 @@ func _trail_weight(x: float, z: float) -> float:
 	var p := Vector2(x, z)
 	var pts := [
 		Vector2(-8.6, -1.9), Vector2(-5.4, -0.7), Vector2(-2.2, 0.4),
-		Vector2(0.0, 0.2), Vector2(2.8, -0.3), Vector2(5.8, -1.1),
+		Vector2(0.0, 0.2), Vector2(2.8, -0.8), Vector2(5.8, -1.1),
 		Vector2(8.5, -1.1), Vector2(12.2, -1.4), Vector2(16.5, -1.2)
 	]
 	var min_d := 999.0
 	for i in range(pts.size() - 1):
 		min_d = minf(min_d, _dist_to_segment(p, pts[i], pts[i + 1]))
-	return smoothstep(1.28, 0.40, min_d)
+	var hill_turn := _dist_to_segment(p, Vector2(-5.4, -0.7), Vector2(-3.0, -4.3))
+	var hill_ascent := _dist_to_segment(p, Vector2(-3.0, -4.3), Vector2(-5.2, -8.4))
+	var cabin_walk := _dist_to_segment(p, Vector2(2.8, -0.8), CABIN_XZ + Vector2(-0.5, 1.5))
+	var branch := minf(cabin_walk, minf(hill_turn, hill_ascent))
+	return maxf(smoothstep(1.28, 0.40, min_d), smoothstep(0.90, 0.27, branch))
 
 func terrain_height(x: float, z: float) -> float:
 	var p := Vector2(x, z)
@@ -111,6 +132,12 @@ func terrain_height(x: float, z: float) -> float:
 	# Lower-left Waterfall Cliff Ledge
 	h += smoothstep(4.2, 1.1, p.distance_to(Vector2(-9.4, 3.1))) * 1.48
 
+	# Two overlapping shelves give the stone circle a distinct profile from the lake.
+	var ridge := (p - Vector2(-5.7, -8.4)) / Vector2(6.4, 4.3)
+	h += 0.85 * (1.0 - smoothstep(0.76, 1.02, ridge.length()))
+	var bank := (p - Vector2(-15.0, 7.4)) / Vector2(4.0, 2.7)
+	h += 1.15 * (1.0 - smoothstep(0.58, 1.04, bank.length()))
+
 	# Northern & Side Forest Ridges
 	if z < -9.0:
 		h += smoothstep(-9.0, -16.5, z) * 2.2
@@ -122,17 +149,29 @@ func terrain_height(x: float, z: float) -> float:
 	# Central Campfire Clearing
 	h = lerpf(h, 0.15, smoothstep(5.4, 1.8, p.distance_to(CAMPFIRE_XZ)) * 0.86)
 
+	# Broad upper garden. Keep the cabin footprint level and ease into the path.
+	var garden := (p - CABIN_XZ) / Vector2(4.35, 3.8)
+	var landing := 1.0 - smoothstep(0.42, 1.0, garden.length())
+	h = lerpf(h, 0.96, landing)
+
 	# Carved Right River Valley (curves gracefully around the cabin peninsula)
 	var rx := _river_center_x(z)
 	var d_river := absf(x - rx)
-	var river_w := 2.15 if z < 4.2 else 2.75
-	h = lerpf(h, -1.42, smoothstep(river_w + 1.25, river_w * 0.45, d_river))
+	var river_w := lerpf(1.93, 2.64, smoothstep(-3.0, 6.0, z)) + 0.18 * sin(z * 0.61)
+	var valley := smoothstep(river_w + 1.25, river_w * 0.45, d_river)
+	h = lerpf(h, -1.42, valley)
+	# The stream curves out of sight under the upstream forest.
+	var source_bank := smoothstep(-21.0, -26.0, z)
+	h += source_bank * valley * 2.4
 
 	# Carved Deep Southern Lake Basin
 	var shore_z := _lake_shore_z(x)
 	var lake_cut := smoothstep(shore_z - 1.15, shore_z + 1.25, z)
 	if x < -7.0 and z < 4.8:
 		lake_cut *= smoothstep(3.6, 4.9, z)
+	# The far bank closes the lake and frames the reverse orbit view.
+	var far_bank := 10.8 + sin(x * 0.32) * 2.1 + cos(x * 0.61) * 0.65
+	lake_cut *= 1.0 - smoothstep(far_bank, far_bank + 2.2, z)
 	h = lerpf(h, -1.68, lake_cut)
 
 	# Raised Dry Right Cabin Peninsula (applied AFTER river/lake carve so cabin is ALWAYS high & dry!)
@@ -145,6 +184,7 @@ func _ready() -> void:
 	contact_mat.shader = SHADER_CONTACT
 
 	ink_fx = INK_FX_SCRIPT.new()
+	ink_fx.render_legacy_precipitation = false
 	add_child(ink_fx)
 	var state_tex: ImageTexture = ink_fx.setup(Vector3(CAMPFIRE_XZ.x, terrain_height(CAMPFIRE_XZ.x, CAMPFIRE_XZ.y), CAMPFIRE_XZ.y))
 	ink_fx.state_img.fill(Color(0.0, 0.0, 0.0, 1.0))
@@ -157,8 +197,10 @@ func _ready() -> void:
 	_build_water_and_waterfall(height_tex)
 	_build_diorama_scene()
 	_setup_player_and_camera()
+	precipitation = Precipitation.new()
+	add_child(precipitation)
 	_setup_minimal_ui()
-	_apply_time_of_day(true)
+	_apply_time_of_day(is_night)
 
 # --- 2. Cozy Velvet Midnight-Indigo Night vs. Sunlit Emerald Day ---
 func _setup_environment_and_lights() -> void:
@@ -170,6 +212,10 @@ func _setup_environment_and_lights() -> void:
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	env.ssao_enabled = true
+	env.ssao_radius = 0.78
+	env.ssao_intensity = 0.74
+	env.ssao_power = 1.3
 	env.tonemap_exposure = 0.98
 	env.glow_enabled = true
 	env.glow_intensity = 0.12
@@ -186,10 +232,12 @@ func _setup_environment_and_lights() -> void:
 	add_child(world_env)
 
 	key_light = DirectionalLight3D.new()
-	key_light.rotation_degrees = Vector3(-46.0, -32.0, 0.0)
+	key_light.rotation_degrees = Vector3(-61.0, -38.0, 0.0)
 	key_light.shadow_enabled = true
-	key_light.shadow_blur = 2.6
-	key_light.shadow_bias = 0.03
+	key_light.shadow_blur = 4.0
+	key_light.directional_shadow_max_distance = 85.0
+	key_light.shadow_bias = 0.055
+	key_light.shadow_normal_bias = 1.1
 	add_child(key_light)
 
 	# Rich cozy honey-amber campfire glow (no harsh omni shadow seam splitting the red pine!)
@@ -211,7 +259,13 @@ func _setup_environment_and_lights() -> void:
 
 func _apply_time_of_day(night: bool) -> void:
 	is_night = night
+	if lens_material:
+		lens_material.set_shader_parameter("night_mix", 1.0 if night else 0.0)
+	for material in smoke_materials:
+		material.set_shader_parameter("night_mix", 1.0 if night else 0.0)
 	if night:
+		env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+		env.adjustment_saturation = 1.02
 		# Exact 06_29_51.png Cozy Velvet Night Palette (Deep Indigo Forest + Luminous Moss-Olive Meadow + Honey Fire!)
 		env.tonemap_exposure = 1.00
 		env.fog_density = 0.0042
@@ -220,11 +274,11 @@ func _apply_time_of_day(night: bool) -> void:
 		sky_mat.ground_bottom_color = Color("#0c1842")
 		sky_mat.ground_horizon_color = Color("#152969")
 		# Lift the blacks with soft blue-violet ambient so tree bases NEVER crush to pitch black!
-		env.ambient_light_color = Color("#2a3555")
-		env.ambient_light_energy = 0.74
+		env.ambient_light_color = Color("#7281a9")
+		env.ambient_light_energy = 0.81
 		env.fog_light_color = Color("#1b294d")
 		key_light.light_color = Color("#8aa4d6")
-		key_light.light_energy = 0.44
+		key_light.light_energy = 0.61
 		campfire_light.light_energy = 2.85
 		cabin_light.light_energy = 1.80
 		if terrain_mat:
@@ -238,9 +292,10 @@ func _apply_time_of_day(night: bool) -> void:
 			terrain_mat.set_shader_parameter("night_mix", 1.0)
 		if water_mat:
 			# Muted Slate Blue night water + soft grey-blue non-glowing foam!
-			water_mat.set_shader_parameter("deep_color", Color("#1c3554"))
-			water_mat.set_shader_parameter("shallow_color", Color("#2b506e"))
+			water_mat.set_shader_parameter("deep_color", Color("#263b59"))
+			water_mat.set_shader_parameter("shallow_color", Color("#44627b"))
 			water_mat.set_shader_parameter("foam_color", Color("#6b8cae"))
+			water_mat.set_shader_parameter("daylight", 0.0)
 		if grass_mat:
 			grass_mat.set_shader_parameter("night_mix", 1.0)
 		for gn in godray_nodes:
@@ -249,23 +304,25 @@ func _apply_time_of_day(night: bool) -> void:
 			pm.set_shader_parameter("ambient_lift", 0.10)
 	else:
 		# Clean vC7OEC Warm Golden Sunlight vs. Soft Cool Cyan-Blue Shadows!
-		env.tonemap_exposure = 0.88
-		env.fog_density = 0.0018
+		env.tonemap_mode = Environment.TONE_MAPPER_AGX
+		env.tonemap_exposure = 1.12
+		env.adjustment_saturation = 1.12
+		env.fog_density = 0.0011
 		sky_mat.sky_top_color = Color("#438cd4")
 		sky_mat.sky_horizon_color = Color("#a8d4f2")
 		sky_mat.ground_bottom_color = Color("#356e3b")
 		sky_mat.ground_horizon_color = Color("#a8d4f2")
-		env.ambient_light_color = Color("#4e8ec4")
-		env.ambient_light_energy = 0.52
+		env.ambient_light_color = Color("#678da9")
+		env.ambient_light_energy = 0.67
 		env.fog_light_color = Color("#8fc2de")
-		key_light.light_color = Color("#ffe294")
-		key_light.light_energy = 1.08
+		key_light.light_color = Color("#ffdf9d")
+		key_light.light_energy = 1.28
 		campfire_light.light_energy = 0.70
 		cabin_light.light_energy = 0.30
 		if terrain_mat:
-			terrain_mat.set_shader_parameter("grass_deep", Color("#336b36"))
-			terrain_mat.set_shader_parameter("grass_mid", Color("#539140"))
-			terrain_mat.set_shader_parameter("grass_hill", Color("#7fb54a"))
+			terrain_mat.set_shader_parameter("grass_deep", Color("#48702c"))
+			terrain_mat.set_shader_parameter("grass_mid", Color("#78a43c"))
+			terrain_mat.set_shader_parameter("grass_hill", Color("#95b23e"))
 			terrain_mat.set_shader_parameter("trail_col", Color("#cfa570"))
 			terrain_mat.set_shader_parameter("campfire_dirt", Color("#c49458"))
 			terrain_mat.set_shader_parameter("shore_sand", Color("#7f9682"))
@@ -273,19 +330,23 @@ func _apply_time_of_day(night: bool) -> void:
 			terrain_mat.set_shader_parameter("night_mix", 0.0)
 		if water_mat:
 			# Painterly azure-slate day water (NO electric neon blue!)
-			water_mat.set_shader_parameter("deep_color", Color("#28649e"))
-			water_mat.set_shader_parameter("shallow_color", Color("#4a90c4"))
+			water_mat.set_shader_parameter("deep_color", Color("#214693"))
+			water_mat.set_shader_parameter("shallow_color", Color("#477fc5"))
 			water_mat.set_shader_parameter("foam_color", Color("#d2e6f5"))
+			water_mat.set_shader_parameter("daylight", 1.0)
 		if grass_mat:
 			grass_mat.set_shader_parameter("night_mix", 0.0)
 		for gn in godray_nodes:
 			gn.visible = true
 		for gm in godray_mats:
-			gm.set_shader_parameter("ray_color", Color(1.0, 0.95, 0.66, 0.36))
+			gm.set_shader_parameter("ray_color", Color(1.0, 0.90, 0.54, 0.26))
 		for pm in prop_mats:
 			pm.set_shader_parameter("ambient_lift", 0.04)
 	for rec in tod_foliage:
-		(rec["mat"] as ShaderMaterial).set_shader_parameter("tint_color", rec["night"] if night else rec["day"])
+		var material: ShaderMaterial = rec["mat"]
+		material.set_shader_parameter("tint_color", rec["night"] if night else rec["day"])
+		if rec.has("canopy"):
+			material.set_shader_parameter("night_mix", 1.0 if night else 0.0)
 	for trec in bg_trunk_mats:
 		(trec["mat"] as StandardMaterial3D).albedo_color = trec["night"] if night else trec["day"]
 	for wm in wind_trail_mats:
@@ -294,7 +355,7 @@ func _apply_time_of_day(night: bool) -> void:
 
 # --- 3. 96x96 Sculpted 3D Terrain Mesh + Heightmap Texture ---
 func _build_sculpted_terrain(state_tex: ImageTexture) -> ImageTexture:
-	var grid := 96
+	var grid := 120
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 
@@ -340,8 +401,8 @@ func _build_sculpted_terrain(state_tex: ImageTexture) -> ImageTexture:
 	terrain_mat = ShaderMaterial.new()
 	terrain_mat.shader = SHADER_TERRAIN
 	terrain_mat.set_shader_parameter("state_map", state_tex)
-	terrain_mat.set_shader_parameter("map_min", MAP_MIN)
-	terrain_mat.set_shader_parameter("map_size", MAP_SIZE)
+	terrain_mat.set_shader_parameter("map_min", SURFACE_STATE_MIN)
+	terrain_mat.set_shader_parameter("map_size", SURFACE_STATE_SIZE)
 	mi.material_override = terrain_mat
 	add_child(mi)
 
@@ -352,7 +413,7 @@ func _build_sculpted_terrain(state_tex: ImageTexture) -> ImageTexture:
 	col_sh.shape = mesh.create_trimesh_shape()
 	body.add_child(col_sh)
 
-	var h_res := 128
+	var h_res := 224
 	var himg := Image.create_empty(h_res, h_res, false, Image.FORMAT_RF)
 	for py in range(h_res):
 		var z := MAP_MIN.y + (float(py) / float(h_res - 1)) * MAP_SIZE.y
@@ -383,13 +444,19 @@ func _build_painterly_grass_tufts() -> void:
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 42069
+	var clusters := FastNoiseLite.new()
+	clusters.seed = 6419
+	clusters.frequency = 0.84
 	var xforms: Array[Transform3D] = []
 	grass_positions.clear()
 
 	# Clean, Breathable Stylized Grass Tufts (2,200 tufts, cast_shadow=OFF, ZERO visual noise!)
-	for _i in range(4500):
+	for _i in range(3100):
 		var gx := rng.randf_range(-15.8, 15.8)
 		var gz := rng.randf_range(-12.5, 7.2)
+		var density := clusters.get_noise_2d(gx, gz)
+		if density < -0.13 and rng.randf() < 0.84:
+			continue
 		var gy := terrain_height(gx, gz)
 		if gy < WATER_LEVEL + 0.32:
 			continue
@@ -403,11 +470,11 @@ func _build_painterly_grass_tufts() -> void:
 		if Vector2(gx, gz).distance_to(Vector2(-9.8, -2.5)) < 2.5:
 			continue
 		var s := rng.randf_range(0.60, 1.05)
-		var yaw := rng.randf_range(-0.50, 0.50)
+		var yaw := rng.randf() * TAU
 		var basis := Basis(Vector3.UP, yaw).scaled(Vector3(s, s * rng.randf_range(0.75, 1.10), s))
 		xforms.append(Transform3D(basis, Vector3(gx, gy - 0.03, gz)))
 		grass_positions.append(Vector2(gx, gz))
-		if xforms.size() >= 2200:
+		if xforms.size() >= 1300:
 			break
 
 	grass_mm = MultiMesh.new()
@@ -440,22 +507,9 @@ func _recolor_grass_tufts() -> void:
 			c = Color("#2b4a3e").lerp(Color("#5d7d44"), clampf(hill_t * 0.72 + 0.28, 0.0, 1.0))
 			c = c.lerp(Color("#e39634"), fire_w * 0.85)
 		else:
-			c = Color("#387834").lerp(Color("#7eb842"), clampf(hill_t * 0.72 + 0.28, 0.0, 1.0))
+			c = Color("#71913c").lerp(Color("#a6ba54"), clampf(hill_t * 0.72 + 0.28, 0.0, 1.0))
 			c = c.lerp(Color("#c4964c"), fire_w * 0.28)
 		grass_mm.set_instance_color(i, c)
-
-func _make_soft_puff_texture() -> ImageTexture:
-	var sz := 64
-	var img := Image.create_empty(sz, sz, false, Image.FORMAT_RGBA8)
-	var half := float(sz) * 0.5
-	for py in range(sz):
-		for px in range(sz):
-			var dx := (float(px) + 0.5 - half) / half
-			var dy := (float(py) + 0.5 - half) / half
-			var d := sqrt(dx * dx + dy * dy)
-			var a := pow(clampf(1.0 - d, 0.0, 1.0), 1.8)
-			img.set_pixel(px, py, Color(1.0, 1.0, 1.0, a))
-	return ImageTexture.create_from_image(img)
 
 # --- 4. Continuous Water Plane + Organic Curved Waterfall + Fluffy Foam Splash ---
 func _build_water_and_waterfall(height_tex: ImageTexture) -> void:
@@ -481,8 +535,8 @@ func _build_water_and_waterfall(height_tex: ImageTexture) -> void:
 	# Curved waterfall cascading out from between mossy cliff stones into fluffy foam clouds
 	var wf_st := SurfaceTool.new()
 	wf_st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var wf_w := 1.72
-	var segs := 12
+	var wf_w := 1.95
+	var segs := 18
 	for i in range(segs):
 		var t0 := float(i) / float(segs)
 		var t1 := float(i + 1) / float(segs)
@@ -490,10 +544,10 @@ func _build_water_and_waterfall(height_tex: ImageTexture) -> void:
 		var y1 := lerpf(1.32, WATER_LEVEL - 0.05, t1 * t1)
 		var z0 := lerpf(3.70, 5.05, t0)
 		var z1 := lerpf(3.70, 5.05, t1)
-		var v00 := Vector3(-wf_w * 0.5, y0, z0)
-		var v10 := Vector3(wf_w * 0.5, y0, z0)
-		var v01 := Vector3(-wf_w * 0.5, y1, z1)
-		var v11 := Vector3(wf_w * 0.5, y1, z1)
+		var v00 := Vector3(-wf_w * (0.46 + t0 * 0.14), y0, z0)
+		var v10 := Vector3(wf_w * (0.46 + t0 * 0.10), y0, z0)
+		var v01 := Vector3(-wf_w * (0.46 + t1 * 0.14), y1, z1)
+		var v11 := Vector3(wf_w * (0.46 + t1 * 0.10), y1, z1)
 		wf_st.set_uv(Vector2(0, t0)); wf_st.add_vertex(v00)
 		wf_st.set_uv(Vector2(1, t0)); wf_st.add_vertex(v10)
 		wf_st.set_uv(Vector2(1, t1)); wf_st.add_vertex(v11)
@@ -501,6 +555,7 @@ func _build_water_and_waterfall(height_tex: ImageTexture) -> void:
 		wf_st.set_uv(Vector2(1, t1)); wf_st.add_vertex(v11)
 		wf_st.set_uv(Vector2(0, t1)); wf_st.add_vertex(v01)
 	var wf_mi := MeshInstance3D.new()
+	wf_st.generate_normals()
 	wf_mi.mesh = wf_st.commit()
 	var wf_mat := ShaderMaterial.new()
 	wf_mat.shader = SHADER_WATERFALL
@@ -512,7 +567,7 @@ func _build_water_and_waterfall(height_tex: ImageTexture) -> void:
 	# Stylized Solid Matte 3D Sphere Splash Particles (scales smoothly to 0 — NO airbrush blur!)
 	var wf_p := GPUParticles3D.new()
 	wf_p.position = Vector3(-8.5, WATER_LEVEL + 0.14, 5.12)
-	wf_p.amount = 24
+	wf_p.amount = 30
 	wf_p.lifetime = 1.10
 	wf_p.preprocess = 1.2
 	wf_p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -530,7 +585,7 @@ func _build_water_and_waterfall(height_tex: ImageTexture) -> void:
 	var wf_scale_tex := CurveTexture.new(); wf_scale_tex.curve = wf_sc
 	wf_pm.scale_curve = wf_scale_tex
 	wf_p.process_material = wf_pm
-	var wf_sm := SphereMesh.new(); wf_sm.radius = 0.26; wf_sm.height = 0.48; wf_sm.radial_segments = 10; wf_sm.rings = 6
+	var wf_sm := SphereMesh.new(); wf_sm.radius = 0.19; wf_sm.height = 0.36; wf_sm.radial_segments = 10; wf_sm.rings = 6
 	var wf_pmat := StandardMaterial3D.new()
 	wf_pmat.albedo_color = Color("#b8cde0"); wf_pmat.roughness = 1.0; wf_pmat.metallic_specular = 0.0
 	wf_sm.material = wf_pmat
@@ -642,46 +697,31 @@ func _soft_cloud_puff(pos: Vector3, rad: float, col: Color) -> MeshInstance3D:
 	add_child(mi)
 	return mi
 
-# Graceful S-Curve Storybook Campfire Smoke Ribbon (matches 06_29_51.png!)
-func _build_campfire_smoke_ribbon(base_pos: Vector3) -> MeshInstance3D:
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var segs := 18
-	for i in range(segs):
-		var t0 := float(i) / float(segs)
-		var t1 := float(i + 1) / float(segs)
-		var x0 := sin(t0 * PI * 1.7) * 0.42 + t0 * 1.25
-		var x1 := sin(t1 * PI * 1.7) * 0.42 + t1 * 1.25
-		var y0 := t0 * 4.4
-		var y1 := t1 * 4.4
-		var w0 := lerpf(0.05, 0.22, sin(t0 * PI * 0.85))
-		var w1 := lerpf(0.05, 0.22, sin(t1 * PI * 0.85))
-		var a0 := sin(t0 * PI) * 0.26
-		var a1 := sin(t1 * PI) * 0.26
-		var c0 := Color(0.86, 0.89, 0.96, a0)
-		var c1 := Color(0.86, 0.89, 0.96, a1)
-		st.set_color(c0); st.add_vertex(Vector3(x0 - w0, y0, 0.0))
-		st.set_color(c0); st.add_vertex(Vector3(x0 + w0, y0, 0.0))
-		st.set_color(c1); st.add_vertex(Vector3(x1 + w1, y1, 0.0))
-		st.set_color(c0); st.add_vertex(Vector3(x0 - w0, y0, 0.0))
-		st.set_color(c1); st.add_vertex(Vector3(x1 + w1, y1, 0.0))
-		st.set_color(c1); st.add_vertex(Vector3(x1 - w1, y1, 0.0))
-	var mi := MeshInstance3D.new()
-	mi.mesh = st.commit()
-	var mat := StandardMaterial3D.new()
-	mat.vertex_color_use_as_albedo = true
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	mat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
-	mi.material_override = mat
-	mi.position = base_pos
-	add_child(mi)
-	return mi
+func _flame_mesh(width: float, height: float, color: Color) -> ArrayMesh:
+	var body := SphereMesh.new()
+	body.radius = 0.5
+	body.height = 1.0
+	body.radial_segments = 16
+	body.rings = 10
+	var arrays := body.surface_get_arrays(0)
+	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var colors := PackedColorArray()
+	for i in vertices.size():
+		var p := vertices[i]
+		var rise := clampf(p.y + 0.5, 0.0, 1.0)
+		var profile := lerpf(1.40, 0.54, rise)
+		vertices[i] = Vector3(p.x * width * profile + pow(rise, 2.2) * 0.093,
+			p.y * height, p.z * width * profile)
+		colors.append(color.lerp(Color("#fff0a9"), (1.0 - rise) * 0.61))
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_COLOR] = colors
+	var flame := ArrayMesh.new()
+	flame.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return flame
 
 # --- 6. Handcrafted Scene Assembly ---
 func _build_diorama_scene() -> void:
-	# 6a. Central Campfire + S-Curve Storybook Smoke Ribbon
+	# Central campfire and a sparse plume above the flames.
 	for ang_d in [-28.0, 36.0, 102.0, 158.0]:
 		var r := deg_to_rad(ang_d)
 		_place_glb(self, "charred_log.glb", CAMPFIRE_XZ + Vector2(cos(r), sin(r)) * 0.26, 0.90, Vector3(0, ang_d, 0), Color("#6e4230"), 0.16, -0.04, 0.95)
@@ -695,13 +735,17 @@ func _build_diorama_scene() -> void:
 		[Vector3(0.12, 0.36, 0.05), 0.28, 0.72, Color("#ffc629")],
 		[Vector3(-0.10, 0.29, -0.04), 0.22, 0.56, Color("#fff6b0")]
 	]:
-		var cm := CylinderMesh.new(); cm.top_radius = 0.02; cm.bottom_radius = float(fp[1]); cm.height = float(fp[2])
-		var fi := MeshInstance3D.new(); fi.mesh = cm
-		var fmat := StandardMaterial3D.new(); fmat.albedo_color = fp[3]; fmat.emission_enabled = true; fmat.emission = fp[3]; fmat.emission_energy_multiplier = 2.0
-		fi.material_override = fmat; fi.position = fp[0]
+		var fi := MeshInstance3D.new()
+		fi.mesh = _flame_mesh(float(fp[1]) * 1.45, float(fp[2]), fp[3])
+		fi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var flame_finish := StandardMaterial3D.new()
+		flame_finish.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		flame_finish.vertex_color_use_as_albedo = true
+		fi.material_override = flame_finish
+		fi.position = fp[0]
 		campfire_flame.add_child(fi)
 
-	campfire_smoke_ribbon = _build_campfire_smoke_ribbon(Vector3(CAMPFIRE_XZ.x + 0.1, fy + 0.82, CAMPFIRE_XZ.y - 0.1))
+	_add_smoke(self, Vector3(CAMPFIRE_XZ.x + 0.1, fy + 0.82, CAMPFIRE_XZ.y - 0.1), false)
 
 	# 6b. Hero Campfire Props (Red diamond rug, open journal on log bench, leather backpack, bedroll)
 	_place_glb(self, "campfire_rug.glb", Vector2(2.05, 1.35), 2.30, Vector3(0, -14, 0), Color("#b83d35"), 0.22, 0.02, 1.00, true, 1.35)
@@ -802,7 +846,7 @@ func _build_diorama_scene() -> void:
 	_place_glb(self, "waterfall_rock.glb", Vector2(-8.55, 3.05), 3.0, Vector3(0, 6, 0), Color("#63759e"), 0.30, -0.10, 0.96, true, 1.4)
 
 	var pier_y := WATER_LEVEL + 0.16
-	_place_glb(self, "pier.glb", Vector2(-2.7, 5.15), 3.3, Vector3(0, -6, 0), Color("#9e633b"), 0.16, pier_y, 0.98, false)
+	_build_fishing_pier(Vector3(-2.7, pier_y, 5.15))
 	_place_glb(self, "bucket.glb", Vector2(-2.25, 5.10), 0.68, Vector3(0, 18, 0), Color("#849bb5"), 0.16, pier_y + 0.94, 1.02, false)
 	_place_glb(self, "fishing_rod.glb", Vector2(-1.65, 5.15), 2.25, Vector3(14, -22, -24), Color("#ad6c3b"), 0.14, pier_y + 0.78, 1.00, false)
 	var line_m := MeshInstance3D.new(); var lcm := CylinderMesh.new(); lcm.top_radius = 0.012; lcm.bottom_radius = 0.012; lcm.height = 1.65
@@ -817,99 +861,26 @@ func _build_diorama_scene() -> void:
 	var bwm := StandardMaterial3D.new(); bwm.albedo_color = Color("#fff6e8"); bwm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	b_wht.mesh = bws; b_wht.material_override = bwm; b_wht.position = Vector3(0, 0.08, 0); fishing_bobber.add_child(b_wht)
 
-	# 6h. Right Wooden Arch Bridge (Natural Warm Cedar)
-	_place_glb(self, "bridge.glb", Vector2(8.55, -1.10), 4.60, Vector3(0, 6, 0), Color("#b07648"), 0.16, -0.22, 0.94, false)
+	_build_bridge()
+	_build_bankside_rocks()
 
-	# 6i. Cozy Red-Roof Cabin HIGH & DRY on Raised Grassy Peninsula + Glowing 4-Pane Window & Porch!
-	var cab_xz := Vector2(9.8, 5.15)
-	var cab_node := _place_glb(self, "cabin.glb", cab_xz, 4.25, Vector3(0, -10, 0), Color("#bd5338"), 0.14, -0.02, 0.98, true, 2.2)
-	var cab_y := terrain_height(cab_xz.x, cab_xz.y)
-	# Warm glowing golden 4-pane storybook window cleanly forward of wall with zero clipping!
-	var win_m := MeshInstance3D.new(); var wbm := BoxMesh.new(); wbm.size = Vector3(0.66, 0.58, 0.06)
-	var wmat := StandardMaterial3D.new(); wmat.albedo_color = Color("#ffd659"); wmat.emission_enabled = true; wmat.emission = Color("#ffbd38"); wmat.emission_energy_multiplier = 2.2
-	win_m.mesh = wbm; win_m.material_override = wmat; win_m.position = Vector3(0.08, 1.15, 1.69)
-	cab_node.add_child(win_m)
-	var bar_mat := StandardMaterial3D.new(); bar_mat.albedo_color = Color("#5e3924"); bar_mat.roughness = 0.9
-	for bsz in [[Vector3(0.70, 0.055, 0.04), Vector3(0.08, 1.15, 1.74)], [Vector3(0.055, 0.62, 0.04), Vector3(0.08, 1.15, 1.74)]]:
-		var bar_m := MeshInstance3D.new(); var bx := BoxMesh.new(); bx.size = bsz[0]
-		bar_m.mesh = bx; bar_m.material_override = bar_mat; bar_m.position = bsz[1]; cab_node.add_child(bar_m)
-	# Cozy wooden porch step in front of cabin
-	var porch := MeshInstance3D.new(); var pbm := BoxMesh.new(); pbm.size = Vector3(1.55, 0.24, 0.65)
-	var pmat := StandardMaterial3D.new(); pmat.albedo_color = Color("#a86e42"); pmat.roughness = 0.92
-	porch.mesh = pbm; porch.material_override = pmat; porch.position = Vector3(0.05, 0.12, 1.75)
-	cab_node.add_child(porch)
-	# Stylized Solid Matte 3D Sphere Chimney Smoke (turbulent drift + shrinks cleanly to Scale=0 — NO airbrush fog!)
-	var smk_p := GPUParticles3D.new()
-	smk_p.position = Vector3(9.85, cab_y + 3.45, 3.55)
-	smk_p.amount = 14
-	smk_p.lifetime = 3.4
-	smk_p.preprocess = 3.4
-	smk_p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	var smk_pm := ParticleProcessMaterial.new()
-	smk_pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
-	smk_pm.emission_sphere_radius = 0.14
-	smk_pm.direction = Vector3(0.24, 1.0, 0.04)
-	smk_pm.spread = 22.0
-	smk_pm.initial_velocity_min = 0.62; smk_pm.initial_velocity_max = 0.95
-	smk_pm.gravity = Vector3(0.32, 0.18, 0.04)
-	smk_pm.turbulence_enabled = true
-	smk_pm.turbulence_noise_strength = 0.55
-	smk_pm.turbulence_noise_scale = 2.4
-	smk_pm.scale_min = 0.75; smk_pm.scale_max = 1.25
-	var smk_sc := Curve.new()
-	smk_sc.add_point(Vector2(0.0, 0.25)); smk_sc.add_point(Vector2(0.45, 1.05)); smk_sc.add_point(Vector2(0.82, 0.85)); smk_sc.add_point(Vector2(1.0, 0.0))
-	var smk_st := CurveTexture.new(); smk_st.curve = smk_sc
-	smk_pm.scale_curve = smk_st
-	smk_p.process_material = smk_pm
-	var smk_sm := SphereMesh.new(); smk_sm.radius = 0.34; smk_sm.height = 0.64; smk_sm.radial_segments = 10; smk_sm.rings = 6
-	var smk_mat := StandardMaterial3D.new()
-	smk_mat.albedo_color = Color("#dce4f0"); smk_mat.roughness = 1.0; smk_mat.metallic_specular = 0.0
-	smk_sm.material = smk_mat
-	smk_p.draw_pass_1 = smk_sm
-	add_child(smk_p)
+	var cab_xz := CABIN_XZ
+	var cabin := preload("res://diorama/LakesideCabin.gd").new()
+	cabin.position = Vector3(cab_xz.x, terrain_height(cab_xz.x, cab_xz.y) - 0.12, cab_xz.y)
+	cabin.rotation.y = CABIN_YAW
+	add_child(cabin)
+	_add_contact_shadow(cabin, 2.2)
+	cabin_light.position = cabin.to_global(Vector3(0.65, 1.28, 1.9))
+	_add_smoke(cabin, Vector3(0.99, 3.80, -0.49), true)
 
-	# 6j. Layered Forest Enclosure (Night: 06_29_51 Midnight-Indigo + Hero Crimson; Day: vC7OEC Lush Emerald!)
-	_place_glb(self, "pine_tree.glb", Vector2(0.90, -8.5), 6.4, Vector3(0, 12, 0), Color("#de4a38"), 0.86, -0.15, 1.08, true, 2.2, Color("#c96b2c"))
-	for tp in [
-		[Vector2(-12.4, -7.2), 6.8, 22.0, Color("#203e94"), Color("#236332")],
-		[Vector2(-15.2, -9.8), 7.2, -8.0, Color("#172e73"), Color("#1c542b")],
-		[Vector2(-16.2, -5.2), 6.4, 15.0, Color("#19327a"), Color("#286e34")],
-		[Vector2(-14.8, -2.0), 6.0, -14.0, Color("#1c3682"), Color("#2e7837")],
-		[Vector2(-14.0, 2.8), 5.6, 34.0, Color("#1d3985"), Color("#36823a")],
-		[Vector2(-10.2, -12.4), 6.4, 10.0, Color("#172d70"), Color("#1e592d")],
-		[Vector2(-3.4, -12.2), 6.0, -24.0, Color("#1d3885"), Color("#2c7336")],
-		[Vector2(4.4, -11.8), 6.2, 18.0, Color("#1a337d"), Color("#246632")],
-		[Vector2(6.6, -8.6), 6.2, -18.0, Color("#23439c"), Color("#337d39")],
-		[Vector2(12.8, -9.8), 6.8, 12.0, Color("#183075"), Color("#1e592d")],
-		[Vector2(15.6, -8.2), 7.0, -18.0, Color("#162b6b"), Color("#1a4f28")],
-		[Vector2(13.2, -5.8), 6.0, 28.0, Color("#1d3885"), Color("#2c7336")],
-		[Vector2(15.2, -0.4), 5.8, -10.0, Color("#203d8f"), Color("#337d39")],
-		[Vector2(13.8, 3.2), 6.4, -16.0, Color("#1c3785"), Color("#276b33")],
-		[Vector2(14.8, 7.2), 5.6, 24.0, Color("#172d70"), Color("#1f5c2d")],
-		[Vector2(-13.6, 7.6), 5.4, -20.0, Color("#172d70"), Color("#1f5c2d")]
-	]:
-		_place_glb(self, "pine_tree.glb", tp[0], float(tp[1]), Vector3(0, float(tp[2]), 0), tp[3], 0.84, -0.18, 1.00, true, 2.0, tp[4])
-
-	# Luminous Northern Woodland Backlight Trunks (Night: deep indigo; Day: forest shadow green)
-	for bx in [-14.2, -11.4, -8.5, -5.6, -2.8, 0.2, 3.0, 5.8, 8.6, 11.4, 14.2]:
-		var tr_h := randf_range(7.5, 11.0)
-		var tr_m := MeshInstance3D.new()
-		var tcm := CylinderMesh.new(); tcm.top_radius = 0.48; tcm.bottom_radius = 0.58; tcm.height = tr_h
-		var tmat := StandardMaterial3D.new()
-		var nc := Color("#1b3478") if int(absf(bx)) % 2 == 0 else Color("#122457")
-		var dc := Color("#245c30") if int(absf(bx)) % 2 == 0 else Color("#1b4725")
-		tmat.albedo_color = nc
-		tmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		bg_trunk_mats.append({"mat": tmat, "night": nc, "day": dc})
-		tr_m.mesh = tcm; tr_m.material_override = tmat
-		tr_m.position = Vector3(float(bx), tr_h * 0.45, -15.4 + fmod(absf(bx) * 1.7, 1.8))
-		add_child(tr_m)
+	_build_forest_canopy()
+	_build_hill_steps()
 
 	# Shoreline Foliage (Night: rich plum-magenta; Day: sunlit olive-lime)
 	for sh in [
 		["palm_bush.glb", Vector2(-11.8, -1.6), 2.0, 18.0, Color("#5e245c"), Color("#598f36")],
 		["palm_bush.glb", Vector2(-10.4, 0.9), 1.7, -24.0, Color("#6e2b64"), Color("#6ca33b")],
-		["palm_bush.glb", Vector2(3.8, -6.5), 1.9, 14.0, Color("#542361"), Color("#4f8533")],
+		["palm_bush.glb", Vector2(5.0, -7.45), 1.9, 14.0, Color("#542361"), Color("#4f8533")],
 		["palm_bush.glb", Vector2(4.6, 3.6), 1.9, -16.0, Color("#66285e"), Color("#659c39")]
 	]:
 		_place_glb(self, String(sh[0]), sh[1], float(sh[2]), Vector3(0, float(sh[3]), 0), sh[4], 0.78, -0.10, 1.00, true, 1.0, sh[5])
@@ -925,11 +896,11 @@ func _build_diorama_scene() -> void:
 
 	# Scattered White & Blue Bobble Wildflowers & Mossy Shore Rocks
 	for wf in [
-		Vector2(-4.4, -5.8), Vector2(-2.8, -5.4), Vector2(4.6, -5.0),
+		Vector2(-4.4, -5.8), Vector2(-2.8, -5.4), Vector2(6.35, -5.2),
 		Vector2(6.0, -4.4), Vector2(-5.4, 2.8), Vector2(-4.0, 3.4),
 		Vector2(3.2, 2.9), Vector2(11.4, -5.2), Vector2(-9.8, -5.4)
 	]:
-		_place_glb(self, "wildflowers.glb", wf, 1.15, Vector3(0, wf.x * 41.0, 0), Color.WHITE, 0.0, -0.04, 1.08)
+		flower_roots.append(_place_glb(self, "wildflowers.glb", wf, 1.15, Vector3(0, wf.x * 41.0, 0), Color.WHITE, 0.0, -0.04, 1.08))
 
 	for sr in [
 		[Vector2(-6.2, -1.4), 1.25], [Vector2(6.5, 1.8), 1.35],
@@ -939,6 +910,12 @@ func _build_diorama_scene() -> void:
 	]:
 		var s_xz: Vector2 = sr[0]
 		_place_glb(self, "shore_rock.glb", s_xz, float(sr[1]), Vector3(0, s_xz.x * 31.0, 0), Color("#697aa6"), 0.28, -0.14, 0.96, true, 0.85)
+
+	# Stones break the water surface, with a small wake anchored around each base.
+	var channel_stones := PackedVector2Array([Vector2(8.5,-6.0), Vector2(8.1,1.45), Vector2(3.8,7.1), Vector2(-6.4,8.3)])
+	water_mat.set_shader_parameter("channel_stones", channel_stones)
+	for i in channel_stones.size():
+		_place_glb(self, "shore_rock.glb", channel_stones[i], 0.88 + i * 0.09, Vector3(0, i * 87.0, 0), Color("#747583"), 0.32, WATER_LEVEL - 0.26, 0.94, false)
 
 	# 6k. Interactive Shatterable Props (RigidBody3D Physics Shards + Pixel Sparks + Smooth Scorch)
 	var wood_cols := [Color("#8c5838"), Color("#c48a58"), Color("#543525"), Color("#e0a050")]
@@ -954,21 +931,9 @@ func _build_diorama_scene() -> void:
 		var p_node := _place_glb(self, String(sp[0]), pxz, float(sp[2]), Vector3(0, randf() * 360.0, 0), Color.WHITE, 0.0, -0.04, 0.98, true, 0.72)
 		ink_fx.register_shatter_prop(p_node, p_node.position, 0.95, sp[3], 3, 1)
 
-	# 6l. Additive Fresnel Fake Volumetric Sunbeams (vC7OEC signature in Daytime mode!)
-	for gr in [
-		[Vector3(-6.2, 6.2, -3.5), 4.2, 18.0],
-		[Vector3(-1.4, 6.8, -2.2), 4.8, 19.0],
-		[Vector3(3.8, 6.5, -2.6), 4.4, 18.0],
-		[Vector3(8.6, 6.2, 1.8), 4.0, 17.0]
-	]:
-		var qm := QuadMesh.new(); qm.size = Vector2(float(gr[1]), float(gr[2]))
-		var gi := MeshInstance3D.new(); gi.mesh = qm
-		var gmat := ShaderMaterial.new(); gmat.shader = SHADER_GODRAY
-		gi.material_override = gmat; godray_mats.append(gmat); godray_nodes.append(gi)
-		gi.position = gr[0]; gi.rotation_degrees = Vector3(14.0, -18.0, 26.0)
-		add_child(gi)
+	_build_sun_shafts()
 
-	# 6l-b. Low/straight wind trails removed to keep cave & foreground super clean!
+	_build_stylized_wind_trails()
 
 	# 6m. Gentle Floating Golden Fireflies
 	for _i in range(26):
@@ -978,34 +943,405 @@ func _build_diorama_scene() -> void:
 		var fm := _soft_cloud_puff(Vector3(fx, fy_base, fz), 0.055, Color("#ffd866"))
 		fireflies.append({"node": fm, "base": fm.position, "ph": randf() * TAU, "spd": randf_range(0.8, 1.7)})
 
+func _build_fishing_pier(at: Vector3) -> void:
+	var pier := Node3D.new()
+	pier.position = at
+	pier.rotation_degrees.y = -6.0
+	add_child(pier)
+	var finish := StandardMaterial3D.new()
+	finish.albedo_color = Color("#d7a36a")
+	finish.roughness = 0.69
+	finish.metallic_specular = 0.19
+	finish.vertex_color_use_as_albedo = true
+	var timber := MultiMesh.new()
+	timber.transform_format = MultiMesh.TRANSFORM_3D
+	timber.use_colors = true
+	timber.mesh = RoundedBoxMesh.build(Vector3(0.35, 0.21, 1.64), 0.057)
+	timber.instance_count = 9
+	for i in 9:
+		var board_yaw := 0.023 * sin(i * 1.27)
+		var origin := Vector3((i - 4) * 0.352, 0.67, sin(i * 3.49) * 0.041)
+		timber.set_instance_transform(i, Transform3D(Basis(Vector3.UP, board_yaw), origin))
+		timber.set_instance_color(i, Color("#c38a59").lerp(Color.WHITE, 0.64 + 0.32 * sin(i * 2.08)))
+	var deck := MultiMeshInstance3D.new()
+	deck.multimesh = timber
+	deck.material_override = finish
+	pier.add_child(deck)
+	var legs := CylinderMesh.new()
+	legs.top_radius = 0.098
+	legs.bottom_radius = 0.13
+	legs.height = 1.52
+	var dark_wood := StandardMaterial3D.new()
+	dark_wood.albedo_color = Color("#7e573c")
+	dark_wood.roughness = 0.83
+	for x in [-1.37, 1.37]:
+		for z in [-0.58, 0.58]:
+			var leg := MeshInstance3D.new()
+			leg.mesh = legs
+			leg.position = Vector3(x, 0.11, z)
+			leg.material_override = dark_wood
+			pier.add_child(leg)
+
+func _add_smoke(parent: Node3D, at: Vector3, chimney: bool) -> void:
+	var plume := GPUParticles3D.new()
+	plume.position = at
+	plume.amount = 30 if chimney else 11
+	plume.lifetime = 3.4 if chimney else 2.6
+	plume.preprocess = plume.lifetime
+	plume.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var motion := ParticleProcessMaterial.new()
+	motion.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
+	motion.emission_sphere_radius = 0.08 if chimney else 0.14
+	motion.direction = Vector3(0.10, 1.0, 0.04)
+	motion.spread = 14.0
+	motion.initial_velocity_min = 0.61
+	motion.initial_velocity_max = 0.87
+	motion.gravity = Vector3(0.12, 0.22, 0.02)
+	motion.turbulence_enabled = true
+	motion.turbulence_noise_strength = 0.34
+	motion.turbulence_noise_scale = 2.4
+	motion.scale_min = 0.75
+	motion.scale_max = 1.25
+	var shape := Curve.new()
+	shape.add_point(Vector2(0.0, 0.25))
+	shape.add_point(Vector2(0.48, 1.03))
+	shape.add_point(Vector2(0.82, 0.86))
+	shape.add_point(Vector2(1.0, 0.0))
+	var scaling := CurveTexture.new()
+	scaling.curve = shape
+	motion.scale_curve = scaling
+	plume.process_material = motion
+	var puff := SphereMesh.new()
+	puff.radius = 0.34 if chimney else 0.30
+	puff.height = puff.radius * 1.92
+	puff.radial_segments = 12
+	puff.rings = 6
+	var material := ShaderMaterial.new()
+	material.shader = preload("res://diorama/shaders/diorama_smoke.gdshader")
+	material.set_shader_parameter("opacity", 0.52 if chimney else 0.17)
+	smoke_materials.append(material)
+	puff.material = material
+	plume.draw_pass_1 = puff
+	parent.add_child(plume)
+
+func _build_bankside_rocks() -> void:
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color.WHITE
+	material.vertex_color_use_as_albedo = true
+	material.roughness = 1.0
+	var blocks := MultiMesh.new()
+	blocks.transform_format = MultiMesh.TRANSFORM_3D
+	blocks.use_colors = true
+	var mesh := SphereMesh.new()
+	mesh.radial_segments = 7
+	mesh.rings = 3
+	mesh.radius = 0.5
+	mesh.height = 1.0
+	blocks.mesh = mesh
+	var ledges: Array[Array] = [
+		[Vector2(-13.0, 7.6), Vector2(-9.2, 8.65), 7],
+		[Vector2(3.05, 10.6), Vector2(6.1, 9.4), 6],
+		[Vector2(10.5, -8.55), Vector2(12.55, -4.3), 7],
+		[Vector2(-8.05, -6.95), Vector2(-7.7, -3.6), 6],
+	]
+	var total := 0
+	for ledge in ledges:
+		total += int(ledge[2])
+	blocks.instance_count = total
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 240317
+	var index := 0
+	for ledge in ledges:
+		var first: Vector2 = ledge[0]
+		var last: Vector2 = ledge[1]
+		var count: int = ledge[2]
+		for i in count:
+			var xz := first.lerp(last, float(i) / (count - 1))
+			xz += Vector2(rng.randf_range(-0.16, 0.16), rng.randf_range(-0.16, 0.16))
+			var hill := terrain_height(xz.x, xz.y)
+			if hill < WATER_LEVEL + 0.07:
+				continue
+			var height := rng.randf_range(0.7, 1.85)
+			var scale_axes := Vector3(rng.randf_range(0.76, 1.18), height, rng.randf_range(0.65, 0.96))
+			var basis := Basis(Vector3.UP, rng.randf_range(-0.65, 0.65)).scaled(scale_axes)
+			var base := Vector3(xz.x, maxf(WATER_LEVEL - 0.13, hill - 0.28) + height * 0.11, xz.y)
+			blocks.set_instance_transform(index, Transform3D(basis, base))
+			blocks.set_instance_color(index, Color("#636977").lerp(Color("#a79b87"), rng.randf()))
+			index += 1
+	blocks.visible_instance_count = index
+	var cliffs := MultiMeshInstance3D.new()
+	cliffs.multimesh = blocks
+	cliffs.material_override = material
+	add_child(cliffs)
+
+func _inside_cabin(x: float, z: float) -> bool:
+	var local := (Vector2(x, z) - CABIN_XZ).rotated(CABIN_YAW)
+	return absf(local.x) < 1.72 and absf(local.y) < 1.49
+
+func _bridge_deck_y(x: float) -> float:
+	var across := clampf((x - BRIDGE_XZ.x) / BRIDGE_HALF_SPAN, -1.0, 1.0)
+	return 0.19 + 0.57 * (1.0 - across * across)
+
+func _build_bridge() -> void:
+	var stone := StandardMaterial3D.new()
+	stone.albedo_color = Color("#a19788")
+	stone.roughness = 1.0
+	var pavement := ShaderMaterial.new()
+	pavement.shader = preload("res://diorama/shaders/diorama_bridge.gdshader")
+	_build_bridge_arch(pavement)
+	var count := 20
+	var step := 2.0 * BRIDGE_HALF_SPAN / count
+	var block := RoundedBoxMesh.build(Vector3.ONE, 0.15)
+	var rails := MultiMesh.new()
+	rails.transform_format = MultiMesh.TRANSFORM_3D
+	rails.mesh = block
+	rails.instance_count = count * 2
+	for side in 2:
+		var edge := -1.0 if side == 0 else 1.0
+		for i in count:
+			var x := BRIDGE_XZ.x - BRIDGE_HALF_SPAN + (i + 0.5) * step
+			var post := i == 0 or i == count - 1 or i == count / 2
+			var size := Vector3(step * 0.98, 0.40 if post else 0.23, 0.29 if post else 0.20)
+			var at := Vector3(x, _bridge_deck_y(x) + 0.09, BRIDGE_XZ.y + edge * BRIDGE_HALF_WIDTH)
+			rails.set_instance_transform(side * count + i, Transform3D(Basis.from_scale(size), at))
+	var rail_mesh := MultiMeshInstance3D.new()
+	rail_mesh.multimesh = rails
+	rail_mesh.material_override = stone
+	rail_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(rail_mesh)
+	for side in [-1, 1]:
+		var x := BRIDGE_XZ.x + float(side) * (BRIDGE_HALF_SPAN - 0.54)
+		var pier := MeshInstance3D.new()
+		var footing := BoxMesh.new()
+		footing.size = Vector3(0.65, 1.45, 1.55)
+		pier.mesh = footing
+		pier.material_override = stone
+		pier.position = Vector3(x, _bridge_deck_y(x) - 0.78, BRIDGE_XZ.y)
+		add_child(pier)
+
+func _build_bridge_arch(stone: Material) -> void:
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var cross_section := PackedVector2Array([
+		Vector2(-BRIDGE_HALF_WIDTH, -0.012),
+		Vector2(BRIDGE_HALF_WIDTH, -0.012),
+		Vector2(BRIDGE_HALF_WIDTH, -0.40),
+		Vector2(-BRIDGE_HALF_WIDTH, -0.40),
+	])
+	for step in 24:
+		var left := BRIDGE_XZ.x + lerpf(-BRIDGE_HALF_SPAN, BRIDGE_HALF_SPAN, float(step) / 24.0)
+		var right := left + BRIDGE_HALF_SPAN / 12.0
+		for side in cross_section.size():
+			var edge_a := cross_section[side]
+			var edge_b := cross_section[(side + 1) % cross_section.size()]
+			var start_a := Vector3(left, _bridge_deck_y(left) + edge_a.y, BRIDGE_XZ.y + edge_a.x)
+			var start_b := Vector3(left, _bridge_deck_y(left) + edge_b.y, BRIDGE_XZ.y + edge_b.x)
+			var end_a := Vector3(right, _bridge_deck_y(right) + edge_a.y, BRIDGE_XZ.y + edge_a.x)
+			var end_b := Vector3(right, _bridge_deck_y(right) + edge_b.y, BRIDGE_XZ.y + edge_b.x)
+			for vertex in [start_a, end_a, end_b, start_a, end_b, start_b]:
+				surface.add_vertex(vertex)
+	surface.generate_normals()
+	var arch := MeshInstance3D.new()
+	arch.mesh = surface.commit()
+	arch.material_override = stone
+	arch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_DOUBLE_SIDED
+	add_child(arch)
+
+func _build_sun_shafts() -> void:
+	var sun := key_light.basis.z.normalized()
+	var ground_patches := PackedVector2Array([
+		CABIN_XZ + Vector2(0.8, 0.6), Vector2(7.8, 3.2), Vector2(-4.8, -4.5),
+	])
+	terrain_mat.set_shader_parameter("sun_patches", ground_patches)
+	water_mat.set_shader_parameter("sun_patches", ground_patches)
+	for i in ground_patches.size():
+		var ground: Vector2 = ground_patches[i]
+		var base := Vector3(ground.x, maxf(terrain_height(ground.x, ground.y), WATER_LEVEL) - 0.10, ground.y)
+		var height := 10.3 + i * 0.7
+		var material := ShaderMaterial.new()
+		material.shader = SHADER_GODRAY
+		godray_mats.append(material)
+		# Two thin intersecting planes hold their shape around the full orbit.
+		for roll in [0.0, PI / 2.0]:
+			var quad := QuadMesh.new()
+			quad.size = Vector2(2.3 - i * 0.21, height)
+			var shaft := MeshInstance3D.new()
+			shaft.mesh = quad
+			shaft.material_override = material
+			shaft.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			var across := sun.cross(Vector3.RIGHT).normalized().rotated(sun, roll)
+			shaft.transform = Transform3D(Basis(across, -sun, across.cross(-sun)), base + sun * height * 0.5)
+			add_child(shaft)
+			godray_nodes.append(shaft)
+
+func _build_hill_steps() -> void:
+	var stone := RoundedBoxMesh.build(Vector3(1.10, 0.19, 0.39), 0.062)
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color("#a69d8e")
+	mat.roughness = 0.78
+	stone.surface_set_material(0, mat)
+	for i in 9:
+		var at := Vector2(-3.0, -4.3).lerp(Vector2(-5.2, -8.4), float(i) / 9.0)
+		var tread := MeshInstance3D.new()
+		tread.mesh = stone
+		tread.position = Vector3(at.x, terrain_height(at.x, at.y) + 0.05, at.y)
+		tread.rotation.y = 0.49 + 0.04 * sin(i * 2.1)
+		add_child(tread)
+
+# Overlapping whorls with drooping scalloped tips and darker undersides.
+func _fir_mesh() -> Mesh:
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var segments := 72
+	for tier in 5:
+		var width := 1.32 - tier * 0.204
+		var y := 0.88 + tier * 0.71
+		var rings: Array[PackedVector3Array] = []
+		for profile in [Vector2(0.08, -0.06), Vector2(1.0, 0.0), Vector2(0.65, 0.30), Vector2(0.02, 1.10)]:
+			var ring := PackedVector3Array()
+			for i in segments:
+				var angle := TAU * i / segments + tier * 0.31
+				var branches := 15.0 - tier
+				var tip := pow(0.5 + 0.5 * cos(angle * branches + tier), 1.42)
+				var radius: float = width * profile.x * (0.87 + 0.14 * tip + 0.034 * sin(angle * 3.0))
+				var rise: float = y + profile.y - 0.18 * tip * pow(profile.x, 3.0)
+				ring.append(Vector3(cos(angle) * radius, rise, sin(angle) * radius))
+			rings.append(ring)
+		for band in 3:
+			var points := rings[band]
+			var above := rings[band + 1]
+			for i in segments:
+				var j := (i + 1) % segments
+				for v in [points[i], points[j], above[j], points[i], above[j], above[i]]:
+					var normal := Vector3(v.x, -0.65 if band == 0 else 0.90, v.z).normalized()
+					surface.set_normal(normal)
+					var sunlight := clampf((v.y - 0.8) / 4.0, 0.0, 1.0)
+					surface.set_color(Color("#749790").lerp(Color("#e7f2a8"), sunlight))
+					surface.add_vertex(v)
+	return surface.commit()
+
+# Shared meshes give the forest a continuous silhouette during the full orbit.
+func _build_forest_canopy() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 48319
+	var lobes := MultiMesh.new()
+	lobes.transform_format = MultiMesh.TRANSFORM_3D
+	lobes.use_colors = true
+	lobes.use_custom_data = true
+	var leaf := SphereMesh.new()
+	leaf.radial_segments = 10
+	leaf.rings = 5
+	# Deform the shared lobe in model space so repeated crowns catch light in facets.
+	var arrays := leaf.surface_get_arrays(0)
+	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
+	var noise := FastNoiseLite.new()
+	noise.frequency = 3.6
+	for k in vertices.size():
+		vertices[k] += normals[k] * noise.get_noise_3dv(vertices[k]) * 0.24
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	var crown_mesh := ArrayMesh.new()
+	crown_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	lobes.mesh = crown_mesh
+	var trunks := MultiMesh.new()
+	trunks.transform_format = MultiMesh.TRANSFORM_3D
+	var trunk := CylinderMesh.new()
+	trunk.radial_segments = 7
+	trunk.top_radius = 0.21
+	trunk.bottom_radius = 0.32
+	trunk.height = 3.0
+	trunks.mesh = trunk
+	var roots: Array[Vector3] = []
+	for z in range(-26, 27, 3):
+		for x in range(-31, 32, 3):
+			var px := x + rng.randf_range(-0.85, 0.85)
+			var pz := z + rng.randf_range(-0.85, 0.85)
+			if absf(px) < 13.0 and pz > -11.8 and pz < 12.6:
+				continue
+			var ground := terrain_height(px, pz)
+			if ground > WATER_LEVEL + 0.2:
+				roots.append(Vector3(px, ground, pz))
+	for pos_xz in [Vector2(-11,-7), Vector2(-13,0), Vector2(3,-10), Vector2(7,-8), Vector2(13,-6), Vector2(14,3), Vector2(-9,1), Vector2(2.5, -7.0)]:
+		roots.append(Vector3(pos_xz.x, terrain_height(pos_xz.x, pos_xz.y), pos_xz.y))
+	trunks.instance_count = roots.size()
+	var firs := MultiMesh.new()
+	firs.transform_format = MultiMesh.TRANSFORM_3D
+	firs.use_colors = true
+	firs.mesh = _fir_mesh()
+	var fir_count := 0
+	var crown_count := 0
+	firs.instance_count = roots.size()
+	lobes.instance_count = roots.size() * 6
+	for i in roots.size():
+		var center := roots[i] + Vector3.UP * rng.randf_range(2.7, 3.7)
+		trunks.set_instance_transform(i, Transform3D(Basis.IDENTITY, roots[i] + Vector3.UP * 1.48))
+		if rng.randf() < 0.55 or i >= roots.size() - 8:
+			var height_scale := rng.randf_range(0.72, 1.36)
+			var crown_width := rng.randf_range(0.88, 1.19)
+			var crown_basis := Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(crown_width, height_scale, crown_width))
+			firs.set_instance_transform(fir_count, Transform3D(crown_basis, roots[i]))
+			firs.set_instance_color(fir_count, Color("#125347").lerp(Color("#629432"), rng.randf()))
+			fir_count += 1
+			continue
+		var spin := rng.randf() * TAU
+		var shade := rng.randf_range(0.50, 1.0)
+		var leaf_color := Color("#226746").lerp(Color("#bdd648"), pow(rng.randf(), 1.5))
+		for j in 6:
+			var angle := spin + TAU * j / 5.0
+			var offset := Vector3(cos(angle), rng.randf_range(-0.25, 0.3), sin(angle)) * 1.05
+			if j == 5:
+				offset = Vector3.UP * 1.0
+			var size := rng.randf_range(1.65, 2.25)
+			var scale_axes := Vector3(size * 1.34, size * rng.randf_range(0.78, 1.16), size)
+			lobes.set_instance_transform(crown_count * 6 + j, Transform3D(Basis.from_scale(scale_axes), center + offset))
+			lobes.set_instance_color(crown_count * 6 + j, leaf_color.darkened((1.0 - shade) * 0.4))
+			var local_shift := offset / scale_axes
+			lobes.set_instance_custom_data(crown_count * 6 + j,
+				Color(local_shift.x, local_shift.y, local_shift.z, 1.0))
+		crown_count += 1
+	firs.visible_instance_count = fir_count
+	lobes.visible_instance_count = crown_count * 6
+	for batch in [trunks, lobes, firs]:
+		var mi := MultiMeshInstance3D.new()
+		mi.multimesh = batch
+		if batch == trunks:
+			var bark := StandardMaterial3D.new()
+			bark.roughness = 1.0
+			bg_trunk_mats.append({"mat": bark, "day": Color("#876445"), "night": Color("#433349")})
+			mi.material_override = bark
+		else:
+			var needles := ShaderMaterial.new()
+			needles.shader = preload("res://diorama/shaders/diorama_canopy.gdshader")
+			needles.set_shader_parameter("conifer", batch == firs)
+			tod_foliage.append({"mat": needles, "day": Color.WHITE, "night": Color("#7189b5"), "canopy": true})
+			mi.material_override = needles
+		add_child(mi)
+
 func _build_stylized_wind_trails() -> void:
 	var curves := [
-		[Vector3(-10.5, 2.6, 1.8), Vector3(-3.0, 3.8, -1.2), Vector3(4.5, 3.0, 1.6), 0.08, 0.24, 0.0],
-		[Vector3(-4.0, 3.4, -4.5), Vector3(3.5, 4.5, -2.0), Vector3(11.5, 3.6, 0.5), 0.07, 0.28, 0.35],
-		[Vector3(2.0, 2.5, 3.8), Vector3(7.5, 3.6, 2.6), Vector3(13.5, 3.2, 5.2), 0.075, 0.25, 0.68],
-		[Vector3(-12.0, 3.2, -5.0), Vector3(-5.0, 4.2, -6.2), Vector3(2.0, 3.6, -3.5), 0.07, 0.22, 0.18],
-		[Vector3(-8.0, 1.8, 4.8), Vector3(-1.5, 2.5, 3.4), Vector3(5.0, 2.2, 5.0), 0.065, 0.27, 0.52]
+		[Vector3(-10, 5, -8), Vector3(-6, 7, -10), Vector3(1, 4, -8), 0.031, 0.14, 0.0],
+		[Vector3(2, 4.8, 2), Vector3(6, 6.2, -0.8), Vector3(12, 4.2, -2), 0.028, 0.12, 0.5],
+		[Vector3(-2, 5, -6), Vector3(4, 6.2, -8), Vector3(11, 5.4, -7), 0.025, 0.15, 0.22]
 	]
 	for c in curves:
-		var p0: Vector3 = c[0]; var p1: Vector3 = c[1]; var p2: Vector3 = c[2]
-		var hw: float = float(c[3])
-		var st := SurfaceTool.new()
-		st.begin(Mesh.PRIMITIVE_TRIANGLES)
-		var segs := 24
-		for i in range(segs):
-			var t0 := float(i) / float(segs)
-			var t1 := float(i + 1) / float(segs)
-			var q0 := p0.lerp(p1, t0).lerp(p1.lerp(p2, t0), t0)
-			var q1 := p0.lerp(p1, t1).lerp(p1.lerp(p2, t1), t1)
-			var up := Vector3(0.0, hw, hw * 0.45)
-			st.set_uv(Vector2(t0, 0.0)); st.add_vertex(q0 - up)
-			st.set_uv(Vector2(t0, 1.0)); st.add_vertex(q0 + up)
-			st.set_uv(Vector2(t1, 1.0)); st.add_vertex(q1 + up)
-			st.set_uv(Vector2(t0, 0.0)); st.add_vertex(q0 - up)
-			st.set_uv(Vector2(t1, 1.0)); st.add_vertex(q1 + up)
-			st.set_uv(Vector2(t1, 0.0)); st.add_vertex(q1 - up)
+		var p0: Vector3 = c[0]
+		var p1: Vector3 = c[1]
+		var p2: Vector3 = c[2]
+		var half_width: float = c[3]
+		var ribbon := SurfaceTool.new()
+		ribbon.begin(Mesh.PRIMITIVE_TRIANGLE_STRIP)
+		ribbon.set_custom_format(0, SurfaceTool.CUSTOM_RGBA_FLOAT)
+		for segment in 37:
+			var t := float(segment) / 36.0
+			var point := p0.lerp(p1, t).lerp(p1.lerp(p2, t), t)
+			var tangent := (p1 - p0).lerp(p2 - p1, t).normalized()
+			for side in [0.0, 1.0]:
+				ribbon.set_uv(Vector2(t, side))
+				ribbon.set_custom(0, Color(tangent.x, tangent.y, tangent.z, half_width))
+				ribbon.add_vertex(point)
 		var mi := MeshInstance3D.new()
-		mi.mesh = st.commit()
+		mi.mesh = ribbon.commit()
+		mi.custom_aabb = mi.mesh.get_aabb().grow(0.35)
 		var wmat := ShaderMaterial.new()
 		wmat.shader = SHADER_WIND_TRAIL
 		wmat.set_shader_parameter("speed", float(c[4]))
@@ -1023,36 +1359,94 @@ func _setup_player_and_camera() -> void:
 	add_child(player)
 	player_visual = Node3D.new()
 	player.add_child(player_visual)
-	_place_glb(player_visual, "traveler_c01.glb", Vector2.ZERO, 1.18, Vector3.ZERO, Color.WHITE, 0.0, 0.0, 1.04, false, 0.45)
+	var traveler := _place_glb(player_visual, "traveler_c01_animated.glb", Vector2.ZERO, 1.18,
+		Vector3.ZERO, Color.WHITE, 0.0, 0.0, 1.04, false, 0.45)
+	var animation_players := traveler.find_children("*", "AnimationPlayer", true, false)
+	if animation_players.is_empty():
+		traveler.queue_free()
+		_place_glb(player_visual, "traveler_c01.glb", Vector2.ZERO, 1.18, Vector3.ZERO, Color.WHITE, 0.0, 0.0, 1.04, false, 0.45)
+	else:
+		player_motion = animation_players[0] as AnimationPlayer
+		for motion in [&"Idle", &"Walk"]:
+			if player_motion.has_animation(motion):
+				player_motion.get_animation(motion).loop_mode = Animation.LOOP_LINEAR
+		_build_practice_sword(traveler)
+		_play_traveler_motion(&"Idle")
 
 	camera = Camera3D.new()
 	camera.projection = Camera3D.PROJECTION_PERSPECTIVE
-	camera.fov = 21.0
+	camera.fov = 22.0
 	camera.near = 1.0
 	camera.far = 220.0
 	camera.current = true
 	add_child(camera)
 	_update_camera(1.0)
 
+func _build_practice_sword(traveler: Node3D) -> void:
+	var skeletons := traveler.find_children("*", "Skeleton3D", true, false)
+	if skeletons.is_empty():
+		return
+	var skeleton := skeletons[0] as Skeleton3D
+	var hand := "mixamorig_RightHand"
+	if skeleton.find_bone(hand) < 0:
+		return
+	var grip := BoneAttachment3D.new()
+	grip.bone_name = hand
+	skeleton.add_child(grip)
+	practice_sword = Node3D.new()
+	practice_sword.position = Vector3(0.0, 0.028, 0.018)
+	practice_sword.rotation.z = -PI * 0.5
+	practice_sword.visible = false
+	grip.add_child(practice_sword)
+	for spec in [
+		[Vector3(0.052, 0.125, 0.052), -0.016, Color("#72503b")],
+		[Vector3(0.157, 0.044, 0.052), 0.053, Color("#c89b63")],
+		[Vector3(0.076, 0.35, 0.042), 0.233, Color("#e6bf82")],
+	]:
+		var part := MeshInstance3D.new()
+		part.mesh = RoundedBoxMesh.build(spec[0], 0.018)
+		part.position.y = spec[1]
+		var finish := StandardMaterial3D.new()
+		finish.albedo_color = spec[2]
+		finish.roughness = 0.81
+		part.material_override = finish
+		practice_sword.add_child(part)
+
 func _update_camera(lerp_w: float) -> void:
 	var target: Vector3
 	var desired: Vector3
 	if orbit_camera:
-		target = Vector3(0.0, 0.35, -0.5)
-		var radius := 42.0
-		desired = target + Vector3(sin(orbit_angle) * radius, 24.8, cos(orbit_angle) * radius)
+		target = ORBIT_TARGET
+		var radius := 34.0
+		desired = target + Vector3(sin(orbit_angle) * radius, 43.5, cos(orbit_angle) * radius)
 	else:
-		target = player.position.lerp(Vector3(0.1, 0.25, -0.4), 0.74)
-		desired = target + Vector3(0.0, 22.8, 39.2)
-	camera.position = camera.position.lerp(desired, lerp_w) if lerp_w < 1.0 else desired
-	camera.look_at(target)
+		target = player.position.lerp(Vector3(0.1, 0.25, -0.4), 0.37)
+		desired = target + Vector3(0.0, 30.0, 34.0)
+	camera.position = camera.position.lerp(desired, lerp_w)
+	camera_target = camera_target.lerp(target, lerp_w)
+	camera.look_at(camera_target)
+	if lens_material:
+		lens_strength = lerpf(lens_strength, 1.0 if orbit_camera else 0.58, lerp_w)
+		lens_material.set_shader_parameter("orbit_blur", lens_strength)
 
 # --- 8. Ultra-Clean Minimalist UI ---
 func _setup_minimal_ui() -> void:
+	var lens_layer := CanvasLayer.new()
+	lens_layer.layer = 0
+	add_child(lens_layer)
+	var lens := ColorRect.new()
+	lens.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lens_material = ShaderMaterial.new()
+	lens_material.shader = preload("res://diorama/shaders/diorama_lens.gdshader")
+	lens.material = lens_material
+	lens_layer.add_child(lens)
+	lens.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var cl := CanvasLayer.new()
-	add_child(cl)
+	var overlay := hud_parent if is_instance_valid(hud_parent) else self
+	overlay.add_child(cl)
 
 	hint_panel = PanelContainer.new()
+	hint_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hint_panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
 	hint_panel.offset_left = 18; hint_panel.offset_bottom = -16; hint_panel.offset_top = -52; hint_panel.offset_right = 680
 	var sb := StyleBoxFlat.new()
@@ -1070,6 +1464,7 @@ func _setup_minimal_ui() -> void:
 	_refresh_hint()
 
 	toast_label = Label.new()
+	toast_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	toast_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 	toast_label.offset_left = -260; toast_label.offset_right = 260; toast_label.offset_top = 20
 	toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -1108,6 +1503,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				_refresh_hint()
 			KEY_R:
 				orbit_camera = not orbit_camera
+				if orbit_camera:
+					var offset := camera.position - ORBIT_TARGET
+					orbit_angle = atan2(offset.x, offset.z)
 				_show_toast("🎥 開啟 360° 微縮盒庭環繞鑑賞" if orbit_camera else "🎥 返回跟隨鏡頭", 2.2)
 				_refresh_hint()
 			KEY_H:
@@ -1119,13 +1517,23 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		_perform_swing()
 
+func _play_traveler_motion(clip: StringName, speed := 1.0, restart := false) -> bool:
+	if player_motion == null or not player_motion.has_animation(clip):
+		return false
+	if restart and player_motion.current_animation == clip:
+		player_motion.seek(0.0, true)
+	elif player_motion.current_animation != clip:
+		player_motion.play(clip, 0.12, speed)
+	return true
+
 func _perform_swing() -> void:
 	if attack_cd > 0.0:
 		return
 	attack_cd = 0.28
 	PrologueState.play_sfx("slash")
-	var tw := create_tween()
-	tw.tween_property(player_visual, "rotation:y", player_visual.rotation.y + TAU, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	if not _play_traveler_motion(&"Swing", 1.65, true):
+		var tw := create_tween()
+		tw.tween_property(player_visual, "rotation:y", player_visual.rotation.y + TAU, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	if ink_fx:
 		ink_fx.try_hit_shatter_props(player.position, 2.8, self)
 		ink_fx.paint_scorch(player.position, 1.35, 0.24)
@@ -1140,7 +1548,8 @@ func flash_hit(node: Node3D) -> void:
 	tw.tween_property(node, "scale", orig, 0.12)
 
 func _physics_process(delta: float) -> void:
-	var t := Time.get_ticks_msec() * 0.001
+	scene_time += delta
+	var t := scene_time
 	attack_cd = maxf(0.0, attack_cd - delta)
 	if toast_timer > 0.0:
 		toast_timer -= delta
@@ -1157,50 +1566,41 @@ func _physics_process(delta: float) -> void:
 		var cand_x := clampf(player.position.x + move_dir.x * 5.2 * delta, -16.5, 16.5)
 		var cand_z := clampf(player.position.z + move_dir.z * 5.2 * delta, -12.5, 9.5)
 		var cand_y := terrain_height(cand_x, cand_z)
-		var on_bridge := absf(cand_z + 1.10) < 1.35 and cand_x > 6.2 and cand_x < 11.2
+		var on_bridge := absf(cand_z - BRIDGE_XZ.y) <= BRIDGE_HALF_WIDTH and absf(cand_x - BRIDGE_XZ.x) <= BRIDGE_HALF_SPAN
 		if on_bridge:
-			player.position = Vector3(cand_x, maxf(cand_y, 0.28), cand_z)
-		elif cand_y > WATER_LEVEL - 0.12:
+			player.position = Vector3(cand_x, maxf(cand_y, _bridge_deck_y(cand_x)), cand_z)
+		elif cand_y > WATER_LEVEL - 0.12 and not _inside_cabin(cand_x, cand_z):
 			player.position = Vector3(cand_x, cand_y, cand_z)
 		player_yaw = atan2(move_dir.x, move_dir.z)
 		player_visual.rotation.y = lerp_angle(player_visual.rotation.y, player_yaw, clampf(delta * 12.0, 0.0, 1.0))
 		_walk_phase += delta * 12.0
-		player_visual.position.y = absf(sin(_walk_phase)) * 0.10
+		player_visual.position.y = absf(sin(_walk_phase)) * (0.044 if player_motion != null else 0.10)
 	else:
 		player_visual.position.y = lerpf(player_visual.position.y, 0.0, clampf(delta * 8.0, 0.0, 1.0))
 
+	if player_motion != null:
+		var swinging := player_motion.current_animation == &"Swing"
+		if practice_sword != null:
+			practice_sword.visible = swinging
+		if not swinging:
+			_play_traveler_motion(&"Walk" if moving else &"Idle", 1.16 if moving else 1.0)
+	for flower in flower_roots:
+		var breeze := sin(t * 1.43 + flower.position.x * 0.54 + flower.position.z * 0.31)
+		flower.rotation.x = breeze * 0.043
+		flower.rotation.z = breeze * 0.029
+	if wolf_node:
+		wolf_node.scale.y = 1.0 + 0.016 * sin(t * 1.90)
+
 	if orbit_camera:
-		orbit_angle += delta * 0.28
-	_update_camera(clampf(delta * 4.5, 0.0, 1.0))
+		orbit_angle += delta * TAU / 16.0
+	_update_camera(1.0 - exp(-delta * 4.5))
 
 	if campfire_flame:
 		campfire_flame.scale = Vector3(1.0 + sin(t * 8.5) * 0.06, 0.94 + sin(t * 12.5) * 0.14, 1.0 + cos(t * 9.5) * 0.06)
 	if campfire_light:
 		var base_e := 3.25 if is_night else 0.85
 		campfire_light.light_energy = base_e + sin(t * 10.5) * 0.26
-	if campfire_smoke_ribbon:
-		campfire_smoke_ribbon.rotation.y = sin(t * 0.9) * 0.14
-		campfire_smoke_ribbon.scale.x = 1.0 + sin(t * 1.6) * 0.08
 
-	for rec in cabin_smoke:
-		var cn: MeshInstance3D = rec["node"]
-		var cyc := fmod(t * 0.24 + float(rec["offset"]), 1.0)
-		cn.position = Vector3(9.85 + cyc * 1.15, float(rec["base_y"]) + cyc * 2.15, 3.55 + sin(cyc * PI) * 0.14)
-		var sc := sin(cyc * PI) * (0.58 + cyc * 0.65)
-		cn.scale = Vector3(maxf(0.01, sc), maxf(0.01, sc * 0.92), maxf(0.01, sc))
-
-	for rec in waterfall_foam:
-		var fn: Node3D = rec["node"]
-		var bp: Vector3 = rec["base"]
-		var ph := float(rec["ph"])
-		var s := 0.86 + sin(t * 4.2 + ph) * 0.18
-		fn.scale = Vector3(s, s * 0.85, s)
-		fn.position.y = bp.y + sin(t * 5.0 + ph) * 0.05
-
-	if fishing_bobber:
-		fishing_bobber.position.y = WATER_LEVEL + 0.05 + sin(t * 3.0) * 0.05
-	if grunt_key:
-		grunt_key.rotation.z += delta * 1.8
 	if golem_node:
 		golem_node.position.y = terrain_height(-5.4, -8.6) - 0.04 + absf(sin(t * 2.2)) * 0.06
 	if bird_node:
@@ -1217,3 +1617,4 @@ func _physics_process(delta: float) -> void:
 
 	if ink_fx:
 		ink_fx.step(delta, player.position, moving)
+		precipitation.follow_weather(ink_fx.weather_mode, player.position)

@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="補簽遠行 · 第一幕微縮實景"
-run/main_scene="res://diorama/CampfireDiorama.tscn"
+run/main_scene="res://diorama/LakesideView.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 
 [autoload]

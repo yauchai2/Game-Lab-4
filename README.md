@@ -13,20 +13,23 @@
   - [畫風分析與資產製作手冊](docs/art/畫風分析與資產製作手冊.md) · [style-spec.json](docs/art/style-spec.json)
   - [手繪風格重新分析](docs/art/手繪風格重新分析.md) · [遊戲風格參考圖索引](docs/art/遊戲風格參考圖索引.md)
 - **`docs/archive/`：** 早期已退役之歷史企劃與舊版港城美術規格（僅供歷史參考）。
-- **`game/`：** Godot 4.6.3 遊戲專案本體。
+- **`game/`：** Godot 遊戲專案本體。
 - **`美術參考/`：** 原始參考圖片與既有 3D／Tripo 資產庫（[資產交接清單](美術參考/西岸港城/README.md)）。
 
-## 本機試玩（最新 PoE 2 式三分區灰盒原型）
+## 本機試玩
 
-用 **Godot 4.6.3** 開啟 [game/project.godot](game/project.godot)，按 **F5** 即可從**地圖一：林間營火空地** [CampfireClearing.tscn](game/prologue/CampfireClearing.tscn) 出發，經自然傳送點依序進入**地圖二：雲丘小鎮 Hub** [CloudhillTown.tscn](game/prologue/CloudhillTown.tscn) 與**地圖三：雲海古道與石橋** [CloudhillRoad.tscn](game/prologue/CloudhillRoad.tscn)（舊港城技術灰盒 [game/harbor/Harbor.tscn](game/harbor/Harbor.tscn) 仍保留，可按 F6 單獨執行）。
+本分支以 **Godot 4.7.2** 和 **GL Compatibility** 驗證。開啟 [Godot 專案](game/project.godot)，按 **F5** 進入湖畔營火。世界以 960 × 540 渲染並使用最近鄰放大，操作提示以視窗解像度顯示。
 
-| 按鍵 | 頭五分鐘三分區灰盒操作 |
+| 按鍵 | 湖畔營火 |
 | --- | --- |
-| WASD 或方向鍵 | 移動（標題畫面按任意鍵／點擊開始） |
-| E | 互動與自然傳送（進出三張地圖／購劍／拍史萊姆／開閘拉桿／蓋退休章／開寶箱／驛站快傳） |
-| F | 上下騎（裝備《彈簧試驗鞍座》後下騎可彈飛高空 200% 暴擊下劈） |
-| Q | 騎乘撞碎枯木路障／首領紅光蓄力時指揮巨狼破防（Stagger） |
-| 滑鼠左鍵 / J / R | 揮劍攻擊（可砍小鎮試刀木樁與首領）／重置整段序章 |
+| WASD 或方向鍵 | 移動 |
+| R | 切換環繞與跟隨鏡頭 |
+| N | 切換日夜 |
+| V | 循環切換晴朗、下雪和下雨 |
+| 滑鼠左鍵或 J | 揮擊 |
+| H | 隱藏或顯示提示 |
+
+玩法與關卡流程的灰盒位於 `prototype/prologue-five-minutes` 分支。湖畔的渲染與驗收紀錄見[專案記憶](docs/project-memory.md)。
 
 ## AI 代理與協作者
 

@@ -80,6 +80,14 @@ void fragment() {
 	vec3 temp_shift = mix(vec3(0.70, 0.80, 0.98), vec3(1.07, 1.03, 0.90), g_t);
 	col *= grad * temp_shift;
 
+	// Broken leaf clusters catch warm light along the upper crown.
+	if (spherical_normal_mix > 0.0) {
+		vec2 canopy_uv = vec2(v_world_pos.x + v_world_pos.z * 0.67, v_world_pos.y - v_world_pos.z * 0.39);
+		float clusters = vnoise(canopy_uv * 2.7) * 0.78 + vnoise(canopy_uv * 7.3) * 0.22;
+		float leaves = smoothstep(0.44, 0.68, clusters);
+		col *= mix(vec3(0.62, 0.77, 0.82), vec3(1.11, 1.03, 0.86), leaves);
+	}
+
 	// ZERO Plastic Shine (Pure Matte Pastel/Gouache!)
 	ALBEDO = clamp(col, 0.0, 1.0);
 	ROUGHNESS = 1.0;

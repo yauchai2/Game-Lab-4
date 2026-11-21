@@ -1,0 +1,28 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://diorama/LakesideView.gd" id="1_view"]
+
+[node name="LakesideView" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_view")
+
+[node name="PixelCanvas" type="SubViewportContainer" parent="."]
+texture_filter = 1
+layout_mode = 0
+offset_right = 960.0
+offset_bottom = 540.0
+stretch = false
+
+[node name="World" type="SubViewport" parent="PixelCanvas"]
+size = Vector2i(960, 540)
+own_world_3d = true
+handle_input_locally = true
+render_target_update_mode = 4
+msaa_3d = 0
+screen_space_aa = 0
