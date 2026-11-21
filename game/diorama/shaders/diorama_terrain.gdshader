@@ -8,13 +8,13 @@ uniform sampler2D state_map : filter_linear, repeat_disable;
 uniform vec2 map_min = vec2(-24.0, -18.0);
 uniform vec2 map_size = vec2(48.0, 36.0);
 
-uniform vec4 grass_deep : source_color = vec4(0.12, 0.22, 0.23, 1.0);
-uniform vec4 grass_mid : source_color = vec4(0.22, 0.34, 0.25, 1.0);
-uniform vec4 grass_hill : source_color = vec4(0.35, 0.46, 0.27, 1.0);
+uniform vec4 grass_deep : source_color = vec4(0.16, 0.27, 0.25, 1.0);
+uniform vec4 grass_mid : source_color = vec4(0.27, 0.41, 0.27, 1.0);
+uniform vec4 grass_hill : source_color = vec4(0.39, 0.51, 0.28, 1.0);
 uniform vec4 trail_col : source_color = vec4(0.84, 0.63, 0.42, 1.0);
-uniform vec4 campfire_dirt : source_color = vec4(0.92, 0.62, 0.24, 1.0);
-uniform vec4 shore_sand : source_color = vec4(0.22, 0.31, 0.42, 1.0);
-uniform vec4 cliff_rock : source_color = vec4(0.25, 0.29, 0.44, 1.0);
+uniform vec4 campfire_dirt : source_color = vec4(0.95, 0.65, 0.24, 1.0);
+uniform vec4 shore_sand : source_color = vec4(0.24, 0.34, 0.45, 1.0);
+uniform vec4 cliff_rock : source_color = vec4(0.26, 0.31, 0.46, 1.0);
 uniform float night_mix : hint_range(0.0, 1.0) = 1.0;
 
 varying vec3 v_world_pos;
@@ -49,24 +49,28 @@ void fragment() {
 
 	float n1 = vnoise(v_world_pos.xz * 0.25);
 	float n2 = vnoise(v_world_pos.xz * 1.10);
-	// Painterly dry-brush stipple (directional vertical brushstrokes like gouache on paper)
 	float brush = vnoise(vec2(v_world_pos.x * 5.2, v_world_pos.z * 2.1));
 	float fine_grain = vnoise(v_world_pos.xz * 8.5);
 
 	// Rich mossy-olive meadow with warm hilltops & deep twilight hollows
 	float hill_t = clamp((v_world_pos.y + 0.05) * 0.50, 0.0, 1.0);
 	vec3 g_col = mix(grass_deep.rgb, grass_mid.rgb, smoothstep(0.18, 0.82, n1));
-	g_col = mix(g_col, grass_hill.rgb, hill_t * 0.65);
+	g_col = mix(g_col, grass_hill.rgb, hill_t * 0.68);
 
 	// Mossy cliff bank on steep slopes
 	float slope = 1.0 - clamp(v_world_nrm.y, 0.0, 1.0);
 	g_col = mix(g_col, cliff_rock.rgb, smoothstep(0.20, 0.48, slope));
 
-	// Organic shoreline, warm sandy path & golden-honey campfire clearing
+	// Organic shoreline, warm sandy path & wide golden-honey campfire clearing
 	vec3 col = mix(g_col, shore_sand.rgb, smoothstep(0.22, 0.88, shore_w));
 	col = mix(col, trail_col.rgb, smoothstep(0.20, 0.72, trail_w + (n2 - 0.5) * 0.14));
-	float fire_pool = smoothstep(0.06, 0.84, fire_w + (n1 - 0.5) * 0.14);
-	col = mix(col, campfire_dirt.rgb, fire_pool * 0.92);
+	float fire_pool = smoothstep(0.04, 0.80, fire_w + (n1 - 0.5) * 0.14);
+	col = mix(col, campfire_dirt.rgb, fire_pool * 0.90);
+
+	// Soft golden hearth heart right under campfire (smooth radial falloff — NO hard circle!)
+	float d_hearth = length(v_world_pos.xz - vec2(0.0, 0.2));
+	float hearth_glow = smoothstep(1.85, 0.25, d_hearth);
+	col = mix(col, vec3(1.0, 0.82, 0.34), hearth_glow * 0.65 * night_mix);
 
 	// Subtle gouache paper & dry-brush texture
 	col *= 1.0 + (brush - 0.5) * 0.11 + (fine_grain - 0.5) * 0.05;
@@ -94,8 +98,9 @@ void fragment() {
 	ROUGHNESS = mix(0.95, 0.38, wet_m);
 	METALLIC = 0.0;
 	SPECULAR = mix(0.03, 0.25, wet_m);
-	// Warm campfire bounce + subtle velvet gouache floor lift (NO washed-out glow!)
-	EMISSION = col * mix(0.04, 0.08, night_mix)
-		+ vec3(0.96, 0.52, 0.14) * fire_pool * 0.22 * night_mix
+	// Luminous cozy night meadow floor + warm hearth bounce (zero daytime bleach!)
+	EMISSION = col * mix(0.02, 0.13, night_mix)
+		+ vec3(0.98, 0.56, 0.16) * fire_pool * 0.24 * night_mix
+		+ vec3(1.0, 0.76, 0.28) * hearth_glow * 0.32 * night_mix
 		+ vec3(0.95, 0.45, 0.14) * ember * 0.38;
 }

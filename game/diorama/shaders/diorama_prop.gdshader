@@ -1,15 +1,15 @@
 shader_type spatial;
 render_mode diffuse_lambert;
 
-// Velvety Gouache Diorama Prop Shader (Rich Saturated Storybook Palette + Dry-Brush Grain + Strong Vertical AO Gradient!)
+// Velvety Gouache Diorama Prop Shader (Rich Saturated Storybook Palette + Dry-Brush Grain + Vertical AO Gradient!)
 uniform sampler2D albedo_tex : source_color, filter_linear_mipmap;
 uniform bool has_albedo_tex = true;
 uniform vec4 base_color : source_color = vec4(1.0, 1.0, 1.0, 1.0);
 uniform vec4 tint_color : source_color = vec4(1.0, 1.0, 1.0, 1.0);
 uniform float tint_mix : hint_range(0.0, 0.92) = 0.0;
 uniform float brightness : hint_range(0.4, 1.8) = 1.00;
-uniform float saturation : hint_range(0.4, 1.6) = 1.12;
-uniform float ambient_lift : hint_range(0.0, 0.25) = 0.06;
+uniform float saturation : hint_range(0.4, 1.6) = 1.14;
+uniform float ambient_lift : hint_range(0.0, 0.25) = 0.09;
 uniform float grad_strength : hint_range(0.0, 0.75) = 0.42;
 uniform float min_y = -0.5;
 uniform float max_y = 0.5;
@@ -46,19 +46,19 @@ void fragment() {
 	float luma = dot(col, vec3(0.299, 0.587, 0.114));
 	col = mix(vec3(luma), col, saturation);
 
-	// Rich gouache tinting that preserves deep crevices (NO chalky +0.38 lift!)
-	vec3 tinted = tint_color.rgb * clamp(luma * 1.32 + 0.14, 0.22, 1.16);
+	// Rich gouache tinting that preserves deep crevices
+	vec3 tinted = tint_color.rgb * clamp(luma * 1.32 + 0.15, 0.24, 1.18);
 	col = mix(col, tinted, tint_mix);
 
-	// Painterly dry-brush vertical strokes (breaks up smooth clay/plastic look!)
+	// Painterly dry-brush vertical strokes
 	float brush = vnoise(vec2((v_world_pos.x + v_world_pos.z) * 6.5, v_world_pos.y * 2.8));
 	float speckle = vnoise(vec2(v_world_pos.x * 14.0 - v_world_pos.z * 11.0, v_world_pos.y * 9.0));
 	col *= 1.0 + (brush - 0.5) * 0.14 + (speckle - 0.5) * 0.06;
 
-	// vC7OEC x 06_29_51 signature: Deep grounded base AO -> luminous painted crown!
+	// vC7OEC x 06_29_51 signature: Grounded base AO -> luminous painted crown!
 	float g_t = smoothstep(0.04, 0.92, v_norm_y);
-	float grad = mix(1.0 - grad_strength * 0.85, 1.0 + grad_strength * 0.36, g_t);
-	vec3 base_cool = mix(vec3(0.78, 0.82, 0.96), vec3(1.0), g_t);
+	float grad = mix(1.0 - grad_strength * 0.82, 1.0 + grad_strength * 0.36, g_t);
+	vec3 base_cool = mix(vec3(0.80, 0.84, 0.96), vec3(1.0), g_t);
 	col *= grad * base_cool;
 
 	ALBEDO = clamp(col, 0.0, 1.0);

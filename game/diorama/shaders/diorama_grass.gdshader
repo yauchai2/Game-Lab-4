@@ -1,7 +1,7 @@
 shader_type spatial;
-render_mode diffuse_lambert, cull_disabled;
+render_mode unshaded, cull_disabled;
 
-// Stylized Painterly Grass Tuft Shader (06_29_51 & vC7OEC signature grass blades!)
+// Seamless Gouache Painterly Grass Tufts (Self-lit to blend softly into meadow & campfire pool — ZERO harsh black comb shadows!)
 uniform float night_mix : hint_range(0.0, 1.0) = 1.0;
 
 varying float v_tip;
@@ -11,17 +11,13 @@ void vertex() {
 	v_tip = clamp(UV.y, 0.0, 1.0);
 	v_col = COLOR.rgb;
 	vec3 wp = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
-	float sway = sin(TIME * 2.1 + wp.x * 0.75 + wp.z * 0.65) * 0.07 * v_tip * v_tip;
+	float sway = sin(TIME * 2.0 + wp.x * 0.72 + wp.z * 0.62) * 0.055 * v_tip * v_tip;
 	VERTEX.x += sway;
-	VERTEX.z += sway * 0.45;
+	VERTEX.z += sway * 0.40;
 }
 
 void fragment() {
-	// Grounded darker base -> brighter painted tip
-	vec3 col = v_col * mix(0.68, 1.18, v_tip);
+	// Soft root-to-tip painterly gradient matching 06_29_51 & vC7OEC grass tufts
+	vec3 col = v_col * mix(0.76, 1.18, v_tip);
 	ALBEDO = clamp(col, 0.0, 1.0);
-	ROUGHNESS = 0.96;
-	METALLIC = 0.0;
-	SPECULAR = 0.02;
-	EMISSION = col * mix(0.04, 0.08, night_mix);
 }
