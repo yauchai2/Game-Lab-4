@@ -24,6 +24,12 @@
 - 港城植栽準備試作 Billboard 草卡與葉卡、共用世界風場及靜態樹影代理。現有 GL Compatibility 不會用片元 `LIGHT_VERTEX` 重算陰影座標，待同景比較 Forward+。[植栽公告板與全域風場](../美術參考/西岸港城/植栽公告板與全域風場.md)
 - 港城正式三視圖使用 GPT Image，Blender 渲染供幾何核對。B03–B08、S03–S05、C02、C03 已補齊 35 張 GPT Image 送件 PNG，並保留原稿；多視圖的 Tripo GLB 生成中。20 件單張送件 GLB 已按 ID 收錄，並通過 Godot 4.6.3 讀入及場景建立。[Tripo 回傳清冊](../美術參考/西岸港城/Tripo回傳/README.md) · [資產交接](../美術參考/西岸港城/README.md)
 
+## Ink Studio 工具試驗
+
+- Ink Studio 0.1.0（MIT）已在 Codex 工作環境從上游提交 `b591504` 安裝。需要 Node.js 18 或以上。可用 `ink-studio scenes` 列出範例，或用 `ink-studio render watcher --t 2.6 --colored --out watcher.png` 重現 CPU 算圖。[上游原始碼與使用文件](https://github.com/siliconjungle/shapeshift-labs-ink-studio/tree/b591504)
+- 已以 `ink-studio export-glb examples/puppet.js --out puppet.glb` 從上游檢出目錄匯出 GLB，並用 Godot 4.6.3 的 glTF 讀取器確認一個網格、九根骨骼和 `Victory` 動畫。GLB 可攜帶相容的網格、材質及烘焙動畫。即時碎裂、布料、積雪等模擬與潑濺渲染屬 Ink Studio 的執行環境。
+- 在此專案可先把它用於離線算圖、精靈圖集或 GLB 素材試驗，由 Godot 負責遊戲內碰撞及互動。此試驗未把工具加入遊戲依賴，也未決定正式畫風。
+
 ## 歷史記錄 · 《借影之森》
 
 > 以下保留當時的企劃背景。
