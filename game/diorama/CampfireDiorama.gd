@@ -172,12 +172,12 @@ func _setup_environment_and_lights() -> void:
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env.tonemap_exposure = 0.98
 	env.glow_enabled = true
-	env.glow_intensity = 0.22
-	env.glow_bloom = 0.05
-	env.glow_hdr_threshold = 1.12
+	env.glow_intensity = 0.12
+	env.glow_bloom = 0.02
+	env.glow_hdr_threshold = 1.25
 	env.adjustment_enabled = true
-	env.adjustment_saturation = 1.16
-	env.adjustment_contrast = 1.07
+	env.adjustment_saturation = 1.06
+	env.adjustment_contrast = 1.02
 	env.fog_enabled = true
 	env.fog_density = 0.0045
 
@@ -219,60 +219,63 @@ func _apply_time_of_day(night: bool) -> void:
 		sky_mat.sky_horizon_color = Color("#152969")
 		sky_mat.ground_bottom_color = Color("#0c1842")
 		sky_mat.ground_horizon_color = Color("#152969")
-		env.ambient_light_color = Color("#324a8f")
-		env.ambient_light_energy = 0.58
-		env.fog_light_color = Color("#122359")
-		key_light.light_color = Color("#87a8f2")
-		key_light.light_energy = 0.48
-		campfire_light.light_energy = 3.15
-		cabin_light.light_energy = 2.20
+		# Lift the blacks with soft blue-violet ambient so tree bases NEVER crush to pitch black!
+		env.ambient_light_color = Color("#2a3555")
+		env.ambient_light_energy = 0.74
+		env.fog_light_color = Color("#1b294d")
+		key_light.light_color = Color("#8aa4d6")
+		key_light.light_energy = 0.44
+		campfire_light.light_energy = 2.85
+		cabin_light.light_energy = 1.80
 		if terrain_mat:
-			terrain_mat.set_shader_parameter("grass_deep", Color("#27423c"))
-			terrain_mat.set_shader_parameter("grass_mid", Color("#436642"))
-			terrain_mat.set_shader_parameter("grass_hill", Color("#638246"))
-			terrain_mat.set_shader_parameter("trail_col", Color("#d9a46c"))
-			terrain_mat.set_shader_parameter("campfire_dirt", Color("#f2a238"))
-			terrain_mat.set_shader_parameter("shore_sand", Color("#283a4f"))
-			terrain_mat.set_shader_parameter("cliff_rock", Color("#2e3654"))
+			terrain_mat.set_shader_parameter("grass_deep", Color("#29433d"))
+			terrain_mat.set_shader_parameter("grass_mid", Color("#436444"))
+			terrain_mat.set_shader_parameter("grass_hill", Color("#607d47"))
+			terrain_mat.set_shader_parameter("trail_col", Color("#d4a26e"))
+			terrain_mat.set_shader_parameter("campfire_dirt", Color("#e89c3c"))
+			terrain_mat.set_shader_parameter("shore_sand", Color("#2c3d4f"))
+			terrain_mat.set_shader_parameter("cliff_rock", Color("#343c57"))
 			terrain_mat.set_shader_parameter("night_mix", 1.0)
 		if water_mat:
-			water_mat.set_shader_parameter("deep_color", Color("#0f3070"))
-			water_mat.set_shader_parameter("shallow_color", Color("#1e54a6"))
-			water_mat.set_shader_parameter("foam_color", Color("#9ec4f5"))
+			# Muted Slate Blue night water + soft grey-blue non-glowing foam!
+			water_mat.set_shader_parameter("deep_color", Color("#1c3554"))
+			water_mat.set_shader_parameter("shallow_color", Color("#2b506e"))
+			water_mat.set_shader_parameter("foam_color", Color("#6b8cae"))
 		if grass_mat:
 			grass_mat.set_shader_parameter("night_mix", 1.0)
 		for gn in godray_nodes:
 			gn.visible = false
 		for pm in prop_mats:
-			pm.set_shader_parameter("ambient_lift", 0.09)
+			pm.set_shader_parameter("ambient_lift", 0.10)
 	else:
-		# Exact vC7OEC.mp4 Warm Golden Sunlight vs. Clean Cool Cyan-Blue Shadows (ZERO grey washout!)
+		# Clean vC7OEC Warm Golden Sunlight vs. Soft Cool Cyan-Blue Shadows!
 		env.tonemap_exposure = 0.88
 		env.fog_density = 0.0018
-		sky_mat.sky_top_color = Color("#3588e0")
-		sky_mat.sky_horizon_color = Color("#9cd2fa")
-		sky_mat.ground_bottom_color = Color("#2d6934")
-		sky_mat.ground_horizon_color = Color("#9cd2fa")
-		env.ambient_light_color = Color("#4088c9")
-		env.ambient_light_energy = 0.48
-		env.fog_light_color = Color("#87c2e6")
-		key_light.light_color = Color("#ffe08a")
-		key_light.light_energy = 1.12
-		campfire_light.light_energy = 0.75
-		cabin_light.light_energy = 0.35
+		sky_mat.sky_top_color = Color("#438cd4")
+		sky_mat.sky_horizon_color = Color("#a8d4f2")
+		sky_mat.ground_bottom_color = Color("#356e3b")
+		sky_mat.ground_horizon_color = Color("#a8d4f2")
+		env.ambient_light_color = Color("#4e8ec4")
+		env.ambient_light_energy = 0.52
+		env.fog_light_color = Color("#8fc2de")
+		key_light.light_color = Color("#ffe294")
+		key_light.light_energy = 1.08
+		campfire_light.light_energy = 0.70
+		cabin_light.light_energy = 0.30
 		if terrain_mat:
-			terrain_mat.set_shader_parameter("grass_deep", Color("#2c6630"))
-			terrain_mat.set_shader_parameter("grass_mid", Color("#4d8f38"))
-			terrain_mat.set_shader_parameter("grass_hill", Color("#7db844"))
-			terrain_mat.set_shader_parameter("trail_col", Color("#cfa36b"))
-			terrain_mat.set_shader_parameter("campfire_dirt", Color("#c49152"))
-			terrain_mat.set_shader_parameter("shore_sand", Color("#7f9680"))
-			terrain_mat.set_shader_parameter("cliff_rock", Color("#697287"))
+			terrain_mat.set_shader_parameter("grass_deep", Color("#336b36"))
+			terrain_mat.set_shader_parameter("grass_mid", Color("#539140"))
+			terrain_mat.set_shader_parameter("grass_hill", Color("#7fb54a"))
+			terrain_mat.set_shader_parameter("trail_col", Color("#cfa570"))
+			terrain_mat.set_shader_parameter("campfire_dirt", Color("#c49458"))
+			terrain_mat.set_shader_parameter("shore_sand", Color("#7f9682"))
+			terrain_mat.set_shader_parameter("cliff_rock", Color("#6d768a"))
 			terrain_mat.set_shader_parameter("night_mix", 0.0)
 		if water_mat:
-			water_mat.set_shader_parameter("deep_color", Color("#1659b5"))
-			water_mat.set_shader_parameter("shallow_color", Color("#2e93e0"))
-			water_mat.set_shader_parameter("foam_color", Color("#dcf0ff"))
+			# Painterly azure-slate day water (NO electric neon blue!)
+			water_mat.set_shader_parameter("deep_color", Color("#28649e"))
+			water_mat.set_shader_parameter("shallow_color", Color("#4a90c4"))
+			water_mat.set_shader_parameter("foam_color", Color("#d2e6f5"))
 		if grass_mat:
 			grass_mat.set_shader_parameter("night_mix", 0.0)
 		for gn in godray_nodes:
@@ -383,28 +386,28 @@ func _build_painterly_grass_tufts() -> void:
 	var xforms: Array[Transform3D] = []
 	grass_positions.clear()
 
-	# 3.5x Denser Fluffy Miniature Lawn (5,200 tufts in 1 single MultiMesh draw call!)
-	for _i in range(9500):
+	# Clean, Breathable Stylized Grass Tufts (2,200 tufts, cast_shadow=OFF, ZERO visual noise!)
+	for _i in range(4500):
 		var gx := rng.randf_range(-15.8, 15.8)
 		var gz := rng.randf_range(-12.5, 7.2)
 		var gy := terrain_height(gx, gz)
-		if gy < WATER_LEVEL + 0.30:
+		if gy < WATER_LEVEL + 0.32:
 			continue
 		if _trail_weight(gx, gz) > 0.30:
 			continue
 		var d_fire := Vector2(gx, gz).distance_to(CAMPFIRE_XZ)
-		if d_fire < 2.55:
+		if d_fire < 2.90:
 			continue
-		if Vector2(gx, gz).distance_to(Vector2(9.8, 5.15)) < 2.4:
+		if Vector2(gx, gz).distance_to(Vector2(9.8, 5.15)) < 2.5:
 			continue
-		if Vector2(gx, gz).distance_to(Vector2(-9.8, -2.5)) < 2.4:
+		if Vector2(gx, gz).distance_to(Vector2(-9.8, -2.5)) < 2.5:
 			continue
-		var s := rng.randf_range(0.62, 1.15)
-		var yaw := rng.randf_range(-0.55, 0.55)
-		var basis := Basis(Vector3.UP, yaw).scaled(Vector3(s, s * rng.randf_range(0.78, 1.18), s))
+		var s := rng.randf_range(0.60, 1.05)
+		var yaw := rng.randf_range(-0.50, 0.50)
+		var basis := Basis(Vector3.UP, yaw).scaled(Vector3(s, s * rng.randf_range(0.75, 1.10), s))
 		xforms.append(Transform3D(basis, Vector3(gx, gy - 0.03, gz)))
 		grass_positions.append(Vector2(gx, gz))
-		if xforms.size() >= 5200:
+		if xforms.size() >= 2200:
 			break
 
 	grass_mm = MultiMesh.new()
@@ -506,36 +509,32 @@ func _build_water_and_waterfall(height_tex: ImageTexture) -> void:
 	wf_mi.rotation_degrees.y = 10.0
 	add_child(wf_mi)
 
-	# Dynamic Bouncing GPUParticles3D Waterfall Splash + Soft Mist (NO static marshmallow line!)
-	var puff_tex := _make_soft_puff_texture()
+	# Stylized Solid Matte 3D Sphere Splash Particles (scales smoothly to 0 — NO airbrush blur!)
 	var wf_p := GPUParticles3D.new()
-	wf_p.position = Vector3(-8.5, WATER_LEVEL + 0.15, 5.12)
-	wf_p.amount = 42
-	wf_p.lifetime = 1.15
+	wf_p.position = Vector3(-8.5, WATER_LEVEL + 0.14, 5.12)
+	wf_p.amount = 24
+	wf_p.lifetime = 1.10
 	wf_p.preprocess = 1.2
+	wf_p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var wf_pm := ParticleProcessMaterial.new()
 	wf_pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-	wf_pm.emission_box_extents = Vector3(0.85, 0.12, 0.25)
+	wf_pm.emission_box_extents = Vector3(0.75, 0.10, 0.22)
 	wf_pm.direction = Vector3(0.0, 1.0, 0.35)
-	wf_pm.spread = 48.0
-	wf_pm.initial_velocity_min = 1.2
-	wf_pm.initial_velocity_max = 2.4
-	wf_pm.gravity = Vector3(0.0, -3.6, 0.0)
-	wf_pm.scale_min = 0.45
-	wf_pm.scale_max = 1.15
-	var wf_grad := Gradient.new()
-	wf_grad.offsets = PackedFloat32Array([0.0, 0.22, 1.0])
-	wf_grad.colors = PackedColorArray([Color(0.90, 0.96, 1.0, 0.0), Color(0.92, 0.97, 1.0, 0.85), Color(0.85, 0.94, 1.0, 0.0)])
-	var wf_gt := GradientTexture1D.new(); wf_gt.gradient = wf_grad
-	wf_pm.color_ramp = wf_gt
+	wf_pm.spread = 42.0
+	wf_pm.initial_velocity_min = 0.9
+	wf_pm.initial_velocity_max = 1.8
+	wf_pm.gravity = Vector3(0.0, -3.2, 0.0)
+	wf_pm.scale_min = 0.55; wf_pm.scale_max = 1.05
+	var wf_sc := Curve.new()
+	wf_sc.add_point(Vector2(0.0, 0.25)); wf_sc.add_point(Vector2(0.35, 1.0)); wf_sc.add_point(Vector2(1.0, 0.0))
+	var wf_scale_tex := CurveTexture.new(); wf_scale_tex.curve = wf_sc
+	wf_pm.scale_curve = wf_scale_tex
 	wf_p.process_material = wf_pm
-	var wf_qm := QuadMesh.new(); wf_qm.size = Vector2(0.85, 0.85)
-	var wf_qmat := StandardMaterial3D.new()
-	wf_qmat.albedo_texture = puff_tex; wf_qmat.vertex_color_use_as_albedo = true
-	wf_qmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; wf_qmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	wf_qmat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES; wf_qmat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
-	wf_qm.material = wf_qmat
-	wf_p.draw_pass_1 = wf_qm
+	var wf_sm := SphereMesh.new(); wf_sm.radius = 0.26; wf_sm.height = 0.48; wf_sm.radial_segments = 10; wf_sm.rings = 6
+	var wf_pmat := StandardMaterial3D.new()
+	wf_pmat.albedo_color = Color("#b8cde0"); wf_pmat.roughness = 1.0; wf_pmat.metallic_specular = 0.0
+	wf_sm.material = wf_pmat
+	wf_p.draw_pass_1 = wf_sm
 	add_child(wf_p)
 
 # --- 5. GLB Loader with Dry-Brush Gouache Shader, Contact Shadow Decal & Auto Grounding ---
@@ -839,39 +838,34 @@ func _build_diorama_scene() -> void:
 	var pmat := StandardMaterial3D.new(); pmat.albedo_color = Color("#a86e42"); pmat.roughness = 0.92
 	porch.mesh = pbm; porch.material_override = pmat; porch.position = Vector3(0.05, 0.12, 1.75)
 	cab_node.add_child(porch)
-	# Soft Billowing GPUParticles3D Chimney Smoke (scales up, curves in breeze & alpha-fades naturally!)
+	# Stylized Solid Matte 3D Sphere Chimney Smoke (turbulent drift + shrinks cleanly to Scale=0 — NO airbrush fog!)
 	var smk_p := GPUParticles3D.new()
 	smk_p.position = Vector3(9.85, cab_y + 3.45, 3.55)
-	smk_p.amount = 28
-	smk_p.lifetime = 3.2
-	smk_p.preprocess = 3.2
+	smk_p.amount = 14
+	smk_p.lifetime = 3.4
+	smk_p.preprocess = 3.4
+	smk_p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var smk_pm := ParticleProcessMaterial.new()
 	smk_pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
 	smk_pm.emission_sphere_radius = 0.14
-	smk_pm.direction = Vector3(0.28, 1.0, 0.05)
-	smk_pm.spread = 16.0
-	smk_pm.initial_velocity_min = 0.72
-	smk_pm.initial_velocity_max = 1.05
-	smk_pm.gravity = Vector3(0.42, 0.22, 0.06)
-	smk_pm.damping_min = 0.12; smk_pm.damping_max = 0.22
-	smk_pm.scale_min = 0.55; smk_pm.scale_max = 1.45
+	smk_pm.direction = Vector3(0.24, 1.0, 0.04)
+	smk_pm.spread = 22.0
+	smk_pm.initial_velocity_min = 0.62; smk_pm.initial_velocity_max = 0.95
+	smk_pm.gravity = Vector3(0.32, 0.18, 0.04)
+	smk_pm.turbulence_enabled = true
+	smk_pm.turbulence_noise_strength = 0.55
+	smk_pm.turbulence_noise_scale = 2.4
+	smk_pm.scale_min = 0.75; smk_pm.scale_max = 1.25
 	var smk_sc := Curve.new()
-	smk_sc.add_point(Vector2(0.0, 0.32)); smk_sc.add_point(Vector2(0.45, 0.95)); smk_sc.add_point(Vector2(1.0, 1.55))
+	smk_sc.add_point(Vector2(0.0, 0.25)); smk_sc.add_point(Vector2(0.45, 1.05)); smk_sc.add_point(Vector2(0.82, 0.85)); smk_sc.add_point(Vector2(1.0, 0.0))
 	var smk_st := CurveTexture.new(); smk_st.curve = smk_sc
 	smk_pm.scale_curve = smk_st
-	var smk_grad := Gradient.new()
-	smk_grad.offsets = PackedFloat32Array([0.0, 0.18, 0.65, 1.0])
-	smk_grad.colors = PackedColorArray([Color(0.94, 0.96, 1.0, 0.0), Color(0.95, 0.97, 1.0, 0.72), Color(0.90, 0.94, 1.0, 0.42), Color(0.88, 0.92, 1.0, 0.0)])
-	var smk_gt := GradientTexture1D.new(); smk_gt.gradient = smk_grad
-	smk_pm.color_ramp = smk_gt
 	smk_p.process_material = smk_pm
-	var smk_qm := QuadMesh.new(); smk_qm.size = Vector2(1.05, 1.05)
-	var smk_qmat := StandardMaterial3D.new()
-	smk_qmat.albedo_texture = _make_soft_puff_texture(); smk_qmat.vertex_color_use_as_albedo = true
-	smk_qmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; smk_qmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	smk_qmat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES; smk_qmat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
-	smk_qm.material = smk_qmat
-	smk_p.draw_pass_1 = smk_qm
+	var smk_sm := SphereMesh.new(); smk_sm.radius = 0.34; smk_sm.height = 0.64; smk_sm.radial_segments = 10; smk_sm.rings = 6
+	var smk_mat := StandardMaterial3D.new()
+	smk_mat.albedo_color = Color("#dce4f0"); smk_mat.roughness = 1.0; smk_mat.metallic_specular = 0.0
+	smk_sm.material = smk_mat
+	smk_p.draw_pass_1 = smk_sm
 	add_child(smk_p)
 
 	# 6j. Layered Forest Enclosure (Night: 06_29_51 Midnight-Indigo + Hero Crimson; Day: vC7OEC Lush Emerald!)
@@ -974,8 +968,7 @@ func _build_diorama_scene() -> void:
 		gi.position = gr[0]; gi.rotation_degrees = Vector3(14.0, -18.0, 26.0)
 		add_child(gi)
 
-	# 6l-b. Stylized Flowing White Wind Trails (vC7OEC Bezier Ribbon Breeze!)
-	_build_stylized_wind_trails()
+	# 6l-b. Low/straight wind trails removed to keep cave & foreground super clean!
 
 	# 6m. Gentle Floating Golden Fireflies
 	for _i in range(26):
