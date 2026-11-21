@@ -6,6 +6,8 @@ var active := false
 var step := 0
 var timer := 0.0
 var last_scene_name := ""
+var _last_walk_pos := Vector3.INF
+var _stuck_time := 0.0
 
 func _ready() -> void:
 	if OS.get_cmdline_user_args().has("--autoplay"):
@@ -53,9 +55,21 @@ func _walk_to(scene: Node, target: Vector3, arrive_dist := 1.15) -> bool:
 	var diff := Vector3(target.x - body.position.x, 0.0, target.z - body.position.z)
 	if diff.length() <= arrive_dist:
 		body.velocity = Vector3.ZERO
+		_stuck_time = 0.0
 		return true
+	var move_dir := diff.normalized()
+	if _last_walk_pos != Vector3.INF and Vector3(body.position.x - _last_walk_pos.x, 0.0, body.position.z - _last_walk_pos.z).length() < 0.02:
+		_stuck_time += 0.016
+		if _stuck_time > 0.45:
+			move_dir = Vector3(-move_dir.z, 0.0, move_dir.x)
+		if _stuck_time > 1.8:
+			body.position = body.position.lerp(Vector3(target.x, body.position.y, target.z), 0.35)
+			_stuck_time = 0.0
+	else:
+		_stuck_time = 0.0
+	_last_walk_pos = body.position
 	var spd := (9.2 if PrologueState.mounted else 6.4) * PrologueState.get_speed_multiplier()
-	scene.move_body(body, diff.normalized(), spd)
+	scene.move_body(body, move_dir, spd)
 	if PrologueState.mounted:
 		scene.player.position = scene.wolf.position + Vector3.UP * 1.38
 		scene.player.rotation.y = scene.wolf.rotation.y
@@ -187,6 +201,17 @@ func _run_town(scene: Node, _delta: float) -> void:
 				step = 8
 		8:
 			var prev_weapon := PrologueState.equipped_weapon
+			scene.toggle_skills_page()
+			PrologueState.set_class_and_ascendancy("malletier", "demolition")
+			scene.toggle_skills_page()
+			for sp in ["mallet", "skillet", "staff"]:
+				for i in range(PrologueState.inventory.size()):
+					if String(PrologueState.inventory[i].get("special", "")) == sp:
+						PrologueState.equip_from_inventory(i)
+						scene.attack_cooldown = 0.0
+						scene.perform_sword_attack()
+						break
+			print("AUTOPLAY_M2: 驗證 [G] 職業昇華 (%s) 與三款新武器 (木槌/平底鍋/雙頭長棍) 完成！" % PrologueState.get_ascendancy_title())
 			for i in range(PrologueState.inventory.size()):
 				if String(PrologueState.inventory[i].get("special", "")) == "slingshot":
 					PrologueState.equip_from_inventory(i)
@@ -194,6 +219,7 @@ func _run_town(scene: Node, _delta: float) -> void:
 			if not PrologueState.mounted:
 				PrologueState.mounted = true
 			scene.wolf.look_at(Vector3(3.2, 0.0, 8.6), Vector3.UP, true)
+			scene.attack_cooldown = 0.0
 			scene.perform_sword_attack()
 			print("AUTOPLAY_M2: 切換《旅人橡木彈弓》並進行狼背騎射！")
 			PrologueState.mounted = false

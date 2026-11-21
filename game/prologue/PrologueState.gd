@@ -31,6 +31,10 @@ var mounted := false
 var player_hp := 5
 var coins := 50
 
+# PoE 2-style Classes & Ascendancies (4 Base Classes x 2 Ascendancies = 8 Builds)
+var player_class := "swordsman" # "swordsman", "malletier", "ranger", "arcanist"
+var player_ascendancy := "red_stamp" # "red_stamp", "iaido", "demolition", "skillet_chef", "staff_dancer", "angler", "spellbook", "bartender"
+
 # PoE 2-style Support Seals (immediately reshape active combat skills!)
 var unlocked_seals: Array[String] = []
 var active_seal := "" # "split", "vortex", "paycheck"
@@ -356,6 +360,8 @@ func reset_all() -> void:
 	mounted = false
 	player_hp = 5
 	coins = 50
+	player_class = "swordsman"
+	player_ascendancy = "red_stamp"
 	unlocked_seals.clear()
 	active_seal = ""
 	orb_blue = 2
@@ -407,8 +413,47 @@ func make_item(item_name: String, slot: String, rarity: String, base_atk := 0, s
 		"affixes": affixes,
 	}
 
+func get_weapon_special() -> String:
+	if equipped_weapon.is_empty():
+		return ""
+	return String(equipped_weapon.get("special", ""))
+
 func is_slingshot() -> bool:
-	return not equipped_weapon.is_empty() and String(equipped_weapon.get("special", "")) == "slingshot"
+	return get_weapon_special() == "slingshot"
+
+func get_class_title(cls := player_class) -> String:
+	match cls:
+		"swordsman": return "⚔ 停戰傳令官 (Swordsman)"
+		"malletier": return "🔨 工坊重槌手 (Malletier)"
+		"ranger": return "🏹 荒野巡遊者 (Ranger)"
+		"arcanist": return "📖 繪本魔導士 (Arcanist)"
+		_: return "⚔ 停戰傳令官 (Swordsman)"
+
+func get_ascendancy_title(asc := player_ascendancy) -> String:
+	match asc:
+		"red_stamp": return "🔴 紅章審判官 (+2破防)"
+		"iaido": return "⚡ 居合急行客 (閃避CD-25%且必暴)"
+		"demolition": return "💥 爆破拆屋匠 (重擊範圍+35%)"
+		"skillet_chef": return "🍳 鐵鍋大廚 (揮擊反彈敵方彈幕)"
+		"staff_dancer": return "🥢 雙棍舞風者 (攻速與移速+12%)"
+		"angler": return "🎣 懸崖神釣手 (彈幕+1且急射)"
+		"spellbook": return "✨ 浮頁魔導書 (揮擊飛出魔導頁刃)"
+		"bartender": return "🧪 戰地調酒師 (藥水震波+12秒疾風)"
+		_: return "未昇華"
+
+func set_class_and_ascendancy(cls: String, asc := "") -> String:
+	player_class = cls
+	if asc.is_empty():
+		match cls:
+			"swordsman": player_ascendancy = "red_stamp"
+			"malletier": player_ascendancy = "demolition"
+			"ranger": player_ascendancy = "staff_dancer"
+			"arcanist": player_ascendancy = "spellbook"
+			_: player_ascendancy = "red_stamp"
+	else:
+		player_ascendancy = asc
+	play_sfx("craft")
+	return "已切換流派：%s｜%s" % [get_class_title(), get_ascendancy_title()]
 
 func _pick_random_affix(existing: Array) -> Dictionary:
 	var candidates: Array = []
@@ -514,6 +559,10 @@ func salvage_normal_items() -> Dictionary:
 
 func get_total_atk() -> int:
 	var total := 1
+	if player_class == "swordsman":
+		total += 1
+	elif player_class == "malletier":
+		total += 2
 	if not equipped_weapon.is_empty():
 		total += int(equipped_weapon["base_atk"])
 	for gear in [equipped_weapon, equipped_saddle]:
@@ -528,6 +577,10 @@ func get_total_atk() -> int:
 
 func get_total_crit() -> int:
 	var total := 10
+	match player_class:
+		"swordsman": total += 10
+		"ranger": total += 15
+		"arcanist": total += 20
 	if active_seal == "paycheck":
 		total += 20
 	for gear in [equipped_weapon, equipped_saddle]:
@@ -605,6 +658,10 @@ func get_seal_title(seal_id: String) -> String:
 
 func get_stagger_bonus() -> int:
 	var total := 1
+	if player_class == "malletier":
+		total += 2
+	if player_ascendancy == "red_stamp":
+		total += 2
 	for gear in [equipped_weapon, equipped_saddle]:
 		if gear.is_empty():
 			continue
@@ -615,6 +672,10 @@ func get_stagger_bonus() -> int:
 
 func get_speed_multiplier() -> float:
 	var pct := 0
+	if player_class == "ranger":
+		pct += 18
+	if player_ascendancy == "staff_dancer":
+		pct += 12
 	for gear in [equipped_weapon, equipped_saddle]:
 		if gear.is_empty():
 			continue
@@ -643,10 +704,12 @@ func format_item_details(item: Dictionary) -> String:
 	if int(item["base_atk"]) > 0:
 		parts.append("基礎攻+%d" % int(item["base_atk"]))
 	var sp := String(item.get("special", ""))
-	if sp == "spring_slam":
-		parts.append("特效:下騎彈飛200%暴擊")
-	elif sp == "slingshot":
-		parts.append("職業:弱點狙擊手(支援騎射!)")
+	match sp:
+		"spring_slam": parts.append("特效:下騎彈飛200%暴擊")
+		"slingshot": parts.append("武器:橡木彈弓(支援騎射!)")
+		"mallet": parts.append("武器:工藝木槌(1.35倍廣域震波)")
+		"skillet": parts.append("武器:鑄鐵平底鍋(揮擊反彈敵方彈幕!)")
+		"staff": parts.append("武器:雙頭長棍(極速連掃突刺)")
 	for a in item["affixes"]:
 		parts.append(String(a["name"]))
 	return " · ".join(parts)

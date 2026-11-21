@@ -99,6 +99,8 @@ var player_sword: MeshInstance3D
 var wolf_spring_pad: MeshInstance3D
 var player_emote: Label3D
 var wolf_emote: Label3D
+var bird_callout: Label3D
+var iaido_crit_ready := false
 
 # Organic world animation & juicy VFX pools
 var sway_items: Array[Dictionary] = []
@@ -1180,6 +1182,8 @@ func setup_core_trio(spawn_pos: Vector3) -> void:
 	add_child(bird)
 	sphere(bird, Vector3.ZERO, Vector3(0.34, 0.30, 0.36), Color("#ffbf3c"))
 	box(bird, Vector3(0, 0.0, 0.20), Vector3(0.10, 0.08, 0.12), Color("#e8632c"))
+	bird_callout = label_at(bird, Vector3(0.0, 0.56, 0.0), "💬 This Way!", Color("#ff9ebc"), 30)
+	bird_callout.hide()
 	bird.position = player.position + Vector3(0, 1.45, 0)
 
 func _make_body(body: CharacterBody3D, pos: Vector3, radius: float) -> void:
@@ -1993,9 +1997,14 @@ func step_shared_physics(delta: float, cam_override_target := Vector3.INF) -> bo
 		var to_alert := flat(bird_alert_target - feet()).normalized()
 		bird_target = feet() + to_alert * 1.45 + Vector3(0, 1.95 + absf(sin(t_bird * 2.2)) * 0.25, 0)
 		bird_speed = 7.0
+		if bird_callout:
+			bird_callout.show()
+			bird_callout.scale = Vector3.ONE * (1.0 + sin(t_bird * 2.6) * 0.08)
 	else:
 		var bird_hover := Vector3(sin(t_bird * 0.6) * 0.16, 1.48 + absf(sin(t_bird)) * 0.10, cos(t_bird * 0.6) * 0.12)
 		bird_target = (wolf.position + Vector3(0, 1.60 + absf(sin(t_bird)) * 0.06, 0.85)) if PrologueState.mounted else (player.position + bird_hover)
+		if bird_callout:
+			bird_callout.hide()
 	bird.position = bird.position.lerp(bird_target, clampf(delta * bird_speed, 0.0, 1.0))
 
 	if minimap_overlay:
@@ -2012,10 +2021,16 @@ func get_minimap_markers() -> Array[Dictionary]:
 func _update_hotbar_visuals() -> void:
 	if not slot_attack:
 		return
-	var can_use_atk := can_attack and (not PrologueState.mounted or PrologueState.is_slingshot())
+	var wep := PrologueState.get_weapon_special()
+	var can_use_atk := can_attack and (not PrologueState.mounted or wep == "slingshot")
 	slot_attack.modulate = Color.WHITE if can_use_atk else Color(0.55, 0.55, 0.62, 0.85)
 	if slot_attack_sub:
-		slot_attack_sub.text = "彈弓" if PrologueState.is_slingshot() else ("旋風!" if combo_step == 2 else "揮劍")
+		match wep:
+			"slingshot": slot_attack_sub.text = "彈弓"
+			"mallet": slot_attack_sub.text = "重槌!"
+			"skillet": slot_attack_sub.text = "平底鍋"
+			"staff": slot_attack_sub.text = "雙頭棍"
+			_: slot_attack_sub.text = "旋風!" if combo_step == 2 else "揮劍"
 	slot_attack_cd.visible = attack_cooldown > 0.0
 	if slot_dodge_cd:
 		slot_dodge_cd.visible = dodge_cooldown > 0.0
@@ -2109,7 +2124,12 @@ func perform_dodge() -> void:
 	dodge_dir = input_dir.normalized() if input_dir.length() > 0.08 else Vector3(sin(yaw), 0.0, cos(yaw)).normalized()
 	dodge_timer = 0.26
 	invuln_timer = 0.30
-	dodge_cooldown = dodge_max_cd
+	if PrologueState.player_ascendancy == "iaido":
+		dodge_cooldown = dodge_max_cd * 0.75
+		iaido_crit_ready = true
+		spawn_damage_pop(feet(), "⚡ 居合蓄勢!", MIST_CYAN, false)
+	else:
+		dodge_cooldown = dodge_max_cd
 	PrologueState.play_sfx("dodge")
 	if mixamo_rig:
 		mixamo_rig.play_state("dodge", true)
@@ -2175,25 +2195,36 @@ func register_combat_hit(pos: Vector3, is_crit := false) -> void:
 		spawn_bouncing_coins(pos, 2, 5)
 
 func get_attack_multiplier() -> float:
-	return 1.6 if combo_step == 3 else 1.0
+	var mult := 1.6 if combo_step == 3 else 1.0
+	if PrologueState.get_weapon_special() == "mallet":
+		mult *= 1.35
+	if iaido_crit_ready:
+		mult *= 1.5
+	return mult
 
 func drink_flask() -> void:
 	if PrologueState.flask_charges <= 0:
 		show_player_emote("?", 0.9)
 		show_subtitle("隨身水壺空了，回到營火即可免費補滿！", 2.6)
 		return
-	if PrologueState.player_hp >= 5:
+	var is_bartender := PrologueState.player_ascendancy == "bartender"
+	if PrologueState.player_hp >= 5 and not is_bartender:
 		show_player_emote("♥", 0.9)
 		show_subtitle("目前滿血中，水壺還剩 %d 口！" % PrologueState.flask_charges, 2.2)
 		return
 	PrologueState.flask_charges -= 1
 	PrologueState.player_hp = mini(5, PrologueState.player_hp + 2)
 	PrologueState.play_sfx("heal")
-	var ring := marker(feet(), FIRE_ORANGE, 1.8)
+	var ring := marker(feet(), MIST_CYAN if is_bartender else FIRE_ORANGE, 2.8 if is_bartender else 1.8)
 	var tw := create_tween()
-	tw.tween_property(ring, "scale", Vector3(1.6, 1.0, 1.6), 0.35)
+	tw.tween_property(ring, "scale", Vector3(2.2, 1.0, 2.2) if is_bartender else Vector3(1.6, 1.0, 1.6), 0.35)
 	tw.tween_callback(ring.queue_free)
-	spawn_damage_pop(feet(), "+2 ♥", Color("#98ffbd"), true)
+	if is_bartender:
+		shrine_speed_timer = maxf(shrine_speed_timer, 12.0)
+		_damage_destructibles(feet(), 4.5)
+		spawn_damage_pop(feet(), "🧪 調酒震波 +12s疾風!", MIST_CYAN, true)
+	else:
+		spawn_damage_pop(feet(), "+2 ♥", Color("#98ffbd"), true)
 	show_player_emote("🍵", 1.2)
 	update_status_line()
 
@@ -2234,50 +2265,97 @@ func on_projectile_hit(_pos: Vector3) -> bool:
 func on_air_slam_land() -> void:
 	pass
 
+func _deflect_enemy_projectiles(origin: Vector3, radius: float) -> void:
+	for i in range(enemy_projectiles.size() - 1, -1, -1):
+		var ep: Dictionary = enemy_projectiles[i]
+		if not is_instance_valid(ep["node"]):
+			enemy_projectiles.remove_at(i)
+			continue
+		var en: Node3D = ep["node"]
+		if flat(en.position - origin).length() <= radius:
+			var rev_vel: Vector3 = -(ep["vel"] as Vector3) * 1.45
+			enemy_projectiles.remove_at(i)
+			projectiles.append({"node": en, "vel": rev_vel, "age": 0.0})
+			PrologueState.play_sfx("coin")
+			spawn_damage_pop(en.position, "🍳 鏘！反彈！", GOLD, true)
+
 func perform_sword_attack() -> void:
 	if not can_attack or attack_cooldown > 0.0:
 		return
-	if PrologueState.is_slingshot():
-		attack_cooldown = 0.24
+	var wep := PrologueState.get_weapon_special()
+	var cd_mult := 0.82 if PrologueState.player_ascendancy == "staff_dancer" else 1.0
+	var reach_mult := 1.35 if PrologueState.player_ascendancy == "demolition" else 1.0
+	if wep == "slingshot":
+		var is_angler := PrologueState.player_ascendancy == "angler"
+		attack_cooldown = (0.18 if is_angler else 0.24) * cd_mult
 		PrologueState.play_sfx("slingshot")
 		var origin := feet() + Vector3(0, 1.05 if PrologueState.mounted else 0.75, 0)
 		var yaw := wolf.rotation.y if PrologueState.mounted else player.rotation.y
-		var angles: Array[float] = [-0.24, 0.0, 0.24]
-		if PrologueState.active_seal != "split":
-			angles = [0.0]
+		var angles: Array[float] = [0.0]
+		if PrologueState.active_seal == "split" and is_angler:
+			angles = [-0.30, -0.10, 0.10, 0.30]
+		elif PrologueState.active_seal == "split":
+			angles = [-0.24, 0.0, 0.24]
+		elif is_angler:
+			angles = [-0.12, 0.12]
 		for a in angles:
 			var forward := Vector3(sin(yaw + a), 0.0, cos(yaw + a)).normalized()
-			var shot := sphere(self, origin + forward * 0.65, Vector3(0.28, 0.28, 0.28), MIST_CYAN if PrologueState.active_seal == "split" else GOLD, true)
+			var shot := sphere(self, origin + forward * 0.65, Vector3(0.28, 0.28, 0.28), MIST_CYAN if (PrologueState.active_seal == "split" or is_angler) else GOLD, true)
 			projectiles.append({"node": shot, "vel": forward * 21.0, "age": 0.0})
 		return
 	if PrologueState.mounted:
 		return
 	combo_step = (combo_step % 3) + 1
 	combo_reset_timer = 0.95
-	if combo_step == 3:
-		attack_cooldown = 0.36
+	if wep == "mallet":
+		attack_cooldown = 0.38 * cd_mult
+		PrologueState.play_sfx("wood")
+		shake_time = 0.16
+		shake_strength = 0.18
+		var smash_r := 3.8 * reach_mult
+		var mring := marker(player.position, FIRE_ORANGE, smash_r * 0.65)
+		var mtw := create_tween()
+		mtw.tween_property(mring, "scale", Vector3(1.6, 1.0, 1.6), 0.26)
+		mtw.tween_callback(mring.queue_free)
+		spawn_slash_arc(player.position, player.rotation.y, FIRE_ORANGE)
+		spawn_damage_pop(player.position, "🔨 重槌震地!", FIRE_ORANGE, false)
+		_damage_destructibles(player.position, smash_r)
+	elif wep == "staff":
+		attack_cooldown = 0.19 * cd_mult
+		PrologueState.play_sfx("slash")
+		if mixamo_rig:
+			mixamo_rig.play_state("spin" if combo_step == 3 else "slash", true)
+		spawn_slash_arc(player.position, player.rotation.y, Color("#ff6b6b"))
+		spawn_slash_arc(player.position, player.rotation.y + PI * 0.85, WHITE_WALL)
+		var lunge_s := Vector3(sin(player.rotation.y), 0.0, cos(player.rotation.y)).normalized()
+		move_body(player, lunge_s, 6.4)
+		if combo_step == 3:
+			spawn_damage_pop(player.position, "🥢 連棍掃擊!", Color("#ff9e9e"), false)
+		_damage_destructibles(player.position, 3.2 * reach_mult)
+	elif combo_step == 3:
+		attack_cooldown = 0.36 * cd_mult
 		PrologueState.play_sfx("whirl")
 		if mixamo_rig:
 			mixamo_rig.play_state("spin", true)
-		var wring := marker(player.position, GOLD, 2.4)
+		var wring := marker(player.position, GOLD, 2.4 * reach_mult)
 		var wtw := create_tween()
 		wtw.tween_property(wring, "scale", Vector3(1.65, 1.0, 1.65), 0.24)
 		wtw.tween_callback(wring.queue_free)
 		spawn_slash_arc(player.position, player.rotation.y, GOLD)
 		spawn_slash_arc(player.position, player.rotation.y + PI, FIRE_ORANGE)
-		spawn_damage_pop(player.position, "旋風斬!", GOLD, false)
+		spawn_damage_pop(player.position, "🍳 鍋蓋旋風!" if wep == "skillet" else "旋風斬!", GOLD, false)
 		var spin_tw := create_tween()
 		spin_tw.tween_property(player_visual, "rotation:y", TAU, 0.24).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		spin_tw.tween_callback(func() -> void:
 			player_visual.rotation.y = 0.0
 		)
-		_damage_destructibles(player.position, 3.4)
+		_damage_destructibles(player.position, 3.4 * reach_mult)
 	else:
-		attack_cooldown = 0.26
+		attack_cooldown = 0.26 * cd_mult
 		PrologueState.play_sfx("slash")
 		if mixamo_rig:
 			mixamo_rig.play_state("slash", true)
-		spawn_slash_arc(player.position, player.rotation.y + (0.35 if combo_step == 2 else 0.0), GOLD if PrologueState.has_sword else Color("#e6f4ff"))
+		spawn_slash_arc(player.position, player.rotation.y + (0.35 if combo_step == 2 else 0.0), Color("#ffd27d") if wep == "skillet" else (GOLD if PrologueState.has_sword else Color("#e6f4ff")))
 		var lunge_dir := Vector3(sin(player.rotation.y), 0.0, cos(player.rotation.y)).normalized()
 		move_body(player, lunge_dir, 4.2)
 		var tw := create_tween().set_parallel(true)
@@ -2285,13 +2363,23 @@ func perform_sword_attack() -> void:
 		tw.tween_property(player_visual, "rotation:x", 0.22, 0.09)
 		tw.chain().tween_property(player_sword, "rotation:y", 0.0, 0.14)
 		tw.parallel().tween_property(player_visual, "rotation:x", 0.0, 0.14)
-		_damage_destructibles(player.position, 2.6)
+		_damage_destructibles(player.position, 2.6 * reach_mult)
+	if wep == "skillet" or PrologueState.player_ascendancy == "skillet_chef":
+		_deflect_enemy_projectiles(player.position, 3.6 * reach_mult)
 	if PrologueState.active_seal == "split":
 		var sw_fwd := Vector3(sin(player.rotation.y), 0.0, cos(player.rotation.y)).normalized()
 		var wave := box(self, player.position + sw_fwd * 0.9 + Vector3(0, 0.65, 0), Vector3(1.15, 0.12, 0.32), GOLD, false, true)
 		wave.rotation.y = player.rotation.y
 		projectiles.append({"node": wave, "vel": sw_fwd * 16.5, "age": 0.0})
+	if PrologueState.player_ascendancy == "spellbook":
+		var sb_fwd := Vector3(sin(player.rotation.y), 0.0, cos(player.rotation.y)).normalized()
+		var page := box(self, player.position + sb_fwd * 0.95 + Vector3(0, 0.78, 0), Vector3(0.85, 0.08, 0.62), Color("#c8a2ff"), false, true)
+		page.rotation.y = player.rotation.y
+		projectiles.append({"node": page, "vel": sb_fwd * 19.0, "age": 0.0})
+	if iaido_crit_ready:
+		spawn_damage_pop(player.position, "⚡ 居合必暴!", MIST_CYAN, true)
 	on_sword_hit()
+	iaido_crit_ready = false
 
 func toggle_mount() -> void:
 	if air_slam_active:
