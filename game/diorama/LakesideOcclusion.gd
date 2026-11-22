@@ -40,6 +40,9 @@ func _fade_finish(original: StandardMaterial3D, converted: Dictionary) -> Shader
 	finish.set_shader_parameter("finish_color", original.albedo_color)
 	finish.set_shader_parameter("finish_roughness", original.roughness)
 	finish.set_shader_parameter("finish_specular", original.metallic_specular)
+	if original.emission_enabled:
+		finish.set_shader_parameter("glow_color", original.emission)
+		finish.set_shader_parameter("glow_energy", original.emission_energy_multiplier)
 	converted[original] = finish
 	return finish
 

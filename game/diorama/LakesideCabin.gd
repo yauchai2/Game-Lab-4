@@ -83,8 +83,8 @@ func _build_roof(trim: Material) -> void:
 	var ridge := _mat("#783527")
 	var tiles := ShaderMaterial.new()
 	tiles.shader = preload("res://diorama/shaders/diorama_roof.gdshader")
-	tiles.set_shader_parameter("clay_base", Color("#923821"))
-	tiles.set_shader_parameter("clay_light", Color("#ce6843"))
+	tiles.set_shader_parameter("clay_base", Color("#852919"))
+	tiles.set_shader_parameter("clay_light", Color("#b44729"))
 	for side in [-1, 1]:
 		var at := Vector3(0, (RIDGE_HEIGHT + EAVE_HEIGHT) * 0.5, side * ROOF_RUN * 0.5)
 		_box(Vector3(ROOF_WIDTH, 0.16, length), at, tiles, side * pitch)

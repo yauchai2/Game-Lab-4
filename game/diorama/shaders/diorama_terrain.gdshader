@@ -53,17 +53,17 @@ void fragment() {
 	float fine_grain = vnoise(v_world_pos.xz * 10.0);
 
 	float hill_t = clamp((v_world_pos.y + 0.05) * 0.50, 0.0, 1.0);
-	vec3 g_col = mix(grass_deep.rgb, grass_mid.rgb, smoothstep(0.18, 0.82, n1));
+	vec3 g_col = mix(grass_deep.rgb, grass_mid.rgb, smoothstep(0.35, 0.66, n1 * 0.86 + n2 * 0.14));
 	g_col = mix(g_col, grass_hill.rgb, hill_t * 0.68);
 
 	float slope = 1.0 - clamp(v_world_nrm.y, 0.0, 1.0);
 	g_col = mix(g_col, cliff_rock.rgb, smoothstep(0.20, 0.48, slope));
 
 	float bank_edge = shore_w + (n2 - 0.5) * 0.24;
-	vec3 col = mix(g_col, shore_sand.rgb, smoothstep(0.19, 0.92, bank_edge));
+	vec3 col = mix(g_col, shore_sand.rgb, smoothstep(0.41, 0.83, bank_edge));
 	float stone_band = smoothstep(0.35, 0.76, slope) * smoothstep(0.58, 0.78, n2);
 	col = mix(col, cliff_rock.rgb * vec3(1.05, 0.94, 0.91), stone_band * 0.53);
-	float trail_mask = smoothstep(0.20, 0.72, trail_w + (n2 - 0.5) * 0.23);
+	float trail_mask = smoothstep(0.30, 0.67, trail_w + (n2 - 0.5) * 0.23);
 	vec3 packed_earth = trail_col.rgb * mix(vec3(0.79, 0.78, 0.82), vec3(1.06, 1.01, 0.92), n2);
 	col = mix(col, packed_earth, trail_mask);
 	float fire_pool = smoothstep(0.04, 0.80, fire_w + (n1 - 0.5) * 0.14);
@@ -76,7 +76,7 @@ void fragment() {
 	col = mix(col, vec3(1.0, 0.82, 0.34), hearth_glow * 0.65 * night_mix);
 
 	// Rich matte gouache grain
-	col *= 1.0 + (brush - 0.5) * 0.12 + (fine_grain - 0.5) * 0.06;
+	col *= 1.0 + (brush - 0.5) * 0.062 + (fine_grain - 0.5) * 0.022;
 
 	// Broad patches of sunlight move slowly across the clearing.
 	float clearing_light = smoothstep(0.28, 0.72, vnoise(v_world_pos.xz * 0.29 + vec2(TIME * 0.018, 0.0)));

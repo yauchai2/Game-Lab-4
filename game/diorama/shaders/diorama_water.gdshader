@@ -74,7 +74,7 @@ void fragment() {
 
 	// Subtle hand-painted horizontal strokes on calm lake
 	float lake_stroke = vnoise(vec2(v_world_pos.x * 0.45 + TIME * 0.08, v_world_pos.z * 3.8));
-	col += vec3(0.03, 0.06, 0.09) * smoothstep(0.64, 0.88, lake_stroke) * (1.0 - is_river);
+	col += vec3(0.012, 0.028, 0.043) * smoothstep(0.64, 0.88, lake_stroke) * (1.0 - is_river);
 
 	// Convert shallow vertical depth into an approximate horizontal shore distance.
 	float shore_foam = 0.0;
@@ -90,7 +90,7 @@ void fragment() {
 		float lip = 1.0 - smoothstep(0.018, 0.095, shore_distance);
 		float broken_line = (1.0 - smoothstep(0.026, 0.115, abs(shore_distance - 0.22 - drift)))
 			* smoothstep(0.37, 0.72, wave_n);
-		shore_foam = lip * 0.57 + broken_line * 0.31;
+		shore_foam = lip * 0.69 + broken_line * 0.38;
 	}
 
 	// 2. River-only concentric ripples
@@ -116,7 +116,7 @@ void fragment() {
 	// Arc ends break up in the current; the lake catches smaller rings near its banks.
 	float wake = stream_ring + (1.0 - is_river) * smoothstep(0.065, 0.012, abs(d_cell - r_phase * 0.32))
 		* sin(PI * r_phase) * step(0.83, rnd) * smoothstep(0.08, 0.35, depth);
-	col *= mix(0.78, 1.10, flow_n);
+	col *= mix(0.91, 1.045, flow_n);
 	float object_foam = (1.0 - smoothstep(0.04, 0.23, contact_depth))
 		* smoothstep(0.21, 0.52, bed_depth) * smoothstep(0.23, 0.66, wave_n) * 0.68;
 	float total_foam = clamp(shore_foam + object_foam + wake * smoothstep(0.20, 0.66, wave_n) * 0.47 + bob_ring + wf_foam, 0.0, 1.0);
@@ -151,7 +151,7 @@ void fragment() {
 	float diamond = abs(center.x) * 0.71 + abs(center.y) * 1.75;
 	float reflection = (1.0 - smoothstep(0.008, 0.034, diamond))
 		* pow(sin(PI * phase), 4.0) * step(0.86, random_glint) * daylight * depth_t * (1.0 - 0.85 * rain_amount);
-	vec3 lit_water = mix(col, vec3(0.59, 0.72, 0.73), sunlight * (0.10 + 0.22 * glint));
+	vec3 lit_water = mix(col, vec3(0.59, 0.72, 0.73), sunlight * (0.035 + 0.10 * glint));
 	ALBEDO = mix(lit_water, vec3(0.78, 0.85, 0.80), reflection * 0.61);
 	float visibility = 1.0 - abs(dot(NORMAL, normalize(VIEW)));
 	ALPHA = clamp(mix(0.68, 0.96, depth_t) + visibility * 0.04 + total_foam * 0.22, 0.0, 1.0);

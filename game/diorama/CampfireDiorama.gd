@@ -231,6 +231,7 @@ func _ready() -> void:
 	_setup_environment_and_lights()
 	var height_tex := _build_sculpted_terrain(state_tex)
 	_build_painterly_grass_tufts()
+	_build_meadow_flowers()
 	_build_water_and_waterfall(height_tex)
 	occlusion = preload("res://diorama/LakesideOcclusion.gd").new()
 	add_child(occlusion)
@@ -361,18 +362,18 @@ func _apply_time_of_day(night: bool) -> void:
 		campfire_light.light_energy = 0.70
 		cabin_light.light_energy = 0.30
 		if terrain_mat:
-			terrain_mat.set_shader_parameter("grass_deep", Color("#48702c"))
-			terrain_mat.set_shader_parameter("grass_mid", Color("#78a43c"))
-			terrain_mat.set_shader_parameter("grass_hill", Color("#95b23e"))
+			terrain_mat.set_shader_parameter("grass_deep", Color("#356828"))
+			terrain_mat.set_shader_parameter("grass_mid", Color("#6c9e36"))
+			terrain_mat.set_shader_parameter("grass_hill", Color("#89ac40"))
 			terrain_mat.set_shader_parameter("trail_col", Color("#cfa570"))
 			terrain_mat.set_shader_parameter("campfire_dirt", Color("#c49458"))
-			terrain_mat.set_shader_parameter("shore_sand", Color("#7f9682"))
+			terrain_mat.set_shader_parameter("shore_sand", Color("#aba07c"))
 			terrain_mat.set_shader_parameter("cliff_rock", Color("#6d768a"))
 			terrain_mat.set_shader_parameter("night_mix", 0.0)
 		if water_mat:
 			# Painterly azure-slate day water (NO electric neon blue!)
-			water_mat.set_shader_parameter("deep_color", Color("#214693"))
-			water_mat.set_shader_parameter("shallow_color", Color("#477fc5"))
+			water_mat.set_shader_parameter("deep_color", Color("#174492"))
+			water_mat.set_shader_parameter("shallow_color", Color("#3189aa"))
 			water_mat.set_shader_parameter("foam_color", Color("#d2e6f5"))
 			water_mat.set_shader_parameter("daylight", 1.0)
 		if grass_mat:
@@ -542,6 +543,34 @@ func _build_painterly_grass_tufts() -> void:
 	mmi.material_override = grass_mat
 	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mmi)
+
+func _build_meadow_flowers() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 72653
+	var transforms: Array[Transform3D] = []
+	for patch: Vector2 in [Vector2(-5.2, -4.6), Vector2(-2.0, -6.0), Vector2(-5.0, 1.9),
+			Vector2(1.1, 3.25), Vector2(12.1, -3.1)]:
+		for group in 5:
+			var center := patch + Vector2(rng.randf_range(-0.96, 0.96), rng.randf_range(-0.52, 0.52))
+			for sprig in rng.randi_range(2, 5):
+				var at := center + Vector2.from_angle(rng.randf() * TAU) * rng.randf_range(0.05, 0.40)
+				var y := terrain_height(at.x, at.y)
+				if y < WATER_LEVEL + 0.30 or _trail_weight(at.x, at.y) > 0.18 or at.distance_to(CAMPFIRE_XZ) < 3.1:
+					continue
+				var basis := Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3.ONE * rng.randf_range(0.78, 1.34))
+				transforms.append(Transform3D(basis, Vector3(at.x, y - 0.014, at.y)))
+	var batch := MultiMesh.new()
+	batch.transform_format = MultiMesh.TRANSFORM_3D
+	batch.mesh = preload("res://diorama/MeadowFlowers.gd").mesh()
+	batch.instance_count = transforms.size()
+	for i in transforms.size():
+		batch.set_instance_transform(i, transforms[i])
+	var flowers := MultiMeshInstance3D.new()
+	flowers.name = "MeadowFlowerPatches"
+	flowers.multimesh = batch
+	flowers.material_override = grass_mat
+	flowers.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(flowers)
 
 func _recolor_grass_tufts() -> void:
 	if not grass_mm:
@@ -1538,9 +1567,9 @@ func _build_forest_canopy() -> void:
 			continue
 		var spin := rng.randf() * TAU
 		var shade := rng.randf_range(0.50, 1.0)
-		var leaf_color := Color("#18604b").lerp(Color("#a6c548"), pow(rng.randf(), 1.9))
+		var leaf_color := Color("#085344").lerp(Color("#aac936"), pow(rng.randf(), 1.9))
 		if feature_broadleaf and i == roots.size() - 1:
-			leaf_color = Color("#9ab63b")
+			leaf_color = Color("#95b42a")
 		var add_detail := Vector2(roots[i].x, roots[i].z).length_squared() < 290.0
 		for j in 6:
 			var angle := spin + TAU * j / 5.0
