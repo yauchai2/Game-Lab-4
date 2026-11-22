@@ -1,29 +1,24 @@
 shader_type spatial;
-render_mode blend_mix, diffuse_lambert, cull_disabled;
+render_mode blend_mix, diffuse_lambert, cull_disabled, depth_draw_never;
 
-// Soft Lit Painterly Waterfall (NO Overexposed Unshaded Neon + Strong Left/Right UV Alpha Fade!)
-uniform vec4 water_top : source_color = vec4(0.44, 0.66, 0.82, 0.90);
-uniform vec4 water_bot : source_color = vec4(0.26, 0.46, 0.66, 0.88);
-uniform vec4 streak_col : source_color = vec4(0.76, 0.86, 0.94, 0.92);
+uniform vec4 water_top : source_color = vec4(0.46, 0.67, 0.80, 1.0);
+uniform vec4 water_bot : source_color = vec4(0.34, 0.54, 0.70, 1.0);
+uniform vec4 froth : source_color = vec4(0.76, 0.85, 0.89, 1.0);
 
 void fragment() {
 	vec2 uv = UV;
-	float s1 = sin(uv.x * 22.0 + sin(uv.y * 5.0 - TIME * 2.8) * 0.5) * 0.5 + 0.5;
-	float scroll = fract(uv.y * 2.2 - TIME * 1.7 + floor(uv.x * 8.0) * 0.19);
-	float streak = smoothstep(0.60, 0.88, s1) * smoothstep(0.14, 0.52, scroll) * smoothstep(0.94, 0.62, scroll);
-	float top_foam = smoothstep(0.16, 0.0, uv.y) * 0.55;
-	float bot_foam = smoothstep(0.78, 1.0, uv.y) * 0.65;
-
+	float runoff = uv.y * (1.65 + 0.70 * uv.y) - TIME * 1.46;
+	float drape = sin(uv.x * 19.0 + sin(uv.y * 4.4 - TIME * 0.85) * 0.8);
+	float fine = sin(uv.x * 57.0 + cos(runoff * 3.2) * 0.95);
+	float ribbon = smoothstep(0.05, 0.88, drape * 0.70 + fine * 0.30);
+	float slide = 0.55 + 0.45 * sin(TAU * runoff + floor(uv.x * 7.0) * 1.7);
+	float crest = (1.0 - smoothstep(0.0, 0.20, uv.y)) * 0.29;
+	float skirt = smoothstep(0.60, 0.96, uv.y) * 0.34;
 	vec3 col = mix(water_top.rgb, water_bot.rgb, uv.y);
-	col = mix(col, streak_col.rgb, clamp(streak * 0.68 + top_foam + bot_foam, 0.0, 1.0));
-	// Strong smooth left/right & bottom UV alpha fade — ZERO rectangular edge!
-	float side_fade = smoothstep(0.0, 0.28, uv.x) * smoothstep(1.0, 0.72, uv.x);
-	float bot_fade = smoothstep(1.0, 0.86, uv.y);
-
-	ALBEDO = col;
-	ALPHA = side_fade * bot_fade * 0.92;
-	ROUGHNESS = 0.92;
-	METALLIC = 0.0;
-	SPECULAR = 0.04;
-	EMISSION = vec3(0.0);
+	ALBEDO = mix(col, froth.rgb, clamp(ribbon * (0.21 + slide * 0.38) + crest + skirt, 0.0, 0.83));
+	float edge = smoothstep(0.0, 0.25, uv.x) * (1.0 - smoothstep(0.75, 1.0, uv.x));
+	float ends = smoothstep(0.0, 0.094, uv.y) * (1.0 - smoothstep(0.84, 1.0, uv.y));
+	ALPHA = edge * ends * (0.64 + 0.24 * ribbon);
+	ROUGHNESS = 0.87;
+	SPECULAR = 0.07;
 }

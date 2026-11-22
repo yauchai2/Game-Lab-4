@@ -13,7 +13,13 @@ void vertex() {
 	tile_position = VERTEX;
 }
 
+uniform float cover_opacity : hint_range(0.0, 1.0) = 1.0;
+
 void fragment() {
+	float screen_pattern = fract(dot(floor(FRAGCOORD.xy), vec2(0.7548776, 0.5698403)));
+	if (screen_pattern > cover_opacity) {
+		discard;
+	}
 	vec2 grid = tile_position.xz * vec2(3.30, 4.35);
 	float row = floor(grid.y);
 	grid.x += mod(row, 2.0) * 0.5;

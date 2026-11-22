@@ -18,6 +18,7 @@ uniform vec3 waterfall_pos = vec3(-8.5, -0.58, 5.10);
 
 uniform vec2 channel_stones[4];
 uniform float daylight = 0.0;
+uniform float rain_amount = 0.0;
 
 varying vec3 v_world_pos;
 
@@ -75,9 +76,22 @@ void fragment() {
 	float lake_stroke = vnoise(vec2(v_world_pos.x * 0.45 + TIME * 0.08, v_world_pos.z * 3.8));
 	col += vec3(0.03, 0.06, 0.09) * smoothstep(0.64, 0.88, lake_stroke) * (1.0 - is_river);
 
-	// 1. Soft non-emissive shoreline foam hugging curved banks (NO neon glow!)
-	float shore_wave = sin(bed_depth * 18.0 - TIME * 1.8 + flow_n * 2.5);
-	float shore_foam = smoothstep(0.18, 0.02, bed_depth) * 0.58 + smoothstep(0.32, 0.10, bed_depth) * smoothstep(0.75, 0.95, shore_wave) * 0.22;
+	// Convert shallow vertical depth into an approximate horizontal shore distance.
+	float shore_foam = 0.0;
+	if (bed_depth < 0.62) {
+		vec2 step_uv = 1.0 / vec2(textureSize(height_tex, 0));
+		float east = texture(height_tex, uv_h + vec2(step_uv.x, 0.0)).r;
+		float west = texture(height_tex, uv_h - vec2(step_uv.x, 0.0)).r;
+		float south = texture(height_tex, uv_h + vec2(0.0, step_uv.y)).r;
+		float north = texture(height_tex, uv_h - vec2(0.0, step_uv.y)).r;
+		vec2 slope = 3.0 * vec2(east - west, south - north) / (step_uv * map_size);
+		float shore_distance = max(0.0, bed_depth) / max(0.26, length(slope));
+		float drift = sin(TIME * 1.35 + flow_n * 4.0) * 0.025;
+		float lip = 1.0 - smoothstep(0.018, 0.095, shore_distance);
+		float broken_line = (1.0 - smoothstep(0.026, 0.115, abs(shore_distance - 0.22 - drift)))
+			* smoothstep(0.37, 0.72, wave_n);
+		shore_foam = lip * 0.57 + broken_line * 0.31;
+	}
 
 	// 2. River-only concentric ripples
 	vec2 cell_uv = (v_world_pos.xz + vec2(0.0, -TIME * 0.58)) * 0.58;
@@ -94,7 +108,10 @@ void fragment() {
 
 	// 4. Waterfall splash foam ring
 	float d_wf = length(v_world_pos.xz - waterfall_pos.xz);
-	float wf_foam = smoothstep(1.9, 0.40, d_wf + (wave_n - 0.5) * 0.7) * 0.65;
+	float impact_white = 1.0 - smoothstep(0.22, 1.16, d_wf + (wave_n - 0.5) * 0.38);
+	float outgoing = sin(d_wf * 21.0 - TIME * 6.3 + flow_n * 1.6);
+	float spread = smoothstep(0.66, 0.94, outgoing) * (1.0 - smoothstep(0.50, 1.88, d_wf));
+	float wf_foam = impact_white * 0.59 + spread * 0.18;
 
 	// Arc ends break up in the current; the lake catches smaller rings near its banks.
 	float wake = stream_ring + (1.0 - is_river) * smoothstep(0.065, 0.012, abs(d_cell - r_phase * 0.32))
@@ -111,6 +128,17 @@ void fragment() {
 		float arc = smoothstep(-0.65,0.4,offset.x + 0.27 * sin(radius * 3.0 + phase * 4.0));
 		total_foam = max(total_foam, ring * arc * sin(PI * phase) * 0.85);
 	}
+	if (rain_amount > 0.015) {
+		vec2 rain_grid = v_world_pos.xz * 1.13;
+		vec2 tile = floor(rain_grid);
+		float clock = TIME * 1.68 + hash21(tile);
+		float age = fract(clock);
+		vec2 seed = tile + floor(clock) * vec2(9.7, 4.2);
+		vec2 point = mix(vec2(0.22), vec2(0.78), vec2(hash21(seed + 1.0), hash21(seed + 5.0)));
+		float gap = abs(length(fract(rain_grid) - point) - (0.026 + age * 0.20));
+		float drop = (1.0 - smoothstep(0.012, 0.038, gap)) * sin(age * PI) * (1.0 - age);
+		total_foam = max(total_foam, drop * rain_amount * 0.48);
+	}
 	col = mix(col, foam_color.rgb, total_foam);
 
 	float sunlight = sun_pools(v_world_pos.xz) * daylight;
@@ -122,7 +150,7 @@ void fragment() {
 	vec2 center = fract(reflection_grid) - vec2(0.42 + phase * 0.16, 0.5);
 	float diamond = abs(center.x) * 0.71 + abs(center.y) * 1.75;
 	float reflection = (1.0 - smoothstep(0.008, 0.034, diamond))
-		* pow(sin(PI * phase), 4.0) * step(0.86, random_glint) * daylight * depth_t;
+		* pow(sin(PI * phase), 4.0) * step(0.86, random_glint) * daylight * depth_t * (1.0 - 0.85 * rain_amount);
 	vec3 lit_water = mix(col, vec3(0.59, 0.72, 0.73), sunlight * (0.10 + 0.22 * glint));
 	ALBEDO = mix(lit_water, vec3(0.78, 0.85, 0.80), reflection * 0.61);
 	float visibility = 1.0 - abs(dot(NORMAL, normalize(VIEW)));

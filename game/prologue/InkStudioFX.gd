@@ -17,6 +17,7 @@ var _tex_upload_timer := 0.0
 # Weather: 0 = Starry Night (ambient embers), 1 = Falling Snow (frost accumulates, melts near fire), 2 = Night Rain (wet puddles)
 var weather_mode := 0
 var render_legacy_precipitation := true
+var scorch_on_impact := true
 var weather_particles: Array[Dictionary] = []
 var pixel_sparks: Array[Dictionary] = []
 var physics_shards: Array[Dictionary] = []
@@ -136,6 +137,8 @@ func spawn_pixel_burst(origin: Vector3, colors: Array, count := 20, speed_mult :
 		var bm := BoxMesh.new()
 		bm.size = Vector3.ONE * sz
 		mi.mesh = bm
+		if not scorch_on_impact:
+			mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		var mat := StandardMaterial3D.new()
 		mat.albedo_color = colors[i % colors.size()]
 		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -161,10 +164,14 @@ func spawn_physics_shatter(origin: Vector3, colors: Array, impulse_from: Vector3
 	for i in range(count):
 		var rb := RigidBody3D.new()
 		rb.collision_layer = 4
-		rb.collision_mask = 1
+		rb.collision_mask = 1 if scorch_on_impact else 3
 		rb.mass = 0.6
+		if not scorch_on_impact:
+			rb.continuous_cd = true
+			rb.linear_damp = 1.1
+			rb.angular_damp = 1.35
 		var pm := PhysicsMaterial.new()
-		pm.bounce = 0.42
+		pm.bounce = 0.42 if scorch_on_impact else 0.26
 		pm.friction = 0.72
 		rb.physics_material_override = pm
 		rb.position = origin + Vector3(randf_range(-0.42, 0.42), randf_range(0.28, 0.92), randf_range(-0.42, 0.42))
@@ -187,11 +194,11 @@ func spawn_physics_shatter(origin: Vector3, colors: Array, impulse_from: Vector3
 		add_child(rb)
 		var ang := randf_range(0.0, TAU)
 		var out_v := Vector3(cos(ang), 0.0, sin(ang)) * randf_range(2.2, 4.8) + push_dir * 2.4 + Vector3(0.0, randf_range(3.6, 6.4), 0.0)
-		rb.apply_central_impulse(out_v)
+		rb.apply_central_impulse(out_v * (1.0 if scorch_on_impact else 0.30))
 		rb.angular_velocity = Vector3(randf_range(-10, 10), randf_range(-10, 10), randf_range(-10, 10))
 		physics_shards.append({"node": rb, "age": 0.0})
 
-func try_hit_shatter_props(origin: Vector3, radius: float, host: Node) -> bool:
+func try_hit_shatter_props(origin: Vector3, radius: float, host: Node, facing := Vector3.ZERO) -> bool:
 	var hit_any := false
 	for p in shatter_props:
 		if bool(p["broken"]):
@@ -199,8 +206,11 @@ func try_hit_shatter_props(origin: Vector3, radius: float, host: Node) -> bool:
 		var pn: Node3D = p["node"]
 		if not is_instance_valid(pn):
 			continue
-		var d := Vector2(origin.x - pn.position.x, origin.z - pn.position.z).length()
-		if d <= radius + float(p["radius"]):
+		var offset := pn.position - origin
+		var planar := Vector3(offset.x, 0.0, offset.z)
+		if not facing.is_zero_approx() and (absf(offset.y) > 1.15 or facing.dot(planar.normalized()) < 0.22):
+			continue
+		if planar.length() <= radius + float(p["radius"]) * (1.0 if facing.is_zero_approx() else 0.48):
 			hit_any = true
 			p["hp"] = int(p["hp"]) - 1
 			var cols: Array = p["colors"]
@@ -208,15 +218,20 @@ func try_hit_shatter_props(origin: Vector3, radius: float, host: Node) -> bool:
 				if host.has_method("flash_hit"):
 					host.flash_hit(pn)
 				spawn_pixel_burst(pn.position, cols, 8, 0.8)
-				paint_scorch(pn.position, 1.1, 0.25)
+				if scorch_on_impact:
+					paint_scorch(pn.position, 1.1, 0.25)
 			else:
 				p["broken"] = true
 				var pos := pn.position
 				pn.queue_free()
-				PrologueState.play_sfx("wood")
+				if scorch_on_impact:
+					PrologueState.play_sfx("wood")
 				spawn_physics_shatter(pos, cols, origin, 10)
-				spawn_pixel_burst(pos, cols + [Color("#ff9838"), Color("#fff2b2")], 22, 1.15)
-				paint_scorch(pos, 1.85, 0.65)
+				if scorch_on_impact:
+					spawn_pixel_burst(pos, cols + [Color("#ff9838"), Color("#fff2b2")], 22, 1.15)
+					paint_scorch(pos, 1.85, 0.65)
+				else:
+					spawn_pixel_burst(pos + Vector3.UP * 0.22, cols + [Color("#dfc9a3")], 8, 0.41)
 				if host.has_method("spawn_bouncing_coins"):
 					host.spawn_bouncing_coins(pos, int(p["coins"]), 5)
 				if host.has_method("spawn_damage_pop"):

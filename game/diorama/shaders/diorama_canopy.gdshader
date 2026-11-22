@@ -4,6 +4,8 @@ render_mode diffuse_lambert, cull_disabled;
 uniform vec4 tint_color : source_color = vec4(1.0);
 uniform bool conifer = false;
 uniform float night_mix = 0.0;
+#include "res://diorama/shaders/diorama_wind_field.gdshaderinc"
+#include "res://diorama/shaders/diorama_canopy_cover.gdshaderinc"
 varying vec3 crown_position;
 varying float crown_light;
 
@@ -24,10 +26,6 @@ float brush(vec3 p) {
 	return mix(mix(slab.x, slab.y, f.x), mix(slab.z, slab.w, f.x), f.y);
 }
 
-global uniform vec2 wind_direction;
-global uniform float wind_speed;
-global uniform float wind_strength;
-
 void vertex() {
 	crown_position = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	if (INSTANCE_CUSTOM.w > 0.5) {
@@ -35,16 +33,16 @@ void vertex() {
 		NORMAL = normalize(mix(NORMAL, whole_crown, 0.42));
 	}
 	crown_light = dot(normalize(MODEL_NORMAL_MATRIX * NORMAL), normalize(vec3(-0.42,0.83,0.36)));
-	vec2 wind = normalize(wind_direction);
-	float gust = sin(dot(crown_position.xz, wind) * 0.52 - TIME * wind_speed * 1.25);
-	float sway = gust * (0.18 + 0.22 * sin(TIME * 0.39)) * wind_strength * (conifer ? smoothstep(0.8, 4.0, VERTEX.y) : 0.45);
-	vec3 world_bend = vec3(wind.x, 0.0, wind.y);
-	vec2 local_bend = vec2(dot(normalize(MODEL_MATRIX[0].xyz), world_bend),
-		dot(normalize(MODEL_MATRIX[2].xyz), world_bend));
-	VERTEX.xz += local_bend * sway;
+	vec2 bend = diorama_bend(crown_position.xz, TIME);
+	float weight = conifer ? smoothstep(0.8, 4.0, VERTEX.y) * 0.23 : 0.081;
+	vec3 world_bend = vec3(bend.x, 0.0, bend.y) * weight;
+	VERTEX += inverse(mat3(MODEL_MATRIX)) * world_bend;
 }
 
 void fragment() {
+	if (canopy_blocks_player(crown_position, FRAGCOORD.xy)) {
+		discard;
+	}
 	float clusters = brush(crown_position * 2.2);
 	float flecks = brush(crown_position * vec3(6.0,4.0,6.0));
 	float light = smoothstep(-0.30,0.94,crown_light + 0.25 * (clusters - 0.5));

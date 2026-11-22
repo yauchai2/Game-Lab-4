@@ -2,6 +2,7 @@ shader_type spatial;
 render_mode blend_add, unshaded, cull_disabled, depth_draw_never, fog_disabled;
 
 uniform vec4 ray_color : source_color = vec4(1.0, 0.92, 0.54, 0.32);
+uniform float clear_air = 1.0;
 uniform sampler2D scene_depth : hint_depth_texture, filter_nearest, repeat_disable;
 
 void fragment() {
@@ -25,5 +26,5 @@ void fragment() {
 	float face = 0.30 + 0.70 * abs(dot(normalize(NORMAL), normalize(VIEW)));
 	float shimmer = 0.93 + 0.07 * sin(UV.x * 11.0 + TIME * 0.68);
 	ALBEDO = ray_color.rgb;
-	ALPHA = edge * length_fade * face * shimmer * ray_color.a * contact;
+	ALPHA = edge * length_fade * face * shimmer * ray_color.a * contact * clear_air;
 }

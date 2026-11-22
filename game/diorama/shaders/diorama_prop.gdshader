@@ -17,6 +17,8 @@ uniform vec3 aabb_center = vec3(0.0, 0.0, 0.0);
 uniform float spherical_normal_mix : hint_range(0.0, 1.0) = 0.0;
 uniform float wind_strength : hint_range(0.0, 0.35) = 0.0;
 
+uniform float breath_strength : hint_range(0.0, 0.05) = 0.0;
+
 varying float v_norm_y;
 varying vec3 v_world_pos;
 
@@ -55,10 +57,21 @@ void vertex() {
 		VERTEX.x += sway_x;
 		VERTEX.z += sway_z;
 	}
+	if (breath_strength > 0.0) {
+		float torso = (1.0 - smoothstep(0.14, 0.38, abs(VERTEX.z - aabb_center.z)))
+			* smoothstep(0.26, 0.59, v_norm_y) * (1.0 - smoothstep(0.73, 0.96, v_norm_y));
+		VERTEX.y += torso * sin(TIME * 1.83) * breath_strength;
+	}
 	v_world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 }
 
+uniform float cover_opacity : hint_range(0.0, 1.0) = 1.0;
+
 void fragment() {
+	float screen_pattern = fract(dot(floor(FRAGCOORD.xy), vec2(0.7548776, 0.5698403)));
+	if (screen_pattern > cover_opacity) {
+		discard;
+	}
 	vec3 tex_c = has_albedo_tex ? texture(albedo_tex, UV).rgb : vec3(1.0);
 	vec3 col = tex_c * base_color.rgb * brightness;
 
